@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
                     <Button sx={{color: '#313926'}}>Login</Button>
                     <IconButton edge="end" color="inherit" aria-label="cart">
                         <ShoppingCartIcon sx={{color: '#313926'}}/>
-                        <span>2</span> {/* Exemplo de quantidade de itens */}
+                        <span>2</span> {/* Exemploss de quantidade de itens */}
                     </IconButton>
                 </Box>
             </Toolbar>
