@@ -36,3 +36,25 @@
     transform: rotate(360deg);
   }
 }
+
+/* Exemplo básico de estilo */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #f8f9fa;
+}
+
+.product-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 10px;
+  width: 200px;
+  text-align: center;
+}
