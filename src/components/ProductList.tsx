@@ -11,6 +11,7 @@ interface Product {
     discount: number;  // Adicionei o campo de desconto
     paymentOptions: string[];  // Adicionei o campo de opções de pagamento
     image: string;
+    colors: { name: string; image: string }[]; 
 }
 
 const ProductList: React.FC = () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, IconButton } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 
@@ -9,15 +9,30 @@ interface BannerProps {
 }
 
 const Banner: React.FC<BannerProps> = ({ images }) => {
-  const [currentIndex, setCurrentIndex] = React.useState<number>(0);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [isSliding, setIsSliding] = useState<boolean>(false);
 
   const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
+    setIsSliding(true);
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
+      setIsSliding(false);
+    }, 500); // Tempo da animação de slide
   };
 
   const handlePrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
+    setIsSliding(true);
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
+      setIsSliding(false);
+    }, 500); // Tempo da animação de slide
   };
+
+  // Função para trocar automaticamente as imagens a cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(handleNext, 5000); // Troca a cada 5 segundos
+    return () => clearInterval(interval); // Limpa o intervalo quando o componente desmonta
+  }, [images]);
 
   return (
     <Box
@@ -38,8 +53,10 @@ const Banner: React.FC<BannerProps> = ({ images }) => {
             alt="Banner"
             sx={{
               width: '100%',
-              height: '100%',   // Ajustar a altura para ocupar todo o banner
-              objectFit: 'cover', // Para garantir que a imagem seja ajustada ao container sem perder proporção
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.5s ease-in-out', // Suave transição de slide
+              transform: isSliding ? 'translateX(-100%)' : 'translateX(0)',
             }}
           />
 

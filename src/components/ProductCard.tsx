@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Button, CardActions } from '@mui/material';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'; // Importando o ícone
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardMedia, Typography, Button, CardActions, Box, Avatar } from '@mui/material';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 
 interface ProductCardProps {
     product: {
@@ -10,12 +10,18 @@ interface ProductCardProps {
         price: number;
         image: string;
         discount: number;
-        paymentOptions: string[]; // Agora é um array de strings
+        paymentOptions: string[];
+        colors: { name: string; image: string }[];  // Array de cores
     };
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-    const { name, description, price, discount, paymentOptions, image } = product;
+    const { name, description, price, discount, paymentOptions, image, colors } = product;
+
+    useEffect(() => {
+        console.log('Produto:', product);
+        console.log('Cores recebidas:', colors);  // Verifica se as cores estão chegando corretamente
+    }, [product, colors]);
 
     // Calculando o preço com desconto
     const finalPrice = discount > 0 ? price - (price * discount) / 100 : price;
@@ -24,10 +30,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <Card sx={{ maxWidth: 345, border: '2.32px solid #FAF8F1', boxShadow: 'none' }}>
             <CardMedia
                 component="img"
-                height="140"
+                height="220"
                 image={image}
                 alt={name}
             />
+
             <CardContent>
                 <Typography gutterBottom variant="h5" component="div" sx={{ color: '#313926' }}>
                     {name}
@@ -36,27 +43,52 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     {description}
                 </Typography>
 
-                {discount > 0 ? (
+                {discount > 0 && (
                     <Typography variant="body1" sx={{ textDecoration: 'line-through', color: '#313926' }}>
                         R$ {price.toFixed(2)}
                     </Typography>
-                ) : null}
-                
-                <Typography variant="h6" sx={{ color: '#313926' }}>
+                )}
+
+                <Typography variant="h6" sx={{ color: '#AE9C82', marginBottom: '8px' }}>
                     R$ {finalPrice.toFixed(2)}
                 </Typography>
 
-                <Typography variant="body2" color="text.secondary">
-                    Opções de pagamento:
-                </Typography>
-                <ul style={{ color: '#313926' }}>
+                {/* Exibindo as opções de pagamento */}
+                <div style={{ color: '#313926', marginTop: '10px' }}>
                     {paymentOptions.map((option, index) => (
-                        <li key={index}>{option}</li>
+                        <Typography variant="body2" key={index} sx={{ margin: '2px 0' }}>
+                            {option}
+                        </Typography>
                     ))}
-                </ul>
+                </div>
+
+                {/* Exibindo as opções de cores sem paginação */}
+                <Box sx={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    {colors && colors.length > 0 ? (
+                        colors.map((color, index) => (
+                            <Box key={index} sx={{ textAlign: 'center' }}>
+                                <Avatar
+                                    alt={color.name}
+                                    src={color.image}
+                                    sx={{ margin: 'auto', width: 56, height: 56 }}
+                                />
+                                <Typography>{color.name}</Typography>
+                            </Box>
+                        ))
+                    ) : (
+                        <Typography variant="caption">Nenhuma cor disponível</Typography>
+                    )}
+                </Box>
             </CardContent>
+
             <CardActions>
-                <Button size="small" variant="contained" color="primary" startIcon={<AddShoppingCartIcon />} sx={{backgroundColor: '#313926'}}>
+                <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddShoppingCartIcon />}
+                    sx={{ backgroundColor: '#313926' }}
+                >
                     Adicionar
                 </Button>
             </CardActions>
