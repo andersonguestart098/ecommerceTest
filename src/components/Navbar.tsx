@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
                 color: '#000', 
                 boxShadow: 'none', 
                 padding: '0 20px', 
-                height: '50px'
+                height: '60px'
             }}
         >
             <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '70px' }}> {/* Centralizar itens */}

@@ -39,7 +39,7 @@ const Banner: React.FC<BannerProps> = ({ images }) => {
       sx={{
         position: 'relative',
         maxWidth: '100%',
-        height: '240px', // Ajuste a altura conforme necessário
+        height: '340px', // Ajuste a altura conforme necessário
         overflow: 'hidden',
         backgroundColor: '#f5f5f5',
         marginTop: '20px',

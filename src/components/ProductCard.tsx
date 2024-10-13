@@ -27,10 +27,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const finalPrice = discount > 0 ? price - (price * discount) / 100 : price;
 
     return (
-        <Card sx={{ maxWidth: 345, border: '2.32px solid #FAF8F1', boxShadow: 'none' }}>
+        <Card sx={{ maxWidth: 375, border: '2.32px solid #FAF8F1', boxShadow: 'none' }}>
             <CardMedia
                 component="img"
-                height="220"
+                height="240"
                 image={image}
                 alt={name}
             />
