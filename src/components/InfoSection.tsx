@@ -10,19 +10,15 @@ const InfoSection: React.FC = () => {
     <Box
       sx={{
         backgroundColor: '#FAF8F1',
-        padding: '10px 0', // Controlando o padding para manter a altura
+        padding: '20px 0', // Padding ajustado para mais espaço em telas menores
         borderTop: '1px solid #e0e0e0',
         borderBottom: '1px solid #e0e0e0',
-        height: '60px', // Altura fixa que você especificou
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
       }}
     >
-      <Grid container justifyContent="center" alignItems="center">
+      <Grid container justifyContent="center" alignItems="center" spacing={2}>
         {/* Frete Grátis */}
-        <Grid item xs={12} sm={3} sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <LocalShippingIcon sx={{ fontSize: 29, color: '#313926' }} />
+        <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+          <LocalShippingIcon sx={{ fontSize: 32, color: '#313926', mb: 1 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 14, color: '#313926' }}>
             Frete Grátis
           </Typography>
@@ -32,8 +28,8 @@ const InfoSection: React.FC = () => {
         </Grid>
 
         {/* Parcelamento */}
-        <Grid item xs={12} sm={3} sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <CreditCardIcon sx={{ fontSize: 29, color: '#313926' }} />
+        <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+          <CreditCardIcon sx={{ fontSize: 32, color: '#313926', mb: 1 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 14, color: '#313926' }}>
             Parcelamento em até 11x
           </Typography>
@@ -43,8 +39,8 @@ const InfoSection: React.FC = () => {
         </Grid>
 
         {/* Desconto */}
-        <Grid item xs={12} sm={3} sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <DiscountIcon sx={{ fontSize: 29, color: '#313926' }} />
+        <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+          <DiscountIcon sx={{ fontSize: 32, color: '#313926', mb: 1 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 14, color: '#313926' }}>
             7% de Desconto
           </Typography>
@@ -54,8 +50,8 @@ const InfoSection: React.FC = () => {
         </Grid>
 
         {/* Devolução e Garantia */}
-        <Grid item xs={12} sm={3} sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <VerifiedUserIcon sx={{ fontSize: 29, color: '#313926' }} />
+        <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+          <VerifiedUserIcon sx={{ fontSize: 32, color: '#313926', mb: 1 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: 14, color: '#313926' }}>
             Devolução e Garantia
           </Typography>

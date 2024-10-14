@@ -4,6 +4,7 @@ import Banner from '../components/Banner';
 import ProductList from '../components/ProductList';
 import { Container } from '@mui/material';
 import InfoSection from '../components/InfoSection';
+import BrandsSection from '../components/BrandsSection';
 
 // Definindo o tipo das props
 interface HomePageProps {
@@ -25,6 +26,7 @@ const HomePage: React.FC<HomePageProps> = ({ images }) => {
         <div>Nenhum banner disponível</div>
       )}
     <InfoSection />
+    <BrandsSection />
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <ProductList />
       </Container>
