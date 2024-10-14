@@ -6,7 +6,7 @@ const brands = [
     { name: 'Arquitech', logo: '/produtos/icones/arquitech.png' },
     { name: 'Quickstep', logo: '/produtos/icones/quickstep.png' },
     { name: 'Eucafloor', logo: '/produtos/icones/eucafloor.jpg' },
-    { name: 'Santa Luzia', logo: '/produtos/icones/santaluzia.png' },
+    { name: 'Santa Luzia', logo: '/produtos/icones/santaLuzia.png' },
 ];
 
 const BrandsSection = () => {
