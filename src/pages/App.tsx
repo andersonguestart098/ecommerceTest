@@ -51,8 +51,7 @@ const App: React.FC = () => {
         <ThemeProvider theme={theme}>
             <div className="App">
                 <HomePage images={images} />
-                <ProductForm/>
-                <BannerUpload />
+                
             </div>
         </ThemeProvider>
     );
