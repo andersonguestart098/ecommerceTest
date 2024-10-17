@@ -21,6 +21,10 @@ const Checkout: React.FC = () => {
         0
       );
 
+      console.log("Iniciando o processo de finalização do pedido...");
+      console.log("Carrinho:", cart);
+      console.log("Total:", totalPrice);
+
       const response = await axios.post(
         "http://localhost:3001/orders",
         { products: cart, totalPrice },
@@ -33,7 +37,7 @@ const Checkout: React.FC = () => {
 
       console.log("Pedido finalizado com sucesso:", response.data);
       clearCart();
-      navigate("/order-confirmation");
+      navigate("/order-confirmation"); // Redireciona para uma página de confirmação de pedido
     } catch (err) {
       console.error("Erro ao finalizar o pedido:", err);
       alert("Erro ao finalizar o pedido.");

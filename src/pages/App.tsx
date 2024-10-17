@@ -6,9 +6,11 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import BannerUpload from "../components/BannerUpload";
 import ProductForm from "../components/ProductForm";
-import Login from "../components/auth/Login"; // Importe o componente de Login
-import PrivateRoute from "../components/auth/PrivateRoute"; // Importe a rota privada, caso esteja usando
+import Login from "../components/auth/Login";
 import Register from "../components/auth/Register";
+import CartList from "../components/cartList";
+import Checkout from "../components/checkout";
+import { CartProvider } from "../contexts/CartContext"; // Importa o CartProvider
 
 const App: React.FC = () => {
   const [images, setImages] = useState<any[]>([]);
@@ -38,15 +40,17 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Router>
-        <Routes>
-          <Route path="/" element={<HomePage images={images} />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} /> {/* Rota para o Login */}
-          <Route path="/products" element={<ProductForm />} />
-          <Route path="/banners" element={<BannerUpload />} />
-          {/* Rotas protegidas podem ser usadas aqui */}
-          {/* <Route path="/protected" element={<PrivateRoute><ProtectedComponent /></PrivateRoute>} /> */}
-        </Routes>
+        {/* Envolva o CartProvider para que todos os componentes tenham acesso ao carrinho */}
+        <CartProvider>
+          <Routes>
+            <Route path="/" element={<HomePage images={images} />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/products" element={<ProductForm />} />
+            <Route path="/cart" element={<CartList />} />
+            <Route path="/checkout" element={<Checkout />} />
+          </Routes>
+        </CartProvider>
       </Router>
     </ThemeProvider>
   );

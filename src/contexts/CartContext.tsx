@@ -16,7 +16,7 @@ interface CartContextProps {
 }
 
 interface CartProviderProps {
-  children: ReactNode; // Define o tipo de children
+  children: ReactNode;
 }
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
@@ -25,17 +25,26 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addToCart = (product: CartItem) => {
+    console.log("Produto adicionado ao contexto do carrinho:", product);
+
     setCart((prevCart) => {
       const existingProduct = prevCart.find((item) => item.id === product.id);
+      
+      // Adiciona log do estado anterior
+      console.log("Estado anterior do carrinho:", prevCart);
+      
+      let updatedCart;
 
       if (existingProduct) {
-        // Atualiza a quantidade se o produto já estiver no carrinho
-        return prevCart.map((item) =>
+        updatedCart = prevCart.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
+      } else {
+        updatedCart = [...prevCart, product];
       }
-      // Adiciona o novo produto ao carrinho
-      return [...prevCart, product];
+
+      console.log("Novo estado do carrinho (atualizado):", updatedCart);
+      return updatedCart;
     });
   };
 
