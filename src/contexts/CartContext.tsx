@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext, ReactNode } from "react";
+// CartContext.tsx
+
+import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 
 // Interface do produto no carrinho
 interface CartItem {
@@ -6,12 +8,15 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image: string;
 }
 
 interface CartContextProps {
   cart: CartItem[];
   addToCart: (product: CartItem) => void;
   removeFromCart: (id: string) => void;
+  increaseQuantity: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
   clearCart: () => void;
 }
 
@@ -22,29 +27,24 @@ interface CartProviderProps {
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const savedCart = localStorage.getItem("cart");
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (product: CartItem) => {
-    console.log("Produto adicionado ao contexto do carrinho:", product);
-
     setCart((prevCart) => {
       const existingProduct = prevCart.find((item) => item.id === product.id);
-      
-      // Adiciona log do estado anterior
-      console.log("Estado anterior do carrinho:", prevCart);
-      
-      let updatedCart;
-
       if (existingProduct) {
-        updatedCart = prevCart.map((item) =>
+        return prevCart.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
-      } else {
-        updatedCart = [...prevCart, product];
       }
-
-      console.log("Novo estado do carrinho (atualizado):", updatedCart);
-      return updatedCart;
+      return [...prevCart, product];
     });
   };
 
@@ -52,22 +52,42 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== id));
   };
 
+  const increaseQuantity = (id: string) => {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    );
+  };
+
+  const decreaseQuantity = (id: string) => {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === id && item.quantity > 1
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+    );
+  };
+
   const clearCart = () => {
     setCart([]);
+    localStorage.removeItem("cart");
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider
+      value={{ cart, addToCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart }}
+    >
       {children}
     </CartContext.Provider>
   );
 };
 
-// Hook para usar o contexto do carrinho
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart deve ser usado dentro de CartProvider");
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 };
