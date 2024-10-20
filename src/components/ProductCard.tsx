@@ -12,7 +12,7 @@ interface Product {
   paymentOptions: string[];
   image: string[] | string;
   metersPerBox: number;
-  colors: { name: string; image: string }[]; // Adiciona a propriedade colors
+  colors: { name: string; image: string }[];
 }
 
 interface ProductCardProps {
@@ -104,15 +104,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     setBoxesNeeded(calculatedBoxes);
   };
 
-  const handleMouseEnter = () => {
-    if (imageArray && imageArray.length > 1) {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
-    }
-  };
-
   const handleColorClick = (index: number) => {
     if (product.colors[index]) {
       setCurrentImageIndex(index);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (imageArray && imageArray.length > 1) {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % imageArray.length);
     }
   };
 
@@ -124,7 +124,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           height="275"
           image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
           alt={product.name}
-          onMouseEnter={handleMouseEnter}
+          onMouseEnter={handleMouseEnter}  // Adiciona de volta a funcionalidade para trocar a imagem ao passar o mouse
           sx={{
             transition: "0.3s ease-in-out",
             objectFit: "cover"
@@ -137,17 +137,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           <Typography variant="body2" color="text.secondary">
             {product.description}
           </Typography>
-          <Typography variant="h6" color="primary">
-            R$ {product.price.toFixed(2)}
+          <Typography variant="h6" color="#313926">
+            R$ {product.price.toFixed(2).replace('.', ',')} m<sup>2</sup>
           </Typography>
+
 
           {/* Seção de cores */}
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
             {product.colors.map((color, index) => (
               <motion.div
                 key={index}
-                whileHover={{ scale: 1.2 }} // Animação ao passar o mouse
-                whileTap={{ scale: 1 }} // Reset ao clicar
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 1 }}
               >
                 <Avatar
                   src={color.image}
@@ -185,33 +186,34 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
             />
           </Box>
 
-          <Button 
-            variant="contained" 
-            onClick={handleCalculateArea}
-            sx={{ mt: 2, width: '100%', backgroundColor: "#313926", color: "#fff", "&:hover": { backgroundColor: "#3d403a" } }}
-          >
-            Calcular
-          </Button>
-
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Área: {area.toFixed(2)} m² - Caixas: {boxesNeeded}
-          </Typography>
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+          {/* Botões lado a lado */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+            <Button 
+              variant="outlined" 
+              onClick={handleCalculateArea}
+              sx={{ width: '48%', borderColor: "#313926", color: "#313926" }}
+            >
+              Calcular
+            </Button>
             <Button
               onClick={handleAddToCart}
               variant="contained"
               sx={{
                 backgroundColor: "#313926",
                 color: "#fff",
-                width: "100%",
+                width: "48%",
                 "&:hover": { backgroundColor: "#3d403a" },
               }}
             >
               <ShoppingCartIcon />
-              <Typography sx={{ ml: 1 }}>ADICIONAR AO CARRINHO</Typography>
+              <Typography sx={{ ml: 1 }}>Adicionar</Typography>
             </Button>
           </Box>
+
+          {/* Resultado do Cálculo */}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+            Área Total: {area.toFixed(2)} m² - Caixas Necessárias: {boxesNeeded}
+          </Typography>
         </CardContent>
       </Card>
 

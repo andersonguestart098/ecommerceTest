@@ -165,6 +165,9 @@ const CartList: React.FC = () => {
                   borderColor: "#313926",
                   color: "#313926",
                   "&:hover": { backgroundColor: "#e0e0e0" },
+                  padding: "10px 0", // Ajuste para o mesmo padding do botão "Finalizar Pedido"
+                  fontSize: "1rem",
+                  fontWeight: "bold",
                 }}
               >
                 Continuar Comprando

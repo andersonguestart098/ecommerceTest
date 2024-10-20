@@ -26,14 +26,16 @@ const OrderTracking: React.FC = () => {
         const response = await axios.get("http://localhost:3001/orders/me", {
           headers: { "x-auth-token": token },
         });
+        console.log("Pedidos recebidos:", response.data); // Log para verificar os dados recebidos
         setOrders(response.data);
       } catch (error) {
         console.error("Erro ao buscar pedidos:", error);
       }
     };
-
+  
     fetchOrders();
   }, []);
+  
 
   const renderProgressTracker = (currentStatus: string) => {
     const currentStepIndex = statusSteps.findIndex(step => step.key === currentStatus);
@@ -104,13 +106,17 @@ const OrderTracking: React.FC = () => {
       ) : (
         <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB" }}>
           <List>
-            {orders.map((order: any, index: number) => (
+          {orders.map((order: any, index: number) => {
+            console.log("Pedido recebido no frontend:", order); // Log para verificar cada pedido
+            return (
               <div key={index}>
                 <ListItem sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
                   <Box sx={{ flex: 1, width: '100%', textAlign: 'left' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Pedido ID: {order._id}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      Pedido ID: {order._id || order.id} {/* Ajuste para garantir que o ID certo seja exibido */}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Total: R${order.totalPrice.toFixed(2)}
+                      Total: R${order.totalPrice.toFixed(2).replace('.', ',')}
                     </Typography>
                   </Box>
                   <Box sx={{ width: '100%' }}>
@@ -119,8 +125,10 @@ const OrderTracking: React.FC = () => {
                 </ListItem>
                 <Divider />
               </div>
-            ))}
-          </List>
+            );
+          })}
+        </List>
+
         </Paper>
       )}
     </Box>

@@ -24,18 +24,25 @@ const Login: React.FC = () => {
         email,
         password,
       });
+
+      // Log completo para verificar a resposta da API
+      console.log("Resposta completa do login:", response);
+
       const { token, user } = response.data;
   
       // Armazene o token e o nome do usuário no localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+
+      // Log para verificar o token gerado após o login
+      console.log("Token gerado:", token);
   
       // Exibe uma mensagem de sucesso e redireciona o usuário
       alert(`Login realizado com sucesso! Olá, ${user.name}`);
       navigate("/"); // Redireciona para a página inicial após o login
-    } catch (err) {
+    } catch (err: any) {
       setError("Credenciais inválidas.");
-      console.error("Erro ao fazer login:", err);
+      console.error("Erro ao fazer login:", err.response ? err.response.data : err.message);
     }
   };
 
