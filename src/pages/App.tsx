@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react"; // Importando useState e useEffect
-import axios from "axios"; // Importando axios
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { ThemeProvider } from "@mui/material/styles";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import theme from "../theme/CustomTheme";
@@ -11,8 +11,10 @@ import Register from "../components/auth/Register";
 import CartList from "../components/cartList";
 import Checkout from "../components/checkout";
 import Navbar from "../components/Navbar";
-import { CartProvider } from "../contexts/CartContext"; // Importa o CartProvider
+import { CartProvider } from "../contexts/CartContext";
 import { Box } from "@mui/material";
+import OrderTrackingAdmin from "../components/OrderTrackingAdmin"; // Importar componente Admin
+import OrderTrackingCustomer from "../components/OrderTrackingCustomer"; // Importar componente Cliente
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
@@ -44,7 +46,7 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", paddingTop: "94px" }}>
         <Router>
-          <CartProvider> {/* Envolvendo com CartProvider */}
+          <CartProvider>
             <Navbar />
             <Box sx={{ marginTop: "0px" }}>
               <Routes>
@@ -54,6 +56,8 @@ const App: React.FC = () => {
                 <Route path="/products" element={<ProductForm />} />
                 <Route path="/cart" element={<CartList />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/admin/orders" element={<OrderTrackingAdmin />} /> {/* Rota para Admin */}
+                <Route path="/my-orders" element={<OrderTrackingCustomer />} /> {/* Rota para Cliente */}
               </Routes>
             </Box>
           </CartProvider>

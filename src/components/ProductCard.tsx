@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Card, CardMedia, CardContent, Typography, Button, Box, TextField, Avatar } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { motion } from "framer-motion";
 
 interface Product {
   id: string;
@@ -9,9 +10,9 @@ interface Product {
   price: number;
   discount: number;
   paymentOptions: string[];
-  image: string[] | string; // Pode ser um array ou uma string JSON serializada
+  image: string[] | string;
   metersPerBox: number;
-  colors: { name: string; image: string }[];
+  colors: { name: string; image: string }[]; // Adiciona a propriedade colors
 }
 
 interface ProductCardProps {
@@ -20,20 +21,27 @@ interface ProductCardProps {
 }
 
 interface CartItem extends Omit<Product, 'image'> {
-  image: string; // Ajustado para apenas uma URL de imagem
+  image: string;
   quantity: number;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const [cartIconRef, setCartIconRef] = useState<Element | null>(null);
   const [length, setLength] = useState<number>(0);
   const [width, setWidth] = useState<number>(0);
   const [area, setArea] = useState<number>(0);
-  const [boxesNeeded, setBoxesNeeded] = useState<number>(0);
+  const [boxesNeeded, setBoxesNeeded] = useState<number>(1);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageArray, setImageArray] = useState<string[]>([]);
+  const [showClone, setShowClone] = useState<boolean>(false);
+  const [cloneStyles, setCloneStyles] = useState<{ top: number; left: number; width: number; height: number }>({ top: 0, left: 0, width: 0, height: 0 });
 
-  // Convertendo a imagem de string JSON para array se necessário
+  useEffect(() => {
+    const iconRef = document.querySelector(".cart-icon");
+    setCartIconRef(iconRef);
+  }, []);
+
   useEffect(() => {
     if (typeof product.image === 'string') {
       try {
@@ -52,11 +60,40 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   }, [product.image]);
 
   const handleAddToCart = () => {
+    const quantityToAdd = boxesNeeded > 0 ? boxesNeeded : 1;
+
     addToCart({
       ...product,
-      image: imageArray[0], // Use apenas a primeira imagem para o CartItem
-      quantity: boxesNeeded, // Usa a quantidade calculada de caixas
+      image: imageArray[0],
+      quantity: quantityToAdd,
     });
+
+    if (cardRef.current && cartIconRef) {
+      const cardRect = cardRef.current.getBoundingClientRect();
+      const cartRect = cartIconRef.getBoundingClientRect();
+
+      setCloneStyles({
+        top: cardRect.top,
+        left: cardRect.left,
+        width: cardRect.width,
+        height: cardRect.height,
+      });
+
+      setShowClone(true);
+
+      setTimeout(() => {
+        setCloneStyles({
+          top: cartRect.top,
+          left: cartRect.left,
+          width: 20,
+          height: 20,
+        });
+      }, 100);
+
+      setTimeout(() => {
+        setShowClone(false);
+      }, 1200);
+    }
   };
 
   const handleCalculateArea = () => {
@@ -74,119 +111,142 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   };
 
   const handleColorClick = (index: number) => {
-    // Quando uma cor é clicada, muda a imagem principal para a correspondente
-    if (imageArray[index]) {
+    if (product.colors[index]) {
       setCurrentImageIndex(index);
     }
   };
 
   return (
-    <Card ref={cardRef} sx={{ padding: "16px", backgroundColor: "#f9f9f9" }}>
-      <CardMedia
-        component="img"
-        height="140"
-        image={imageArray[currentImageIndex] || '/path/to/default-image.png'} // Fallback para imagem padrão
-        alt={product.name}
-        onMouseEnter={handleMouseEnter}
-        sx={{
-          transition: "0.3s ease-in-out",
-        }}
-      />
-      <CardContent>
-        <Typography gutterBottom variant="h5" component="div">
-          {product.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {product.description}
-        </Typography>
-        <Typography variant="h6" color="primary">
-          R$ {product.price.toFixed(2)}
-        </Typography>
-        
-        {/* Seção de cores */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            mt: 2, 
-            justifyContent: 'center', 
-            alignItems: 'center' 
+    <>
+      <Card ref={cardRef} sx={{ padding: "16px", backgroundColor: "#f9f9f9", border: "1px solid #E6E3DB", borderRadius: "8px" }}>
+        <CardMedia
+          component="img"
+          height="275"
+          image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
+          alt={product.name}
+          onMouseEnter={handleMouseEnter}
+          sx={{
+            transition: "0.3s ease-in-out",
+            objectFit: "cover"
+          }}
+        />
+        <CardContent>
+          <Typography gutterBottom variant="h5" component="div">
+            {product.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {product.description}
+          </Typography>
+          <Typography variant="h6" color="primary">
+            R$ {product.price.toFixed(2)}
+          </Typography>
+
+          {/* Seção de cores */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
+            {product.colors.map((color, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ scale: 1.2 }} // Animação ao passar o mouse
+                whileTap={{ scale: 1 }} // Reset ao clicar
+              >
+                <Avatar
+                  src={color.image}
+                  alt={color.name}
+                  sx={{
+                    width: 55,
+                    height: 55,
+                    border: currentImageIndex === index ? "2px solid #E6E3DB" : "1px solid #E6E3DB",
+                    cursor: "pointer",
+                    transition: "border-color 0.3s",
+                  }}
+                  onClick={() => handleColorClick(index)}
+                />
+              </motion.div>
+            ))}
+          </Box>
+
+          {/* Inputs de Comprimento e Largura */}
+          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <TextField
+              label="Comprimento (m)"
+              type="number"
+              value={length || ''}
+              onChange={(e) => setLength(parseFloat(e.target.value))}
+              size="small"
+              sx={{ width: "100%" }}
+            />
+            <TextField
+              label="Largura (m)"
+              type="number"
+              value={width || ''}
+              onChange={(e) => setWidth(parseFloat(e.target.value))}
+              size="small"
+              sx={{ width: "100%" }}
+            />
+          </Box>
+
+          <Button 
+            variant="contained" 
+            onClick={handleCalculateArea}
+            sx={{ mt: 2, width: '100%', backgroundColor: "#313926", color: "#fff", "&:hover": { backgroundColor: "#3d403a" } }}
+          >
+            Calcular
+          </Button>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Área: {area.toFixed(2)} m² - Caixas: {boxesNeeded}
+          </Typography>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+            <Button
+              onClick={handleAddToCart}
+              variant="contained"
+              sx={{
+                backgroundColor: "#313926",
+                color: "#fff",
+                width: "100%",
+                "&:hover": { backgroundColor: "#3d403a" },
+              }}
+            >
+              <ShoppingCartIcon />
+              <Typography sx={{ ml: 1 }}>ADICIONAR AO CARRINHO</Typography>
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Clone para a animação de fly-to-cart */}
+      {showClone && (
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{
+            top: cloneStyles.top,
+            left: cloneStyles.left,
+            width: cloneStyles.width,
+            height: cloneStyles.height,
+            scale: 0.2,
+            opacity: 0,
+          }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          style={{
+            position: "fixed",
+            top: cloneStyles.top,
+            left: cloneStyles.left,
+            zIndex: 1000,
+            width: cloneStyles.width,
+            height: cloneStyles.height,
+            pointerEvents: "none",
           }}
         >
-          {product.colors.map((color, index) => (
-            <Avatar
-              key={index}
-              src={color.image}
-              alt={color.name}
-              onClick={() => handleColorClick(index)} // Adiciona a lógica de clique
-              sx={{
-                width: 50,
-                height: 50,
-                border: "1px solid #ddd",
-                cursor: "pointer",
-                transition: "transform 0.3s ease-in-out",
-                "&:hover": {
-                  transform: "scale(1.2)",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                }
-              }}
-              title={color.name}
-            />
-          ))}
-        </Box>
-
-        {/* Input para cálculo de caixas com comprimento e largura */}
-        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-          <TextField
-            label="Comprimento (m)"
-            type="number"
-            variant="outlined"
-            size="small"
-            value={length || ''}
-            onChange={(e) => setLength(parseFloat(e.target.value))}
-            inputProps={{ min: "0", step: "0.1" }}
-            sx={{ width: "50%" }}
+          <CardMedia
+            component="img"
+            height="275"
+            image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
+            alt={product.name}
           />
-          <TextField
-            label="Largura (m)"
-            type="number"
-            variant="outlined"
-            size="small"
-            value={width || ''}
-            onChange={(e) => setWidth(parseFloat(e.target.value))}
-            inputProps={{ min: "0", step: "0.1" }}
-            sx={{ width: "50%" }}
-          />
-        </Box>
-        <Button 
-          variant="contained" 
-          onClick={handleCalculateArea}
-          sx={{ mt: 2, width: '100%' }}
-        >
-          Calcular
-        </Button>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Sua área é de {area.toFixed(2)} m² e você precisará de aproximadamente {boxesNeeded} caixas.
-        </Typography>
-
-        {/* Botão de Adicionar ao Carrinho */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-          <Button
-            onClick={handleAddToCart}
-            variant="contained"
-            sx={{
-              backgroundColor: "#313926",
-              color: "#fff",
-              width: "100%",
-              "&:hover": { backgroundColor: "#3d403a" },
-            }}
-          >
-            <ShoppingCartIcon />
-            <Typography sx={{ ml: 1 }}>ADICIONAR AO CARRINHO</Typography>
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+        </motion.div>
+      )}
+    </>
   );
 };
 

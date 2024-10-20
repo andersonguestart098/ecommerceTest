@@ -28,7 +28,7 @@ const CartList: React.FC = () => {
   };
 
   const handleContinueShopping = () => {
-    navigate("/products");
+    navigate("/");
   };
 
   const totalPrice = cart.reduce(

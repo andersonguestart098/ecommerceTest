@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,8 +28,24 @@ interface CartItem {
 
 const Checkout: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]); // Estado local do carrinho
+  const [shippingCost, setShippingCost] = useState<number>(0); // Custo do frete
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
+
+  useEffect(() => {
+    // Recupera o carrinho do localStorage
+    const storedCart = localStorage.getItem("cart");
+    const storedShipping = localStorage.getItem("shippingCost");
+
+    if (storedCart) {
+      setCart(JSON.parse(storedCart));
+    }
+
+    // Recupera o valor do frete do localStorage
+    if (storedShipping) {
+      setShippingCost(parseFloat(storedShipping));
+    }
+  }, []);
 
   const handleCheckout = async () => {
     const token = localStorage.getItem("token");
@@ -40,19 +56,21 @@ const Checkout: React.FC = () => {
     }
 
     try {
+      // Calcula o preço total, incluindo o custo de envio
       const totalPrice = cart.reduce(
         (total: number, product: CartItem) => total + product.price * product.quantity,
         0
-      );
+      ) + shippingCost;
 
       console.log("Iniciando o processo de finalização do pedido...");
       console.log("Carrinho:", cart);
       console.log("Total:", totalPrice);
       console.log("Forma de Pagamento:", paymentMethod);
 
+      // Faz a requisição para criar um novo pedido
       const response = await axios.post(
         "http://localhost:3001/orders",
-        { products: cart, totalPrice, paymentMethod },
+        { products: cart, totalPrice, paymentMethod, shippingCost },
         {
           headers: {
             "x-auth-token": token,
@@ -61,13 +79,24 @@ const Checkout: React.FC = () => {
       );
 
       console.log("Pedido finalizado com sucesso:", response.data);
-      setCart([]); // Limpa o carrinho após finalizar a compra
+
+      // Limpa o carrinho após finalizar a compra
+      setCart([]);
+      localStorage.removeItem("cart");
+      localStorage.removeItem("shippingCost");
+
+      // Navega para a página de confirmação do pedido
       navigate("/order-confirmation");
     } catch (err) {
       console.error("Erro ao finalizar o pedido:", err);
       alert("Erro ao finalizar o pedido.");
     }
   };
+
+  const totalPrice = cart.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
   return (
     <Box
@@ -91,7 +120,7 @@ const Checkout: React.FC = () => {
       <Grid container spacing={3}>
         {/* Seleção de Método de Pagamento */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 2 }}>
+          <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "8px" }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Forma de Pagamento:
             </Typography>
@@ -102,58 +131,22 @@ const Checkout: React.FC = () => {
               <FormControlLabel
                 value="PIX"
                 control={<Radio />}
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <img
-                      src="/images/pix.png"
-                      alt="PIX"
-                      style={{ width: 30, height: 30, marginRight: 8 }}
-                    />
-                    PIX
-                  </Box>
-                }
+                label="PIX"
               />
               <FormControlLabel
                 value="Boleto Bancário"
                 control={<Radio />}
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <img
-                      src="/images/boleto.png"
-                      alt="Boleto Bancário"
-                      style={{ width: 30, height: 30, marginRight: 8 }}
-                    />
-                    Boleto Bancário
-                  </Box>
-                }
+                label="Boleto Bancário"
               />
               <FormControlLabel
                 value="Cartão de Crédito"
                 control={<Radio />}
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <img
-                      src="/images/cartao.png"
-                      alt="Cartão de Crédito"
-                      style={{ width: 30, height: 30, marginRight: 8 }}
-                    />
-                    Cartão de Crédito
-                  </Box>
-                }
+                label="Cartão de Crédito"
               />
               <FormControlLabel
                 value="NUPay"
                 control={<Radio />}
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <img
-                      src="/images/nupay.png"
-                      alt="NUPay"
-                      style={{ width: 30, height: 30, marginRight: 8 }}
-                    />
-                    NUPay
-                  </Box>
-                }
+                label="NUPay"
               />
             </RadioGroup>
           </Paper>
@@ -161,7 +154,7 @@ const Checkout: React.FC = () => {
 
         {/* Resumo do Pedido */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 2 }}>
+          <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "8px" }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Resumo do Pedido
             </Typography>
@@ -185,7 +178,7 @@ const Checkout: React.FC = () => {
                       primary={
                         <Typography
                           variant="h6"
-                          sx={{ fontWeight: "bold", color: "#1565c0" }}
+                          sx={{ fontWeight: "bold", color: "#313926" }}
                         >
                           {item.name}
                         </Typography>
@@ -206,23 +199,24 @@ const Checkout: React.FC = () => {
                 </div>
               ))}
             </List>
-            {/* Exibir método de pagamento selecionado */}
             <Typography
               variant="h6"
-              sx={{ fontWeight: "bold", mt: 3, textAlign: "left" }}
+              sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
             >
-              Método de Pagamento:
+              Total dos Produtos: R$ {totalPrice.toFixed(2)}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-              <img
-                src={`/images/${paymentMethod.toLowerCase().replace(/\s/g, "")}.png`}
-                alt={paymentMethod}
-                style={{ width: 30, height: 30, marginRight: 8 }}
-              />
-              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                {paymentMethod}
-              </Typography>
-            </Box>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", mt: 1, textAlign: "right" }}
+            >
+              Frete: R$ {shippingCost.toFixed(2)}
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", mt: 1, textAlign: "right" }}
+            >
+              Total Geral: R$ {(totalPrice + shippingCost).toFixed(2)}
+            </Typography>
             <Button
               variant="contained"
               color="primary"

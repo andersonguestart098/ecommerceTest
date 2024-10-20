@@ -16,29 +16,36 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate(); // Hook de navegação
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setError("");
-
+  
     try {
       const response = await axios.post("http://localhost:3001/auth/login", {
         email,
         password,
       });
-      const { token } = response.data;
-
-      // Exibe o token no console para testar no Postman
-      console.log("Token JWT:", token);
-
-      // Salva o token JWT no localStorage
+      const { token, user } = response.data;
+  
+      // Armazene o token e o nome do usuário no localStorage
       localStorage.setItem("token", token);
-
+      localStorage.setItem("user", JSON.stringify(user));
+  
       // Exibe uma mensagem de sucesso e redireciona o usuário
-      alert("Login realizado com sucesso!");
+      alert(`Login realizado com sucesso! Olá, ${user.name}`);
       navigate("/"); // Redireciona para a página inicial após o login
     } catch (err) {
       setError("Credenciais inválidas.");
+      console.error("Erro ao fazer login:", err);
     }
+  };
+
+  const handleRegisterClick = () => {
+    navigate("/register"); // Redireciona para a página de registro
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleLogin();
   };
 
   return (
@@ -52,7 +59,7 @@ const Login: React.FC = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Login
+          Entre para Continuar
         </Typography>
 
         {error && <Alert severity="error">{error}</Alert>}
@@ -88,7 +95,15 @@ const Login: React.FC = () => {
             variant="contained"
             sx={{ mt: 3, mb: 2, backgroundColor: "#313926" }}
           >
-            Login
+            Entrar
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            sx={{ mt: 1, color: "#313926", borderColor: "#313926" }}
+            onClick={handleRegisterClick}
+          >
+            Registrar-se
           </Button>
         </Box>
       </Box>
