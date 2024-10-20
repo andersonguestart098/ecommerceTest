@@ -1,5 +1,4 @@
 import React from "react";
-import { useCart } from "../contexts/CartContext";
 import {
   Button,
   Typography,
@@ -17,10 +16,11 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart(); // Obtém o carrinho do contexto
   const navigate = useNavigate();
 
   const handleCheckoutRedirect = () => {

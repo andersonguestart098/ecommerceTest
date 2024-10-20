@@ -10,28 +10,18 @@ interface BannerProps {
 
 const Banner: React.FC<BannerProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [isSliding, setIsSliding] = useState<boolean>(false);
 
   const handleNext = () => {
-    setIsSliding(true);
-    setTimeout(() => {
-      setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
-      setIsSliding(false);
-    }, 500); // Tempo da animação de slide
+    setCurrentIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1));
   };
 
   const handlePrevious = () => {
-    setIsSliding(true);
-    setTimeout(() => {
-      setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
-      setIsSliding(false);
-    }, 500); // Tempo da animação de slide
+    setCurrentIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1));
   };
 
-  // Função para trocar automaticamente as imagens a cada 5 segundos
   useEffect(() => {
-    const interval = setInterval(handleNext, 5000); // Troca a cada 5 segundos
-    return () => clearInterval(interval); // Limpa o intervalo quando o componente desmonta
+    const interval = setInterval(handleNext, 5000);
+    return () => clearInterval(interval);
   }, [images]);
 
   return (
@@ -39,32 +29,69 @@ const Banner: React.FC<BannerProps> = ({ images }) => {
       sx={{
         position: 'relative',
         maxWidth: '100%',
-        height: '340px', // Ajuste a altura conforme necessário
+        height: '380px', // Aumenta a altura para dar mais destaque ao banner
         overflow: 'hidden',
         backgroundColor: '#f5f5f5',
-        marginTop: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {images.length > 0 && (
         <>
-          <Box
-            component="img"
-            src={images[currentIndex]?.imageUrl}
-            alt="Banner"
-            sx={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transition: 'transform 0.5s ease-in-out', // Suave transição de slide
-              transform: isSliding ? 'translateX(-100%)' : 'translateX(0)',
-            }}
-          />
+          {images.map((image, index) => (
+            <Box
+              key={index}
+              component="img"
+              src={image.imageUrl}
+              alt={`Banner ${index}`}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transition: 'opacity 0.5s ease-in-out',
+                opacity: index === currentIndex ? 1 : 0,
+                zIndex: index === currentIndex ? 1 : 0,
+              }}
+            />
+          ))}
 
-          <IconButton onClick={handlePrevious} sx={{ position: 'absolute', top: '50%', left: '10px' }}>
+          <IconButton
+            onClick={handlePrevious}
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '20px',
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: '#fff',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              },
+            }}
+          >
             <ArrowBackIos />
           </IconButton>
 
-          <IconButton onClick={handleNext} sx={{ position: 'absolute', top: '50%', right: '10px' }}>
+          <IconButton
+            onClick={handleNext}
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              right: '20px',
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: '#fff',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              },
+            }}
+          >
             <ArrowForwardIos />
           </IconButton>
         </>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -7,78 +7,107 @@ import {
   Box,
   InputBase,
   Badge,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { useNavigate } from "react-router-dom"; // Para navegação
-import { useCart } from "../contexts/CartContext"; // Para acessar o contexto do carrinho
+import { useNavigate } from "react-router-dom"; 
+import { useCart } from "../contexts/CartContext"; // Importa o contexto
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const { cart } = useCart(); // Pega o estado do carrinho
+  const { cart } = useCart(); // Usa o contexto para obter o carrinho
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [showSearch, setShowSearch] = useState(false);
 
   const handleCartClick = () => {
-    navigate("/cart"); // Navega para a página do carrinho
+    navigate("/cart");
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <AppBar
-      position="static"
+      position="fixed"
       sx={{
         backgroundColor: "#fff",
         color: "#000",
         boxShadow: "none",
         padding: "0 20px",
-        height: "60px",
+        height: "94px",
+        zIndex: 1300,
       }}
+      onClick={scrollToTop}
     >
       <Toolbar
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          minHeight: "70px",
+          height: "100%",
         }}
       >
-        {/* Logo ajustada */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <img src="/produtos/logos/" alt="Logo" style={{ height: "70px" }} />
+          <img
+            src="/icones/logo.png"
+            alt="Logo"
+            style={{ width: "180px", cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          />
         </Box>
-
-        {/* Barra de busca */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            backgroundColor: "#E6E3DB",
-            borderRadius: "4px",
-            padding: "4px 8px",
-            flexGrow: 1,
-            maxWidth: "400px",
-            margin: "0 auto",
-          }}
-        >
-          <InputBase placeholder="Buscar produtos" sx={{ ml: 1, flex: 1 }} />
-          <IconButton type="submit" aria-label="search">
+        {isMobile ? (
+          <IconButton
+            onClick={() => setShowSearch(!showSearch)}
+            sx={{ marginLeft: "auto" }}
+          >
             <SearchIcon />
           </IconButton>
-        </Box>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#E6E3DB",
+              borderRadius: "4px",
+              padding: "4px 8px",
+              flexGrow: 1,
+              maxWidth: "400px",
+              margin: "0 auto",
+            }}
+          >
+            <InputBase placeholder="Buscar produtos" sx={{ ml: 1, flex: 1 }} />
+            <IconButton type="submit" aria-label="search">
+              <SearchIcon />
+            </IconButton>
+          </Box>
+        )}
 
-        {/* Botões Login e Carrinho */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button sx={{ color: "#313926" }} onClick={() => navigate("/login")}>
+          <Button
+            sx={{
+              color: "#313926",
+              fontSize: "1rem",
+              padding: "6px 10px",
+              display: isMobile ? "none" : "block",
+            }}
+            onClick={() => navigate("/login")}
+          >
             Login
           </Button>
-
-          {/* Carrinho com a quantidade de itens */}
           <IconButton
             edge="end"
             color="inherit"
             aria-label="cart"
             onClick={handleCartClick}
+            className="cart-icon"
+            sx={{ padding: "8px" }}
           >
             <Badge badgeContent={cart.length} color="primary">
-              <ShoppingCartIcon sx={{ color: "#313926" }} />
+              <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </Badge>
           </IconButton>
         </Box>

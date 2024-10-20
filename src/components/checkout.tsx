@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -19,8 +18,16 @@ import {
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
 const Checkout: React.FC = () => {
-  const { cart, clearCart } = useCart();
+  const [cart, setCart] = useState<CartItem[]>([]); // Estado local do carrinho
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
 
@@ -34,7 +41,7 @@ const Checkout: React.FC = () => {
 
     try {
       const totalPrice = cart.reduce(
-        (total, product) => total + product.price * product.quantity,
+        (total: number, product: CartItem) => total + product.price * product.quantity,
         0
       );
 
@@ -54,7 +61,7 @@ const Checkout: React.FC = () => {
       );
 
       console.log("Pedido finalizado com sucesso:", response.data);
-      clearCart();
+      setCart([]); // Limpa o carrinho após finalizar a compra
       navigate("/order-confirmation");
     } catch (err) {
       console.error("Erro ao finalizar o pedido:", err);
@@ -82,7 +89,7 @@ const Checkout: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Payment Method Selection */}
+        {/* Seleção de Método de Pagamento */}
         <Grid item xs={12} md={6}>
           <Paper elevation={3} sx={{ padding: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -152,7 +159,7 @@ const Checkout: React.FC = () => {
           </Paper>
         </Grid>
 
-        {/* Order Summary */}
+        {/* Resumo do Pedido */}
         <Grid item xs={12} md={6}>
           <Paper elevation={3} sx={{ padding: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -199,7 +206,7 @@ const Checkout: React.FC = () => {
                 </div>
               ))}
             </List>
-            {/* Show selected payment method */}
+            {/* Exibir método de pagamento selecionado */}
             <Typography
               variant="h6"
               sx={{ fontWeight: "bold", mt: 3, textAlign: "left" }}
