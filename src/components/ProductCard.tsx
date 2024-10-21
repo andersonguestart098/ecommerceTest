@@ -49,10 +49,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
         if (Array.isArray(parsedImages)) {
           setImageArray(parsedImages);
         } else {
-          console.error("Formato inesperado de imagem");
+          console.error("Unexpected image format");
         }
       } catch (e) {
-        console.error("Erro ao converter imagens:", e);
+        console.error("Error parsing images:", e);
       }
     } else {
       setImageArray(product.image);
@@ -124,7 +124,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           height="275"
           image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
           alt={product.name}
-          onMouseEnter={handleMouseEnter}  // Adiciona de volta a funcionalidade para trocar a imagem ao passar o mouse
+          onMouseEnter={handleMouseEnter}
           sx={{
             transition: "0.3s ease-in-out",
             objectFit: "cover"
@@ -140,7 +140,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           <Typography variant="h6" color="#313926">
             R$ {product.price.toFixed(2).replace('.', ',')} m<sup>2</sup>
           </Typography>
-
 
           {/* Seção de cores */}
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
