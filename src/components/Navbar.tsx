@@ -10,15 +10,14 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Button,
-  Drawer
+  Button
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
-import SearchBar from "./SearchBar"; // Updated SearchBar component
+import SearchBar from "./SearchBar";
 
 interface NavbarProps {
   onSearch: (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => void;
@@ -31,7 +30,6 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [userName, setUserName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [showSearchDrawer, setShowSearchDrawer] = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -41,9 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
     }
   }, []);
 
-  const handleCartClick = () => {
-    navigate("/cart");
-  };
+  const handleCartClick = () => navigate("/cart");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -52,17 +48,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
     navigate("/");
   };
 
-  const handleLoginClick = () => {
-    navigate("/login");
-  };
+  const handleLoginClick = () => navigate("/login");
 
   const handleUserClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
+  const handleCloseMenu = () => setAnchorEl(null);
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -109,16 +101,14 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           />
         </Box>
 
-        {/* Input de Busca para Desktop */}
-        {!isMobile && (
-          <Box sx={{ flexGrow: 1, marginLeft: "20px" }}>
-            <SearchBar onSearch={onSearch} />
-          </Box>
-        )}
+        {/* Única SearchBar */}
+        <Box sx={{ flexGrow: 1, marginLeft: "20px", maxWidth: isMobile ? "80%" : "40%" }}>
+          <SearchBar onSearch={onSearch} />
+        </Box>
 
         {/* Saudação, Login, Logout e Carrinho */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          {userName && !isMobile && (
+          {userName ? (
             <>
               <Typography
                 sx={{
@@ -143,21 +133,14 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                   Meus Dados
                 </MenuItem>
               </Menu>
+              <IconButton onClick={handleLogout} sx={{ padding: "8px", marginRight: "10px" }}>
+                <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+              </IconButton>
             </>
-          )}
-
-          {/* Botão de Login */}
-          {!userName && (
+          ) : (
             <Button onClick={handleLoginClick} sx={{ color: "#313926", fontSize: "1rem", marginRight: "10px" }}>
               Entrar
             </Button>
-          )}
-
-          {/* Ícone de Logout */}
-          {userName && (
-            <IconButton onClick={handleLogout} sx={{ padding: "8px", marginRight: "10px" }}>
-              <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
-            </IconButton>
           )}
 
           {/* Ícone do Carrinho */}
@@ -166,26 +149,8 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
               <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </Badge>
           </IconButton>
-
-          {/* Ícone de Busca para Mobile */}
-          {isMobile && (
-            <IconButton onClick={() => setShowSearchDrawer(true)} sx={{ padding: "8px" }}>
-              <SearchIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
-            </IconButton>
-          )}
         </Box>
       </Toolbar>
-
-      {/* Drawer para Mobile Search */}
-      <Drawer
-        anchor="top"
-        open={showSearchDrawer}
-        onClose={() => setShowSearchDrawer(false)}
-      >
-        <Box sx={{ padding: "10px", backgroundColor: "#f5f5f5" }}>
-          <SearchBar onSearch={onSearch} />
-        </Box>
-      </Drawer>
     </AppBar>
   );
 };

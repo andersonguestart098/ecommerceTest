@@ -24,22 +24,19 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         size="small"
+        variant="outlined" // Use outlined para ajustar a borda
         sx={{
           flexGrow: 1,
           backgroundColor: "#E6E3DB", // Light color for the input background
           borderRadius: "20px", // Rounder edges
-          '.MuiOutlinedInput-root': {
-            paddingRight: 0, // Adjust padding for icon
-          }
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ color: "#313926" }} />
-            </InputAdornment>
-          ),
+          "& .MuiOutlinedInput-root": {
+            "& fieldset": {
+              border: "none", // Remove a borda do input
+            },
+          },
         }}
       />
+
       <IconButton
         onClick={() => setShowFilters((prev) => !prev)}
         aria-label="search"
@@ -72,7 +69,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             placeholder="Cor (ex: azul)"
             value={color}
             onChange={(e) => setColor(e.target.value)}
-            size="small"
           />
           <TextField
             placeholder="Preço mínimo"

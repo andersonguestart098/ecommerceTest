@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Paper, Typography, List, ListItem, Divider, Box, Avatar } from "@mui/material";
+import { Paper, Typography, List, ListItem, Divider, Box, Avatar, useMediaQuery, useTheme } from "@mui/material";
 import PendingIcon from "@mui/icons-material/HourglassEmpty";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import { motion } from "framer-motion"; // Importando Framer Motion para animações
 
 const statusSteps = [
-  { key: "PENDING", label: "Pendente", icon: <PendingIcon /> },
-  { key: "PAYMENT_APPROVED", label: "Pagamento Aprovado", icon: <PaymentIcon /> },
-  { key: "AWAITING_STOCK_CONFIRMATION", label: "Aguardando Estoque", icon: <CheckCircleIcon /> },
-  { key: "SEPARATED", label: "Separado", icon: <AssignmentTurnedInIcon /> },
-  { key: "DISPATCHED", label: "Despachado", icon: <LocalShippingIcon /> },
-  { key: "DELIVERED", label: "Entregue", icon: <AssignmentTurnedInIcon /> },
+  { key: "PENDING", label: "Pendente", icon: <PendingIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
+  { key: "PAYMENT_APPROVED", label: "Pagamento Aprovado", icon: <PaymentIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
+  { key: "AWAITING_STOCK_CONFIRMATION", label: "Aguardando Estoque", icon: <CheckCircleIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
+  { key: "SEPARATED", label: "Separado", icon: <AssignmentTurnedInIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
+  { key: "DISPATCHED", label: "Despachado", icon: <LocalShippingIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
+  { key: "DELIVERED", label: "Entregue", icon: <AssignmentTurnedInIcon />, defaultColor: "#E6E3DB" }, // Cor padrão
 ];
 
 const OrderTracking: React.FC = () => {
   const [orders, setOrders] = useState([]);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // Verifica se o dispositivo é móvel
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -26,79 +29,64 @@ const OrderTracking: React.FC = () => {
         const response = await axios.get("http://localhost:3001/orders/me", {
           headers: { "x-auth-token": token },
         });
-        console.log("Pedidos recebidos:", response.data);
         setOrders(response.data);
       } catch (error: any) {
-        if (error.response) {
-          console.error("Erro ao buscar pedidos:", error.response.data);
-        } else {
-          console.error("Erro ao buscar pedidos:", error.message);
-        }
+        console.error("Erro ao buscar pedidos:", error);
       }
     };
     fetchOrders();
   }, []);
-  
 
   const renderProgressTracker = (currentStatus: string) => {
     const currentStepIndex = statusSteps.findIndex(step => step.key === currentStatus);
-
+  
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row', 
+        alignItems: 'center', 
+        justifyContent: isMobile ? 'center' : 'space-between',
+        position: 'relative' 
+      }}>
         {statusSteps.map((step, index) => (
-          <Box
+          <motion.div
             key={step.key}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexDirection: 'column',
-              color: index <= currentStepIndex ? "#313926" : "#E6E3DB",
-              zIndex: 2,
-            }}
+            animate={index === currentStepIndex ? { y: [0, -5, 0] } : {}}
+            transition={{ duration: 1.38, repeat: Infinity }}
+            style={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}
           >
             <Avatar
               sx={{
-                backgroundColor: index === currentStepIndex ? "#313926" : index < currentStepIndex ? "#1565c0" : "#E6E3DB",
+                backgroundColor: 
+                  index < currentStepIndex ? "#4CAF50" : // Verde para etapas concluídas
+                  index === currentStepIndex ? "#313926" : // Azul para etapa atual
+                  step.defaultColor, // Cor padrão para as outras
                 color: "#fff",
                 width: 40,
                 height: 40,
+                marginBottom: 1,
                 transition: "all 0.3s ease-in-out",
               }}
             >
               {step.icon}
             </Avatar>
-            <Typography variant="caption" sx={{ marginTop: 1 }}>
+            <Typography variant="caption" sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}>
               {step.label}
             </Typography>
-          </Box>
+            {index < statusSteps.length - 1 && (
+              <Box sx={{
+                width: isMobile ? '2px' : '50px',
+                height: isMobile ? '20px' : '2px',
+                backgroundColor: index < currentStepIndex ? "#4CAF50" : "#E6E3DB", // Verde para barra de conexão concluída
+                margin: isMobile ? "5px 0" : "0 5px",
+              }} />
+            )}
+          </motion.div>
         ))}
-
-        {/* Barra de progresso */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '0',
-            right: '0',
-            height: '5px',
-            backgroundColor: "#E6E3DB",
-            zIndex: 1,
-            display: 'flex',
-          }}
-        >
-          <Box
-            sx={{
-              width: `calc(${(currentStepIndex + 0.5) / (statusSteps.length - 1)} * 100%)`, // Avança até metade do próximo
-              height: '100%',
-              backgroundColor: "#313926",
-              transition: "width 0.3s ease-in-out",
-            }}
-          />
-        </Box>
       </Box>
     );
   };
-
+  
   return (
     <Box sx={{ padding: 3 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "#313926" }}>
@@ -109,14 +97,12 @@ const OrderTracking: React.FC = () => {
       ) : (
         <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB" }}>
           <List>
-          {orders.map((order: any, index: number) => {
-            console.log("Pedido recebido no frontend:", order); // Log para verificar cada pedido
-            return (
+            {orders.map((order: any, index: number) => (
               <div key={index}>
-                <ListItem sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: 2 }}>
+                <ListItem sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                   <Box sx={{ flex: 1, width: '100%', textAlign: 'left' }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      Pedido ID: {order._id || order.id} {/* Ajuste para garantir que o ID certo seja exibido */}
+                      Pedido ID: {order._id || order.id}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Total: R${order.totalPrice.toFixed(2).replace('.', ',')}
@@ -128,10 +114,8 @@ const OrderTracking: React.FC = () => {
                 </ListItem>
                 <Divider />
               </div>
-            );
-          })}
-        </List>
-
+            ))}
+          </List>
         </Paper>
       )}
     </Box>
