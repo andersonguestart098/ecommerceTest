@@ -26,13 +26,16 @@ const OrderTracking: React.FC = () => {
         const response = await axios.get("http://localhost:3001/orders/me", {
           headers: { "x-auth-token": token },
         });
-        console.log("Pedidos recebidos:", response.data); // Log para verificar os dados recebidos
+        console.log("Pedidos recebidos:", response.data);
         setOrders(response.data);
-      } catch (error) {
-        console.error("Erro ao buscar pedidos:", error);
+      } catch (error: any) {
+        if (error.response) {
+          console.error("Erro ao buscar pedidos:", error.response.data);
+        } else {
+          console.error("Erro ao buscar pedidos:", error.message);
+        }
       }
     };
-  
     fetchOrders();
   }, []);
   
