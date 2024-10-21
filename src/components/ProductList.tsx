@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Grid, Typography } from "@mui/material";
 import ProductCard from "./ProductCard";
-import { useCart } from "../contexts/CartContext"; // Importa o hook do contexto
+import { useCart } from "../contexts/CartContext";
+import SearchBar from "./SearchBar";
 
 interface Product {
   id: string;
@@ -11,41 +12,57 @@ interface Product {
   price: number;
   discount: number;
   paymentOptions: string[];
-  image: string[]; // Change to an array of strings
+  image: string[];
   metersPerBox: number;
   colors: { name: string; image: string }[];
 }
 
-const ProductList: React.FC = () => {
+interface ProductListProps {
+  searchTerm: string;
+  color: string;
+  minPrice: string;
+  maxPrice: string;
+}
+
+const ProductList: React.FC<ProductListProps> = ({ searchTerm, color, minPrice, maxPrice }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { addToCart } = useCart(); // Obtém a função addToCart do contexto
+  const { addToCart } = useCart();
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log("Buscando produtos com filtros...");
+      const response = await axios.get("http://localhost:3001/products", {
+        params: {
+          search: searchTerm,
+          color,
+          minPrice: minPrice || undefined,
+          maxPrice: maxPrice || undefined,
+        },
+      });
+
+      const processedProducts = response.data.map((product: any) => ({
+        ...product,
+        image: typeof product.image === 'string' ? JSON.parse(product.image) : product.image,
+      }));
+
+      setProducts(processedProducts || []);
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+      setError("Erro ao carregar produtos. Tente novamente mais tarde.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // UseEffect to fetch products initially and whenever filters change
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        console.log("Buscando produtos do backend...");
-        const response = await axios.get("http://localhost:3001/products");
-
-        // Parse the `image` field if it's a string, to ensure it is treated as an array
-        const processedProducts = response.data.map((product: any) => ({
-          ...product,
-          image: typeof product.image === 'string' ? JSON.parse(product.image) : product.image,
-        }));
-
-        console.log("Produtos recebidos:", processedProducts);
-        setProducts(processedProducts || []);
-      } catch (error) {
-        console.error("Erro ao buscar produtos:", error);
-        setError("Erro ao carregar produtos. Tente novamente mais tarde.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, []);
+  }, [searchTerm, color, minPrice, maxPrice]);
 
   if (loading) {
     return <Typography>Carregando produtos...</Typography>;
@@ -63,18 +80,8 @@ const ProductList: React.FC = () => {
     <Grid container spacing={3}>
       {products.map((product) => (
         <Grid item xs={12} sm={6} md={4} key={product.id}>
-          <ProductCard 
-            product={{
-              id: product.id,
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              discount: product.discount,
-              paymentOptions: product.paymentOptions,
-              image: product.image, // Utilize o array de URLs do banco de dados
-              metersPerBox: product.metersPerBox,
-              colors: product.colors,
-            }} 
+          <ProductCard
+            product={product}
             addToCart={(product) => addToCart(product)}
           />
         </Grid>

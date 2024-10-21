@@ -4,30 +4,34 @@ import {
   Toolbar,
   IconButton,
   Box,
-  InputBase,
   Badge,
   useMediaQuery,
   useTheme,
   Typography,
-  Drawer,
   Menu,
   MenuItem,
   Button,
+  Drawer
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
+import SearchBar from "./SearchBar"; // Updated SearchBar component
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  onSearch: (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const navigate = useNavigate();
   const { cart } = useCart();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [showSearch, setShowSearch] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [showSearchDrawer, setShowSearchDrawer] = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -42,11 +46,10 @@ const Navbar: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Remove token and user info for logout
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUserName(null);
-    navigate("/"); // Redirect to home or login page
+    navigate("/");
   };
 
   const handleLoginClick = () => {
@@ -66,10 +69,6 @@ const Navbar: React.FC = () => {
     handleCloseMenu();
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <AppBar
       position="fixed"
@@ -81,7 +80,6 @@ const Navbar: React.FC = () => {
         height: "94px",
         zIndex: 1300,
       }}
-      onClick={scrollToTop}
     >
       <Toolbar
         sx={{
@@ -104,47 +102,22 @@ const Navbar: React.FC = () => {
             src="/icones/logo.png"
             alt="Logo"
             style={{
-              width: isMobile ? "120px" : "180px", // Maior no desktop, menor no mobile
+              width: isMobile ? "120px" : "180px",
               cursor: "pointer",
             }}
             onClick={() => navigate("/")}
           />
         </Box>
 
-        {/* Input de Busca para dispositivos maiores */}
+        {/* Input de Busca para Desktop */}
         {!isMobile && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              backgroundColor: "#E6E3DB",
-              borderRadius: "4px",
-              padding: "4px 8px",
-              flexGrow: 1,
-              maxWidth: "400px",
-              margin: "0 auto",
-            }}
-          >
-            <InputBase placeholder="Buscar produtos" sx={{ ml: 1, flex: 1 }} />
-            <IconButton type="submit" aria-label="search">
-              <SearchIcon />
-            </IconButton>
+          <Box sx={{ flexGrow: 1, marginLeft: "20px" }}>
+            <SearchBar onSearch={onSearch} />
           </Box>
         )}
 
         {/* Saudação, Login, Logout e Carrinho */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          {/* Ícone de busca para mobile */}
-          {isMobile && (
-            <IconButton
-              onClick={() => setShowSearch(!showSearch)}
-              sx={{ padding: "8px" }}
-            >
-              <SearchIcon sx={{ fontSize: "1.8rem", color: "#313926" }} />
-            </IconButton>
-          )}
-
-          {/* Saudação ao usuário com menu suspenso */}
           {userName && !isMobile && (
             <>
               <Typography
@@ -175,79 +148,44 @@ const Navbar: React.FC = () => {
 
           {/* Botão de Login */}
           {!userName && (
-            <Button
-              onClick={handleLoginClick}
-              sx={{
-                color: "#313926",
-                fontSize: "1rem",
-                marginRight: "10px",
-              }}
-            >
+            <Button onClick={handleLoginClick} sx={{ color: "#313926", fontSize: "1rem", marginRight: "10px" }}>
               Entrar
             </Button>
           )}
 
           {/* Ícone de Logout */}
           {userName && (
-            <IconButton
-              edge="end"
-              color="inherit"
-              aria-label="logout"
-              onClick={handleLogout}
-              sx={{ padding: "8px", marginRight: "10px" }}
-            >
+            <IconButton onClick={handleLogout} sx={{ padding: "8px", marginRight: "10px" }}>
               <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </IconButton>
           )}
 
           {/* Ícone do Carrinho */}
-          <IconButton
-            edge="end"
-            color="inherit"
-            aria-label="cart"
-            onClick={handleCartClick}
-            className="cart-icon"
-            sx={{ padding: "8px" }}
-          >
+          <IconButton onClick={handleCartClick} sx={{ padding: "8px" }}>
             <Badge badgeContent={cart.length} color="primary">
               <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </Badge>
           </IconButton>
-        </Box>
 
-        {/* Barra de pesquisa para dispositivos móveis */}
-        {showSearch && isMobile && (
-          <Drawer
-            anchor="top"
-            open={showSearch}
-            onClose={() => setShowSearch(false)}
-            sx={{
-              "& .MuiDrawer-paper": {
-                backgroundColor: "#E6E3DB",
-                padding: "10px",
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                backgroundColor: "#fff",
-                borderRadius: "4px",
-                padding: "4px 8px",
-                flexGrow: 1,
-                maxWidth: "400px",
-                margin: "0 auto",
-              }}
-            >
-              <InputBase placeholder="Buscar produtos" sx={{ ml: 1, flex: 1 }} />
-              <IconButton type="submit" aria-label="search">
-                <SearchIcon />
-              </IconButton>
-            </Box>
-          </Drawer>
-        )}
+          {/* Ícone de Busca para Mobile */}
+          {isMobile && (
+            <IconButton onClick={() => setShowSearchDrawer(true)} sx={{ padding: "8px" }}>
+              <SearchIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+            </IconButton>
+          )}
+        </Box>
       </Toolbar>
+
+      {/* Drawer para Mobile Search */}
+      <Drawer
+        anchor="top"
+        open={showSearchDrawer}
+        onClose={() => setShowSearchDrawer(false)}
+      >
+        <Box sx={{ padding: "10px", backgroundColor: "#f5f5f5" }}>
+          <SearchBar onSearch={onSearch} />
+        </Box>
+      </Drawer>
     </AppBar>
   );
 };

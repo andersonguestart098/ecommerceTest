@@ -13,13 +13,32 @@ import Checkout from "../components/checkout";
 import Navbar from "../components/Navbar";
 import { CartProvider } from "../contexts/CartContext";
 import { Box } from "@mui/material";
-import OrderTrackingAdmin from "../components/OrderTrackingAdmin"; // Importar componente Admin
-import OrderTrackingCustomer from "../components/OrderTrackingCustomer"; // Importar componente Cliente
+import OrderTrackingAdmin from "../components/OrderTrackingAdmin"; 
+import OrderTrackingCustomer from "../components/OrderTrackingCustomer"; 
+import ProductList from "../components/ProductList";
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // State to manage search filters (all as strings)
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    color: "",
+    minPrice: "",
+    maxPrice: ""
+  });
+
+  // Update filters to accept strings for all properties
+  const handleSearch = (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => {
+    setFilters({
+      searchTerm,
+      color,
+      minPrice: minPrice !== "" ? String(minPrice) : "",
+      maxPrice: maxPrice !== "" ? String(maxPrice) : ""
+    });
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -47,17 +66,18 @@ const App: React.FC = () => {
       <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", paddingTop: "94px" }}>
         <Router>
           <CartProvider>
-            <Navbar />
+            <Navbar onSearch={handleSearch} />
             <Box sx={{ marginTop: "0px" }}>
               <Routes>
-                <Route path="/" element={<HomePage images={images} />} />
+                <Route path="/" element={<HomePage images={images} filters={filters} />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/products" element={<ProductForm />} />
                 <Route path="/cart" element={<CartList />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/admin/orders" element={<OrderTrackingAdmin />} /> {/* Rota para Admin */}
-                <Route path="/my-orders" element={<OrderTrackingCustomer />} /> {/* Rota para Cliente */}
+                <Route path="/admin/orders" element={<OrderTrackingAdmin />} />
+                <Route path="/my-orders" element={<OrderTrackingCustomer />} />
+                <Route path="/product-list" element={<ProductList {...filters} />} />
               </Routes>
             </Box>
           </CartProvider>
