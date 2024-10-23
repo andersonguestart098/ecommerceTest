@@ -7,47 +7,55 @@ import {
   Container,
   Box,
   Alert,
+  CircularProgress,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Para redirecionar o usuário após o login
+import { useNavigate } from "react-router-dom";
+import { useSocket } from "../../contexts/SocketContext";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Hook de navegação
+  const [loading, setLoading] = useState(false); // Adicionando estado de loading
+  const navigate = useNavigate();
+  const socket = useSocket();
 
   const handleLogin = async () => {
     setError("");
-  
+    setLoading(true); // Inicia o spinner
+
     try {
       const response = await axios.post("http://localhost:3001/auth/login", {
         email,
         password,
       });
 
-      // Log completo para verificar a resposta da API
       console.log("Resposta completa do login:", response);
 
       const { token, user } = response.data;
-  
-      // Armazene o token e o nome do usuário no localStorage
+
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Log para verificar o token gerado após o login
       console.log("Token gerado:", token);
-  
-      // Exibe uma mensagem de sucesso e redireciona o usuário
-      alert(`Login realizado com sucesso! Olá, ${user.name}`);
-      navigate("/"); // Redireciona para a página inicial após o login
+
+      // Emitir o evento de login via WebSocket
+      if (socket) {
+        socket.emit("userLoggedIn", user.name);
+        console.log("Evento de login emitido para o servidor:", user.name);
+      }
+
+      navigate("/");
     } catch (err: any) {
       setError("Credenciais inválidas.");
       console.error("Erro ao fazer login:", err.response ? err.response.data : err.message);
+    } finally {
+      setLoading(false); // Para o spinner após a tentativa de login
     }
   };
 
   const handleRegisterClick = () => {
-    navigate("/register"); // Redireciona para a página de registro
+    navigate("/register");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,8 +109,9 @@ const Login: React.FC = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2, backgroundColor: "#313926" }}
+            disabled={loading} // Desativa o botão enquanto está carregando
           >
-            Entrar
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
           </Button>
           <Button
             fullWidth

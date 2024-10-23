@@ -84,7 +84,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : "")}
             size="small"
           />
-          <Button variant="contained" onClick={handleSearch}>Buscar</Button>
+          <Button variant="contained" onClick={handleSearch} sx={{backgroundColor: '#313926'}}>Buscar</Button>
         </Box>
       </Collapse>
     </Box>

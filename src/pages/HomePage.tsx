@@ -25,13 +25,13 @@ const HomePage: React.FC<HomePageProps> = ({ images, filters }) => {
       {images.length > 0 ? (
         <Banner images={images} />
       ) : (
-        <div>Nenhum banner disponível</div>
+        <div></div>
       )}
       <InfoSection />
       <BrandsSection />
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <ProductList {...filters} />
-        <ProductForm />
+        
       </Container>
     </div>
   );

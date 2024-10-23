@@ -27,7 +27,7 @@ interface CartItem extends Omit<Product, 'image'> {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [cartIconRef, setCartIconRef] = useState<Element | null>(null);
+  const [cartIconRef, setCartIconRef] = useState<DOMRect | null>(null);
   const [length, setLength] = useState<number>(0);
   const [width, setWidth] = useState<number>(0);
   const [area, setArea] = useState<number>(0);
@@ -39,7 +39,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   useEffect(() => {
     const iconRef = document.querySelector(".cart-icon");
-    setCartIconRef(iconRef);
+    if (iconRef) {
+      setCartIconRef(iconRef.getBoundingClientRect());
+    }
   }, []);
 
   useEffect(() => {
@@ -70,7 +72,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
     if (cardRef.current && cartIconRef) {
       const cardRect = cardRef.current.getBoundingClientRect();
-      const cartRect = cartIconRef.getBoundingClientRect();
 
       setCloneStyles({
         top: cardRect.top,
@@ -83,8 +84,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
       setTimeout(() => {
         setCloneStyles({
-          top: cartRect.top,
-          left: cartRect.left,
+          top: cartIconRef.top,
+          left: cartIconRef.left,
           width: 20,
           height: 20,
         });

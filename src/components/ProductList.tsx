@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Grid, Typography } from "@mui/material";
+import { Grid, Typography, CircularProgress, Box } from "@mui/material";
 import ProductCard from "./ProductCard";
 import { useCart } from "../contexts/CartContext";
-import SearchBar from "./SearchBar";
 
 interface Product {
   id: string;
@@ -65,7 +64,11 @@ const ProductList: React.FC<ProductListProps> = ({ searchTerm, color, minPrice, 
   }, [searchTerm, color, minPrice, maxPrice]);
 
   if (loading) {
-    return <Typography>Carregando produtos...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <CircularProgress color="inherit" sx={{ color: "#313926" }} />
+      </Box>
+    );
   }
 
   if (error) {

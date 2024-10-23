@@ -15,8 +15,10 @@ import {
   Radio,
   FormControlLabel,
   RadioGroup,
+  IconButton,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface CartItem {
   id: string;
@@ -93,6 +95,11 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const handleContinueShopping = () => {
+    navigate("/");
+  };
+
+
   const totalPrice = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -106,6 +113,20 @@ const Checkout: React.FC = () => {
         minHeight: "100vh",
       }}
     >
+       {/* Botão de Voltar */}
+       <IconButton
+        onClick={handleContinueShopping}
+        sx={{
+          color: "#313926",
+          border: "1px solid #313926",
+          marginBottom: "16px",
+          "&:hover": {
+            backgroundColor: "#e0e0e0",
+          },
+        }}
+      >
+        <ArrowBackIcon />
+      </IconButton>
       <Typography
         variant="h4"
         gutterBottom

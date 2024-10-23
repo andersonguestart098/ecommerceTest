@@ -16,11 +16,12 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"; // Ícone de retorno
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart(); // Obtém o carrinho do contexto
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
   const navigate = useNavigate();
 
   const handleCheckoutRedirect = () => {
@@ -44,6 +45,21 @@ const CartList: React.FC = () => {
         minHeight: "100vh",
       }}
     >
+      {/* Botão de Voltar */}
+      <IconButton
+        onClick={handleContinueShopping}
+        sx={{
+          color: "#313926",
+          border: "1px solid #313926",
+          marginBottom: "16px",
+          "&:hover": {
+            backgroundColor: "#e0e0e0",
+          },
+        }}
+      >
+        <ArrowBackIcon />
+      </IconButton>
+
       <Typography
         variant="h4"
         gutterBottom
@@ -112,7 +128,13 @@ const CartList: React.FC = () => {
                     <Typography variant="body2" sx={{ fontWeight: "bold" }}>
                       Total: R$ {(item.price * item.quantity).toFixed(2)}
                     </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 1,
+                      }}
+                    >
                       <IconButton
                         color="primary"
                         onClick={() => increaseQuantity(item.id)}
@@ -165,7 +187,7 @@ const CartList: React.FC = () => {
                   borderColor: "#313926",
                   color: "#313926",
                   "&:hover": { backgroundColor: "#e0e0e0" },
-                  padding: "10px 0", // Ajuste para o mesmo padding do botão "Finalizar Pedido"
+                  padding: "10px 0",
                   fontSize: "1rem",
                   fontWeight: "bold",
                 }}

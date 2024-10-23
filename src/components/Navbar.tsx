@@ -10,7 +10,9 @@ import {
   Typography,
   Menu,
   MenuItem,
-  Button
+  Button,
+  Snackbar,
+  SnackbarContent,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -18,6 +20,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import SearchBar from "./SearchBar";
+import { useSocket } from "../contexts/SocketContext";
 
 interface NavbarProps {
   onSearch: (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => void;
@@ -27,15 +30,48 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const navigate = useNavigate();
   const { cart } = useCart();
   const theme = useTheme();
+  const socket = useSocket(); // Pegar a instância do socket
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [userName, setUserName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserName(parsedUser.name);
+  
+      if (socket && socket.connected) {
+        socket.emit("userLoggedIn", parsedUser.name);
+        console.log("Evento de login emitido para o servidor:", parsedUser.name);
+      }
+    }
+  
+    // Configuração para receber mensagens de boas-vindas
+    socket?.on("welcomeMessage", (msg: string) => {
+      console.log("Mensagem de boas-vindas recebida:", msg);
+      setSnackbarMessage(msg);
+      setOpenSnackbar(true);
+      const userNameFromMessage = msg.split(",")[1]?.trim(); // Assumindo que a mensagem segue o padrão "Bem-vindo(a), Nome!"
+      if (userNameFromMessage) setUserName(userNameFromMessage);
+    });
+  
+    return () => {
+      socket?.off("welcomeMessage");
+    };
+  }, [socket]);
+  
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
+    if (hasSeenWelcome) {
+      setOpenSnackbar(false);
     }
   }, []);
 
@@ -44,6 +80,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("hasSeenWelcome");
     setUserName(null);
     navigate("/");
   };
@@ -101,9 +138,15 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           />
         </Box>
 
-        {/* Única SearchBar */}
+        {/* SearchBar ou Ícone de Lupa */}
         <Box sx={{ flexGrow: 1, marginLeft: "20px", maxWidth: isMobile ? "80%" : "40%" }}>
-          <SearchBar onSearch={onSearch} />
+          {!isMobile ? (
+            <SearchBar onSearch={onSearch} />
+          ) : (
+            <IconButton onClick={() => console.log("Abrir modal ou dropdown de busca")}>
+              <SearchIcon />
+            </IconButton>
+          )}
         </Box>
 
         {/* Saudação, Login, Logout e Carrinho */}
@@ -144,13 +187,26 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           )}
 
           {/* Ícone do Carrinho */}
-          <IconButton onClick={handleCartClick} sx={{ padding: "8px" }}>
+          <IconButton onClick={handleCartClick} className="cart-icon" sx={{ padding: "8px" }}>
             <Badge badgeContent={cart.length} color="primary">
               <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </Badge>
           </IconButton>
         </Box>
       </Toolbar>
+
+      {/* Snackbar para notificações */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <SnackbarContent
+          style={{ backgroundColor: '#fff', color: '#313926', fontFamily: 'Arial, sans-serif', fontSize: '1rem' }}
+          message={snackbarMessage}
+        />
+      </Snackbar>
     </AppBar>
   );
 };
