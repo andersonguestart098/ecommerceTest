@@ -59,10 +59,12 @@ const Checkout: React.FC = () => {
 
     try {
       // Calcula o preço total, incluindo o custo de envio
-      const totalPrice = cart.reduce(
-        (total: number, product: CartItem) => total + product.price * product.quantity,
-        0
-      ) + shippingCost;
+      const totalPrice =
+        cart.reduce(
+          (total: number, product: CartItem) =>
+            total + product.price * product.quantity,
+          0
+        ) + shippingCost;
 
       console.log("Iniciando o processo de finalização do pedido...");
       console.log("Carrinho:", cart);
@@ -71,7 +73,7 @@ const Checkout: React.FC = () => {
 
       // Faz a requisição para criar um novo pedido
       const response = await axios.post(
-        "http://localhost:3001/orders",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
         { products: cart, totalPrice, paymentMethod, shippingCost },
         {
           headers: {
@@ -99,7 +101,6 @@ const Checkout: React.FC = () => {
     navigate("/");
   };
 
-
   const totalPrice = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -113,8 +114,8 @@ const Checkout: React.FC = () => {
         minHeight: "100vh",
       }}
     >
-       {/* Botão de Voltar */}
-       <IconButton
+      {/* Botão de Voltar */}
+      <IconButton
         onClick={handleContinueShopping}
         sx={{
           color: "#313926",
@@ -141,7 +142,14 @@ const Checkout: React.FC = () => {
       <Grid container spacing={3}>
         {/* Seleção de Método de Pagamento */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "8px" }}>
+          <Paper
+            elevation={3}
+            sx={{
+              padding: 2,
+              border: "1px solid #E6E3DB",
+              borderRadius: "8px",
+            }}
+          >
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Forma de Pagamento:
             </Typography>
@@ -149,11 +157,7 @@ const Checkout: React.FC = () => {
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
-              <FormControlLabel
-                value="PIX"
-                control={<Radio />}
-                label="PIX"
-              />
+              <FormControlLabel value="PIX" control={<Radio />} label="PIX" />
               <FormControlLabel
                 value="Boleto Bancário"
                 control={<Radio />}
@@ -175,7 +179,14 @@ const Checkout: React.FC = () => {
 
         {/* Resumo do Pedido */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "8px" }}>
+          <Paper
+            elevation={3}
+            sx={{
+              padding: 2,
+              border: "1px solid #E6E3DB",
+              borderRadius: "8px",
+            }}
+          >
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Resumo do Pedido
             </Typography>

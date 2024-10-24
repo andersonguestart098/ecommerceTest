@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Paper, Typography, List, ListItem, ListItemText, Divider, Box } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Box,
+} from "@mui/material";
 
 const CustomerOrders: React.FC = () => {
   const [orders, setOrders] = useState([]);
@@ -10,9 +18,12 @@ const CustomerOrders: React.FC = () => {
     const fetchCustomerOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3001/orders/me", {
-          headers: { "x-auth-token": token },
-        });
+        const response = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/me",
+          {
+            headers: { "x-auth-token": token },
+          }
+        );
         setOrders(response.data);
       } catch (error) {
         console.error("Erro ao buscar pedidos do cliente:", error);
@@ -24,11 +35,17 @@ const CustomerOrders: React.FC = () => {
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "#313926" }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "#313926" }}
+      >
         Meus Pedidos
       </Typography>
       {orders.length === 0 ? (
-        <Typography variant="body1">Você ainda não fez nenhum pedido.</Typography>
+        <Typography variant="body1">
+          Você ainda não fez nenhum pedido.
+        </Typography>
       ) : (
         <Paper elevation={3} sx={{ padding: 2, border: "1px solid #E6E3DB" }}>
           <List>
@@ -37,7 +54,9 @@ const CustomerOrders: React.FC = () => {
                 <ListItem>
                   <ListItemText
                     primary={`Pedido ID: ${order.id}`}
-                    secondary={`Total: R$${order.totalPrice.toFixed(2)} - Status: ${order.status}`}
+                    secondary={`Total: R$${order.totalPrice.toFixed(
+                      2
+                    )} - Status: ${order.status}`}
                   />
                 </ListItem>
                 <Divider />

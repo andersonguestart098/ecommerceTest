@@ -14,8 +14,8 @@ import Navbar from "../components/Navbar";
 import { CartProvider } from "../contexts/CartContext";
 import { SocketProvider } from "../contexts/SocketContext";
 import { Box } from "@mui/material";
-import OrderTrackingAdmin from "../components/OrderTrackingAdmin"; 
-import OrderTrackingCustomer from "../components/OrderTrackingCustomer"; 
+import OrderTrackingAdmin from "../components/OrderTrackingAdmin";
+import OrderTrackingCustomer from "../components/OrderTrackingCustomer";
 import ProductList from "../components/ProductList";
 
 const App: React.FC = () => {
@@ -26,25 +26,34 @@ const App: React.FC = () => {
     searchTerm: "",
     color: "",
     minPrice: "",
-    maxPrice: ""
+    maxPrice: "",
   });
 
-  const handleSearch = (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => {
+  const handleSearch = (
+    searchTerm: string,
+    color: string,
+    minPrice: number | "",
+    maxPrice: number | ""
+  ) => {
     setFilters({
       searchTerm,
       color,
       minPrice: minPrice !== "" ? String(minPrice) : "",
-      maxPrice: maxPrice !== "" ? String(maxPrice) : ""
+      maxPrice: maxPrice !== "" ? String(maxPrice) : "",
     });
   };
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/banners");
-        const formattedImages = response.data.map((resource: { imageUrl: string }) => ({
-          imageUrl: resource.imageUrl,
-        }));
+        const response = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/banners"
+        );
+        const formattedImages = response.data.map(
+          (resource: { imageUrl: string }) => ({
+            imageUrl: resource.imageUrl,
+          })
+        );
         setImages(formattedImages);
       } catch (error) {
         console.error("Erro ao buscar imagens de banners:", error);
@@ -59,21 +68,36 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <SocketProvider>
-        <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", paddingTop: "94px" }}>
+        <Box
+          sx={{
+            backgroundColor: "#f5f5f5",
+            minHeight: "100vh",
+            paddingTop: "94px",
+          }}
+        >
           <Router>
             <CartProvider>
               <Navbar onSearch={handleSearch} />
               <Box sx={{ marginTop: "0px" }}>
                 <Routes>
-                  <Route path="/" element={<HomePage images={images} filters={filters} />} />
+                  <Route
+                    path="/"
+                    element={<HomePage images={images} filters={filters} />}
+                  />
                   <Route path="/register" element={<Register />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/products" element={<ProductForm />} />
                   <Route path="/cart" element={<CartList />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/orders" element={<OrderTrackingAdmin />} />
-                  <Route path="/my-orders" element={<OrderTrackingCustomer />} />
-                  <Route path="/product-list" element={<ProductList {...filters} />} />
+                  <Route
+                    path="/my-orders"
+                    element={<OrderTrackingCustomer />}
+                  />
+                  <Route
+                    path="/product-list"
+                    element={<ProductList {...filters} />}
+                  />
                 </Routes>
               </Box>
             </CartProvider>

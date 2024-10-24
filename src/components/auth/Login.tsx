@@ -25,10 +25,13 @@ const Login: React.FC = () => {
     setLoading(true); // Inicia o spinner
 
     try {
-      const response = await axios.post("http://localhost:3001/auth/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/login",
+        {
+          email,
+          password,
+        }
+      );
 
       console.log("Resposta completa do login:", response);
 
@@ -48,7 +51,10 @@ const Login: React.FC = () => {
       navigate("/");
     } catch (err: any) {
       setError("Credenciais inválidas.");
-      console.error("Erro ao fazer login:", err.response ? err.response.data : err.message);
+      console.error(
+        "Erro ao fazer login:",
+        err.response ? err.response.data : err.message
+      );
     } finally {
       setLoading(false); // Para o spinner após a tentativa de login
     }
@@ -111,7 +117,11 @@ const Login: React.FC = () => {
             sx={{ mt: 3, mb: 2, backgroundColor: "#313926" }}
             disabled={loading} // Desativa o botão enquanto está carregando
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Entrar"
+            )}
           </Button>
           <Button
             fullWidth

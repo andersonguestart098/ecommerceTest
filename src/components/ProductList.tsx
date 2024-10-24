@@ -23,7 +23,12 @@ interface ProductListProps {
   maxPrice: string;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ searchTerm, color, minPrice, maxPrice }) => {
+const ProductList: React.FC<ProductListProps> = ({
+  searchTerm,
+  color,
+  minPrice,
+  maxPrice,
+}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,18 +40,24 @@ const ProductList: React.FC<ProductListProps> = ({ searchTerm, color, minPrice, 
 
     try {
       console.log("Buscando produtos com filtros...");
-      const response = await axios.get("http://localhost:3001/products", {
-        params: {
-          search: searchTerm,
-          color,
-          minPrice: minPrice || undefined,
-          maxPrice: maxPrice || undefined,
-        },
-      });
+      const response = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
+        {
+          params: {
+            search: searchTerm,
+            color,
+            minPrice: minPrice || undefined,
+            maxPrice: maxPrice || undefined,
+          },
+        }
+      );
 
       const processedProducts = response.data.map((product: any) => ({
         ...product,
-        image: typeof product.image === 'string' ? JSON.parse(product.image) : product.image,
+        image:
+          typeof product.image === "string"
+            ? JSON.parse(product.image)
+            : product.image,
       }));
 
       setProducts(processedProducts || []);
@@ -65,7 +76,14 @@ const ProductList: React.FC<ProductListProps> = ({ searchTerm, color, minPrice, 
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "200px",
+        }}
+      >
         <CircularProgress color="inherit" sx={{ color: "#313926" }} />
       </Box>
     );

@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Paper, Typography, List, ListItem, ListItemText, Divider, Box, Button, Grid } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Box,
+  Button,
+  Grid,
+} from "@mui/material";
 
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -10,9 +20,12 @@ const OrderManagement: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3001/orders", {
-          headers: { "x-auth-token": token },
-        });
+        const response = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
+          {
+            headers: { "x-auth-token": token },
+          }
+        );
         setOrders(response.data);
       } catch (error) {
         console.error("Erro ao buscar pedidos:", error);
@@ -26,7 +39,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:3001/orders/${orderId}`,
+        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/${orderId}`,
         { status: newStatus },
         {
           headers: { "x-auth-token": token },
@@ -45,7 +58,11 @@ const OrderManagement: React.FC = () => {
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "#313926" }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "#313926" }}
+      >
         Gestão de Pedidos
       </Typography>
       {orders.length === 0 ? (
@@ -95,7 +112,9 @@ const OrderManagement: React.FC = () => {
                       <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => updateOrderStatus(order.id, "Verificando Estoque")}
+                        onClick={() =>
+                          updateOrderStatus(order.id, "Verificando Estoque")
+                        }
                         sx={{ marginRight: 1 }}
                       >
                         Verificando Estoque
@@ -103,7 +122,9 @@ const OrderManagement: React.FC = () => {
                       <Button
                         variant="contained"
                         color="secondary"
-                        onClick={() => updateOrderStatus(order.id, "Pedido Enviado")}
+                        onClick={() =>
+                          updateOrderStatus(order.id, "Pedido Enviado")
+                        }
                       >
                         Pedido Enviado
                       </Button>

@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Paper, Typography, List, ListItem, Divider, Box, Avatar, useMediaQuery, useTheme, Snackbar, SnackbarContent, IconButton } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  List,
+  ListItem,
+  Divider,
+  Box,
+  Avatar,
+  useMediaQuery,
+  useTheme,
+  Snackbar,
+  SnackbarContent,
+  IconButton,
+} from "@mui/material";
 import PendingIcon from "@mui/icons-material/HourglassEmpty";
 import PaymentIcon from "@mui/icons-material/Payment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -21,12 +34,42 @@ interface Order {
 
 // Define your status steps
 const statusSteps = [
-  { key: "PENDING", label: "Pendente", icon: <PendingIcon />, defaultColor: "#E6E3DB" },
-  { key: "PAYMENT_APPROVED", label: "Pagamento Aprovado", icon: <PaymentIcon />, defaultColor: "#E6E3DB" },
-  { key: "AWAITING_STOCK_CONFIRMATION", label: "Aguardando Estoque", icon: <CheckCircleIcon />, defaultColor: "#E6E3DB" },
-  { key: "SEPARATED", label: "Separado", icon: <AssignmentTurnedInIcon />, defaultColor: "#E6E3DB" },
-  { key: "DISPATCHED", label: "Despachado", icon: <LocalShippingIcon />, defaultColor: "#E6E3DB" },
-  { key: "DELIVERED", label: "Entregue", icon: <AssignmentTurnedInIcon />, defaultColor: "#E6E3DB" },
+  {
+    key: "PENDING",
+    label: "Pendente",
+    icon: <PendingIcon />,
+    defaultColor: "#E6E3DB",
+  },
+  {
+    key: "PAYMENT_APPROVED",
+    label: "Pagamento Aprovado",
+    icon: <PaymentIcon />,
+    defaultColor: "#E6E3DB",
+  },
+  {
+    key: "AWAITING_STOCK_CONFIRMATION",
+    label: "Aguardando Estoque",
+    icon: <CheckCircleIcon />,
+    defaultColor: "#E6E3DB",
+  },
+  {
+    key: "SEPARATED",
+    label: "Separado",
+    icon: <AssignmentTurnedInIcon />,
+    defaultColor: "#E6E3DB",
+  },
+  {
+    key: "DISPATCHED",
+    label: "Despachado",
+    icon: <LocalShippingIcon />,
+    defaultColor: "#E6E3DB",
+  },
+  {
+    key: "DELIVERED",
+    label: "Entregue",
+    icon: <AssignmentTurnedInIcon />,
+    defaultColor: "#E6E3DB",
+  },
 ];
 
 const OrderTracking: React.FC = () => {
@@ -43,9 +86,12 @@ const OrderTracking: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3001/orders/me", {
-          headers: { "x-auth-token": token },
-        });
+        const response = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/me",
+          {
+            headers: { "x-auth-token": token },
+          }
+        );
         setOrders(response.data);
       } catch (error) {
         console.error("Erro ao buscar pedidos:", error);
@@ -54,17 +100,24 @@ const OrderTracking: React.FC = () => {
     fetchOrders();
 
     // Listen for order updates
-    socket?.on("orderStatusUpdated", (update: { orderId: string; status: string }) => {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === update.orderId || order._id === update.orderId ? { ...order, status: update.status } : order
-        )
-      );
+    socket?.on(
+      "orderStatusUpdated",
+      (update: { orderId: string; status: string }) => {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === update.orderId || order._id === update.orderId
+              ? { ...order, status: update.status }
+              : order
+          )
+        );
 
-      // Show notification to the user
-      setSnackbarMessage(`Status do pedido ${update.orderId} atualizado para ${update.status}`);
-      setOpenSnackbar(true);
-    });
+        // Show notification to the user
+        setSnackbarMessage(
+          `Status do pedido ${update.orderId} atualizado para ${update.status}`
+        );
+        setOpenSnackbar(true);
+      }
+    );
 
     return () => {
       socket?.off("orderStatusUpdated");
@@ -76,15 +129,15 @@ const OrderTracking: React.FC = () => {
   };
 
   const renderProgressTracker = (currentStatus: string) => {
-    const currentStepIndex = statusSteps.findIndex((step) => step.key === currentStatus);
+    const currentStepIndex = statusSteps.findIndex(
+      (step) => step.key === currentStatus
+    );
 
     const handleContinueShopping = () => {
       navigate("/");
     };
-  
 
     return (
-      
       <Box
         sx={{
           display: "flex",
@@ -95,25 +148,29 @@ const OrderTracking: React.FC = () => {
         }}
       >
         {/* Botão de Voltar */}
-      <IconButton
-        onClick={handleContinueShopping}
-        sx={{
-          color: "#313926",
-          border: "1px solid #313926",
-          marginBottom: "16px",
-          "&:hover": {
-            backgroundColor: "#e0e0e0",
-          },
-        }}
-      >
-        <ArrowBackIcon />
-      </IconButton>
+        <IconButton
+          onClick={handleContinueShopping}
+          sx={{
+            color: "#313926",
+            border: "1px solid #313926",
+            marginBottom: "16px",
+            "&:hover": {
+              backgroundColor: "#e0e0e0",
+            },
+          }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
         {statusSteps.map((step, index) => (
           <motion.div
             key={step.key}
             animate={index === currentStepIndex ? { y: [0, -5, 0] } : {}}
             transition={{ duration: 1.38, repeat: Infinity }}
-            style={{ display: "flex", alignItems: "center", flexDirection: "column" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "column",
+            }}
           >
             <Avatar
               sx={{
@@ -132,7 +189,10 @@ const OrderTracking: React.FC = () => {
             >
               {step.icon}
             </Avatar>
-            <Typography variant="caption" sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}
+            >
               {step.label}
             </Typography>
             {index < statusSteps.length - 1 && (
@@ -140,7 +200,8 @@ const OrderTracking: React.FC = () => {
                 sx={{
                   width: isMobile ? "2px" : "50px",
                   height: isMobile ? "20px" : "2px",
-                  backgroundColor: index < currentStepIndex ? "#4CAF50" : "#E6E3DB",
+                  backgroundColor:
+                    index < currentStepIndex ? "#4CAF50" : "#E6E3DB",
                   margin: isMobile ? "5px 0" : "0 5px",
                 }}
               />
@@ -153,7 +214,11 @@ const OrderTracking: React.FC = () => {
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "#313926" }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "#313926" }}
+      >
         Meus Pedidos
       </Typography>
       {orders.length === 0 ? (
@@ -163,7 +228,14 @@ const OrderTracking: React.FC = () => {
           <List>
             {orders.map((order, index) => (
               <div key={index}>
-                <ListItem sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <ListItem
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
                   <Box sx={{ flex: 1, width: "100%", textAlign: "left" }}>
                     <Typography variant="body2" sx={{ fontWeight: "bold" }}>
                       Pedido ID: {order._id || order.id}
@@ -172,7 +244,9 @@ const OrderTracking: React.FC = () => {
                       Total: R${order.totalPrice.toFixed(2).replace(".", ",")}
                     </Typography>
                   </Box>
-                  <Box sx={{ width: "100%" }}>{renderProgressTracker(order.status)}</Box>
+                  <Box sx={{ width: "100%" }}>
+                    {renderProgressTracker(order.status)}
+                  </Box>
                 </ListItem>
                 <Divider />
               </div>
@@ -189,7 +263,12 @@ const OrderTracking: React.FC = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <SnackbarContent
-          style={{ backgroundColor: "#fff", color: "#313926", fontFamily: "Arial, sans-serif", fontSize: "1rem" }}
+          style={{
+            backgroundColor: "#fff",
+            color: "#313926",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "1rem",
+          }}
           message={snackbarMessage}
         />
       </Snackbar>

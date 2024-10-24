@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Button,
   Typography,
@@ -11,18 +11,24 @@ import {
   Avatar,
   Grid,
   IconButton,
+  TextField,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"; // Ícone de retorno
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
+import axios from "axios";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
+    useCart();
   const navigate = useNavigate();
+  const [cepDestino, setCepDestino] = useState<string>("");
+  const [freightOptions, setFreightOptions] = useState<any[]>([]);
+  const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
 
   const handleCheckoutRedirect = () => {
     navigate("/checkout");
@@ -37,6 +43,25 @@ const CartList: React.FC = () => {
     0
   );
 
+  // Função para calcular o frete via backend
+  const handleCalculateFreight = async () => {
+    setLoadingFreight(true);
+    try {
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+        {
+          cepDestino,
+          produtos: cart,
+        }
+      );
+      setFreightOptions(response.data);
+    } catch (error) {
+      console.error("Erro ao calcular frete:", error);
+    } finally {
+      setLoadingFreight(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -45,7 +70,6 @@ const CartList: React.FC = () => {
         minHeight: "100vh",
       }}
     >
-      {/* Botão de Voltar */}
       <IconButton
         onClick={handleContinueShopping}
         sx={{
@@ -165,9 +189,44 @@ const CartList: React.FC = () => {
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
               Opções de Frete:
             </Typography>
-            <Typography variant="body2">
-              Calcule o frete para sua região.
-            </Typography>
+            <TextField
+              label="Insira seu CEP"
+              value={cepDestino}
+              onChange={(e) => setCepDestino(e.target.value)}
+              variant="outlined"
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCalculateFreight}
+              fullWidth
+              disabled={loadingFreight}
+            >
+              {loadingFreight ? "Calculando..." : "Calcular Frete"}
+            </Button>
+
+            {freightOptions.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body1" sx={{ fontWeight: "bold", mb: 1 }}>
+                  Opções de Frete Disponíveis:
+                </Typography>
+                <List>
+                  {freightOptions.map((option, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={`${option.name} - R$ ${option.price.toFixed(
+                          2
+                        )}`}
+                        secondary={`Prazo: ${option.delivery_time} dias úteis`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+
             <Typography
               variant="h6"
               sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
