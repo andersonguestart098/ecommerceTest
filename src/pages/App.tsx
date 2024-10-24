@@ -71,7 +71,7 @@ const App: React.FC = () => {
                   <Route path="/products" element={<ProductForm />} />
                   <Route path="/cart" element={<CartList />} />
                   <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/admin/orders" element={<OrderTrackingAdmin />} />
+                  <Route path="/orders" element={<OrderTrackingAdmin />} />
                   <Route path="/my-orders" element={<OrderTrackingCustomer />} />
                   <Route path="/product-list" element={<ProductList {...filters} />} />
                 </Routes>
