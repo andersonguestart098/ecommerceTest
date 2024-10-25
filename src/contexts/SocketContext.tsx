@@ -12,7 +12,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     socketRef.current = io(
-      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com:3001"
+      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com"
     );
 
     socketRef.current.on("connect", () => {
