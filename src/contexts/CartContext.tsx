@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface Product {
   id: string;
@@ -17,6 +23,8 @@ interface CartItem extends Product {
 
 interface CartContextType {
   cart: CartItem[];
+  cepDestino: string | null; // Adicionado para o CEP de destino
+  setCepDestino: (cep: string) => void; // Função para definir o CEP de destino
   addToCart: (product: CartItem) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
@@ -32,26 +40,37 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
-    // Load initial cart data from localStorage
+    // Carregar dados iniciais do carrinho do localStorage
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
+  const [cepDestino, setCepDestino] = useState<string | null>(() => {
+    // Carregar CEP de destino do localStorage
+    const savedCep = localStorage.getItem("cepDestino");
+    return savedCep || null;
+  });
+
   useEffect(() => {
-    // Save the cart data to localStorage whenever the cart state changes
+    // Salvar os dados do carrinho e o CEP de destino no localStorage sempre que eles mudarem
     localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    if (cepDestino) {
+      localStorage.setItem("cepDestino", cepDestino);
+    }
+  }, [cart, cepDestino]);
 
   const addToCart = (product: CartItem) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
-        // If product already exists, increase the quantity
+        // Se o produto já existe, aumentar a quantidade
         return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + product.quantity } : item
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + product.quantity }
+            : item
         );
       } else {
-        // If new product, add to the cart with the initial quantity
+        // Se for um novo produto, adicionar ao carrinho com a quantidade inicial
         return [...prevCart, { ...product, quantity: product.quantity }];
       }
     });
@@ -88,6 +107,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     <CartContext.Provider
       value={{
         cart,
+        cepDestino,
+        setCepDestino, // Adicionar setter para o CEP
         addToCart,
         removeFromCart,
         increaseQuantity,

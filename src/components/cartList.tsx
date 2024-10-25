@@ -43,9 +43,12 @@ const CartList: React.FC = () => {
     0
   );
 
-  // Função para calcular o frete via backend
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
+    console.log("Iniciando cálculo de frete...");
+    console.log("CEP de destino inserido:", cepDestino);
+    console.log("Produtos no carrinho:", cart);
+
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
@@ -54,11 +57,16 @@ const CartList: React.FC = () => {
           produtos: cart,
         }
       );
+      console.log("Resultado do cálculo do frete:", response.data);
       setFreightOptions(response.data);
     } catch (error) {
       console.error("Erro ao calcular frete:", error);
+      alert(
+        "Erro ao calcular frete. Por favor, verifique o console para mais detalhes."
+      );
     } finally {
       setLoadingFreight(false);
+      console.log("Cálculo de frete finalizado.");
     }
   };
 
