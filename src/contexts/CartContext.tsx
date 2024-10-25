@@ -15,17 +15,27 @@ interface Product {
   paymentOptions: string[];
   image: string;
   colors: { name: string; image: string }[];
+  metersPerBox?: number;
+  weightPerBox?: number;
+  boxDimensions?: string;
+  materialType?: string;
+  freightClass?: number;
 }
 
 interface CartItem extends Product {
   quantity: number;
+  metersPerBox: number; // Certificando de que esses campos sempre estejam presentes
+  weightPerBox: number;
+  boxDimensions: string;
+  materialType: string;
+  freightClass: number;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  cepDestino: string | null; // Adicionado para o CEP de destino
-  setCepDestino: (cep: string) => void; // Função para definir o CEP de destino
-  addToCart: (product: CartItem) => void;
+  cepDestino: string | null;
+  setCepDestino: (cep: string) => void;
+  addToCart: (product: Product) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
@@ -38,40 +48,47 @@ interface CartProviderProps {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const convertToCartItem = (product: Product): CartItem => ({
+  ...product,
+  metersPerBox: product.metersPerBox || 0,
+  weightPerBox: product.weightPerBox || 0,
+  boxDimensions: product.boxDimensions || "0x0x0",
+  materialType: product.materialType || "Desconhecido",
+  freightClass: product.freightClass || 0,
+  quantity: 1,
+});
+
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
-    // Carregar dados iniciais do carrinho do localStorage
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
   const [cepDestino, setCepDestino] = useState<string | null>(() => {
-    // Carregar CEP de destino do localStorage
     const savedCep = localStorage.getItem("cepDestino");
     return savedCep || null;
   });
 
   useEffect(() => {
-    // Salvar os dados do carrinho e o CEP de destino no localStorage sempre que eles mudarem
     localStorage.setItem("cart", JSON.stringify(cart));
     if (cepDestino) {
       localStorage.setItem("cepDestino", cepDestino);
     }
   }, [cart, cepDestino]);
 
-  const addToCart = (product: CartItem) => {
+  const addToCart = (product: Product) => {
+    const cartItem = convertToCartItem(product);
+
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
+      const existingItem = prevCart.find((item) => item.id === cartItem.id);
       if (existingItem) {
-        // Se o produto já existe, aumentar a quantidade
         return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + product.quantity }
+          item.id === cartItem.id
+            ? { ...item, quantity: item.quantity + cartItem.quantity }
             : item
         );
       } else {
-        // Se for um novo produto, adicionar ao carrinho com a quantidade inicial
-        return [...prevCart, { ...product, quantity: product.quantity }];
+        return [...prevCart, cartItem];
       }
     });
   };
@@ -108,7 +125,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       value={{
         cart,
         cepDestino,
-        setCepDestino, // Adicionar setter para o CEP
+        setCepDestino,
         addToCart,
         removeFromCart,
         increaseQuantity,

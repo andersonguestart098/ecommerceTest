@@ -43,20 +43,51 @@ const CartList: React.FC = () => {
     0
   );
 
+  const obterTokenAcesso = async (): Promise<string> => {
+    try {
+      const response = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
+      );
+      return response.data.token;
+    } catch (error) {
+      console.error("Erro ao obter token de acesso:", error);
+      throw new Error("Falha ao obter token de acesso");
+    }
+  };
+
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
     console.log("Iniciando cálculo de frete...");
     console.log("CEP de destino inserido:", cepDestino);
     console.log("Produtos no carrinho:", cart);
 
+    const produtos = cart.map((item) => ({
+      id: item.id,
+      width: parseInt(item.boxDimensions.split("x")[0], 10) || 0,
+      height: parseInt(item.boxDimensions.split("x")[1], 10) || 0,
+      length: parseInt(item.boxDimensions.split("x")[2], 10) || 0,
+      weight: item.weightPerBox,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+
+    console.log("Produtos para enviar:", produtos);
+
     try {
+      console.log("Obtendo token de acesso para cálculo de frete...");
+      const token = await obterTokenAcesso();
+      console.log("Token de acesso obtido:", token);
+
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+        { cepDestino, produtos },
         {
-          cepDestino,
-          produtos: cart,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
+
       console.log("Resultado do cálculo do frete:", response.data);
       setFreightOptions(response.data);
     } catch (error) {
@@ -69,7 +100,6 @@ const CartList: React.FC = () => {
       console.log("Cálculo de frete finalizado.");
     }
   };
-
   return (
     <Box
       sx={{
