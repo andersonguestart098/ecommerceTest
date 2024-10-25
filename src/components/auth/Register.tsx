@@ -47,7 +47,7 @@ const Register: React.FC = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Registrar-se
+          Registrar-Se
         </Typography>
 
         {error && <Alert severity="error">{error}</Alert>}
