@@ -23,7 +23,12 @@ import SearchBar from "./SearchBar";
 import { useSocket } from "../contexts/SocketContext";
 
 interface NavbarProps {
-  onSearch: (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => void;
+  onSearch: (
+    searchTerm: string,
+    color: string,
+    minPrice: number | "",
+    maxPrice: number | ""
+  ) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
@@ -42,13 +47,16 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserName(parsedUser.name);
-  
+
       if (socket && socket.connected) {
         socket.emit("userLoggedIn", parsedUser.name);
-        console.log("Evento de login emitido para o servidor:", parsedUser.name);
+        console.log(
+          "Evento de login emitido para o servidor:",
+          parsedUser.name
+        );
       }
     }
-  
+
     // Configuração para receber mensagens de boas-vindas
     socket?.on("welcomeMessage", (msg: string) => {
       console.log("Mensagem de boas-vindas recebida:", msg);
@@ -57,12 +65,19 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
       const userNameFromMessage = msg.split(",")[1]?.trim(); // Assumindo que a mensagem segue o padrão "Bem-vindo(a), Nome!"
       if (userNameFromMessage) setUserName(userNameFromMessage);
     });
-  
+
+    // Configuração para ouvir eventos de atualização de login
+    socket?.on("updateUserName", (newName: string) => {
+      setUserName(newName);
+      setSnackbarMessage(`Bem-vindo(a), ${newName}!`);
+      setOpenSnackbar(true);
+    });
+
     return () => {
       socket?.off("welcomeMessage");
+      socket?.off("updateUserName");
     };
   }, [socket]);
-  
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
@@ -134,18 +149,26 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             style={{
               width: isMobile ? "120px" : "200px",
               cursor: "pointer",
-              paddingBottom: 5
+              paddingBottom: 5,
             }}
             onClick={() => navigate("/")}
           />
         </Box>
 
         {/* SearchBar ou Ícone de Lupa */}
-        <Box sx={{ flexGrow: 1, marginLeft: "20px", maxWidth: isMobile ? "80%" : "40%" }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            marginLeft: "20px",
+            maxWidth: isMobile ? "80%" : "40%",
+          }}
+        >
           {!isMobile ? (
             <SearchBar onSearch={onSearch} />
           ) : (
-            <IconButton onClick={() => console.log("Abrir modal ou dropdown de busca")}>
+            <IconButton
+              onClick={() => console.log("Abrir modal ou dropdown de busca")}
+            >
               <SearchIcon />
             </IconButton>
           )}
@@ -178,18 +201,28 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                   Meus Dados
                 </MenuItem>
               </Menu>
-              <IconButton onClick={handleLogout} sx={{ padding: "8px", marginRight: "10px" }}>
+              <IconButton
+                onClick={handleLogout}
+                sx={{ padding: "8px", marginRight: "10px" }}
+              >
                 <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
               </IconButton>
             </>
           ) : (
-            <Button onClick={handleLoginClick} sx={{ color: "#313926", fontSize: "1rem", marginRight: "10px" }}>
+            <Button
+              onClick={handleLoginClick}
+              sx={{ color: "#313926", fontSize: "1rem", marginRight: "10px" }}
+            >
               Entrar
             </Button>
           )}
 
           {/* Ícone do Carrinho */}
-          <IconButton onClick={handleCartClick} className="cart-icon" sx={{ padding: "8px" }}>
+          <IconButton
+            onClick={handleCartClick}
+            className="cart-icon"
+            sx={{ padding: "8px" }}
+          >
             <Badge badgeContent={cart.length} color="primary">
               <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
             </Badge>
@@ -202,10 +235,15 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <SnackbarContent
-          style={{ backgroundColor: '#fff', color: '#313926', fontFamily: 'Arial, sans-serif', fontSize: '1rem' }}
+          style={{
+            backgroundColor: "#fff",
+            color: "#313926",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "1rem",
+          }}
           message={snackbarMessage}
         />
       </Snackbar>
