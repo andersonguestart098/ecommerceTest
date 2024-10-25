@@ -10,13 +10,49 @@ import {
   Box,
   Button,
   Grid,
+  IconButton,
 } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+
+type StatusIconProps = {
+  status: string;
+  onClick: () => void;
+  isSelected: boolean;
+};
+
+const StatusIcon: React.FC<StatusIconProps> = ({ status, onClick, isSelected }) => (
+  <Box
+    onClick={onClick}
+    sx={{
+      cursor: "pointer",
+      transition: "transform 0.3s, box-shadow 0.3s",
+      "&:hover": {
+        transform: "scale(1.2)",
+        boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
+      },
+      padding: "8px",
+      borderRadius: "50%",
+      backgroundColor: isSelected ? "#4caf50" : "#E6E3DB",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      width: 40,
+      height: 40,
+    }}
+  >
+    {status === "Verificando Estoque" ? (
+      <HourglassEmptyIcon sx={{ color: isSelected ? "#fff" : "#313926" }} />
+    ) : (
+      <CheckCircleIcon sx={{ color: isSelected ? "#fff" : "#313926" }} />
+    )}
+  </Box>
+);
 
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
-    // Buscar todos os pedidos do backend
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -45,7 +81,6 @@ const OrderManagement: React.FC = () => {
           headers: { "x-auth-token": token },
         }
       );
-      // Atualizar a lista de pedidos após alterar o status
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.id === orderId ? { ...order, status: newStatus } : order
@@ -107,27 +142,22 @@ const OrderManagement: React.FC = () => {
                       </List>
                     </Grid>
 
-                    {/* Botões para atualizar o status do pedido */}
+                    {/* Status Buttons */}
                     <Grid item xs={12}>
-                      <Button
-                        variant="contained"
-                        color="primary"
+                      <StatusIcon
+                        status="Verificando Estoque"
+                        isSelected={order.status === "Verificando Estoque"}
                         onClick={() =>
                           updateOrderStatus(order.id, "Verificando Estoque")
                         }
-                        sx={{ marginRight: 1 }}
-                      >
-                        Verificando Estoque
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
+                      />
+                      <StatusIcon
+                        status="Pedido Enviado"
+                        isSelected={order.status === "Pedido Enviado"}
                         onClick={() =>
                           updateOrderStatus(order.id, "Pedido Enviado")
                         }
-                      >
-                        Pedido Enviado
-                      </Button>
+                      />
                     </Grid>
                   </Grid>
                 </ListItem>

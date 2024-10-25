@@ -108,6 +108,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         padding: "0 20px",
         height: "94px",
         zIndex: 1300,
+        borderBottom: "2px solid #E6E3DB", // Adiciona a borda inferior com a cor desejada
       }}
     >
       <Toolbar
@@ -131,8 +132,9 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             src="/icones/logo.png"
             alt="Logo"
             style={{
-              width: isMobile ? "120px" : "180px",
+              width: isMobile ? "120px" : "200px",
               cursor: "pointer",
+              paddingBottom: 5
             }}
             onClick={() => navigate("/")}
           />

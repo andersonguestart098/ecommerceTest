@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Button,
   CircularProgress,
   Paper,
   Snackbar,
@@ -35,37 +34,31 @@ const statusSteps = [
     key: "PENDING",
     label: "Pendente",
     icon: <PendingIcon />,
-    defaultColor: "#e57373",
   },
   {
     key: "PAYMENT_APPROVED",
     label: "Pagamento Aprovado",
     icon: <PaymentIcon />,
-    defaultColor: "#81c784",
   },
   {
     key: "AWAITING_STOCK_CONFIRMATION",
     label: "Aguardando Estoque",
     icon: <CheckCircleIcon />,
-    defaultColor: "#ffb74d",
   },
   {
     key: "SEPARATED",
     label: "Separado",
     icon: <AssignmentTurnedInIcon />,
-    defaultColor: "#64b5f6",
   },
   {
     key: "DISPATCHED",
     label: "Despachado",
     icon: <LocalShippingIcon />,
-    defaultColor: "#4db6ac",
   },
   {
     key: "DELIVERED",
     label: "Entregue",
     icon: <AssignmentTurnedInIcon />,
-    defaultColor: "#4caf50",
   },
 ];
 
@@ -132,63 +125,65 @@ const OrderTrackingAdmin: React.FC = () => {
     );
 
     return (
-      <Box
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-      >
-        {statusSteps.map((step, index) => (
-          <motion.div
-            key={step.key}
-            animate={index === currentStepIndex ? { scale: 1.1 } : {}}
-            transition={{ duration: 0.3 }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexDirection: "column",
-              padding: "8px",
-            }}
-          >
-            <Avatar
-              sx={{
-                backgroundColor:
-                  index < currentStepIndex
-                    ? "#4CAF50"
-                    : index === currentStepIndex
-                    ? "#313926"
-                    : step.defaultColor,
-                color: "#fff",
-                width: 45,
-                height: 45,
-                transition: "all 0.3s ease-in-out",
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+        {statusSteps.map((step, index) => {
+          let backgroundColor = "#E6E3DB"; // Default color for future steps
+          if (index < currentStepIndex) {
+            backgroundColor = "#4CAF50"; // Completed step
+          } else if (index === currentStepIndex) {
+            backgroundColor = "#313926"; // Current step
+          }
+
+          return (
+            <motion.div
+              key={step.key}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexDirection: "column",
+                padding: "8px",
               }}
             >
-              {step.icon}
-            </Avatar>
-            <Typography
-              variant="caption"
-              sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}
-            >
-              {step.label}
-            </Typography>
-            {index < statusSteps.length - 1 && (
-              <Divider
-                orientation="vertical"
-                flexItem
+              <Avatar
                 sx={{
-                  height: "30px",
-                  backgroundColor:
-                    index < currentStepIndex ? "#4CAF50" : "#E6E3DB",
-                  width: "2px",
+                  backgroundColor: backgroundColor,
+                  color: "#fff",
+                  width: 50,
+                  height: 50,
+                  boxShadow: index === currentStepIndex ? "0px 0px 15px rgba(0,0,0,0.3)" : "",
+                  transition: "all 0.3s ease-in-out",
+                  cursor: "pointer",
                 }}
-              />
-            )}
-          </motion.div>
-        ))}
+              >
+                {step.icon}
+              </Avatar>
+              <Typography
+                variant="caption"
+                sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}
+              >
+                {step.label}
+              </Typography>
+              {index < statusSteps.length - 1 && (
+                <Box
+                  sx={{
+                    height: "30px",
+                    width: "2px",
+                    backgroundColor:
+                      index < currentStepIndex ? "#4CAF50" : "#E6E3DB",
+                  }}
+                />
+              )}
+            </motion.div>
+          );
+        })}
       </Box>
     );
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
+    <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Box
         sx={{
           display: "flex",

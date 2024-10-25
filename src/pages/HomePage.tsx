@@ -4,9 +4,9 @@ import Banner from '../components/Banner';
 import InfoSection from '../components/InfoSection';
 import BrandsSection from '../components/BrandsSection';
 import ProductList from '../components/ProductList';
-import ProductForm from '../components/ProductForm';
+import Footer from '../components/Footer'; // Corrigido para corresponder à capitalização
 
-// Defining the type for the props
+// Definindo o tipo para as props
 interface HomePageProps {
   images: {
     imageUrl: string;
@@ -31,8 +31,8 @@ const HomePage: React.FC<HomePageProps> = ({ images, filters }) => {
       <BrandsSection />
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <ProductList {...filters} />
-        
       </Container>
+      <Footer />
     </div>
   );
 };
