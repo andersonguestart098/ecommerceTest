@@ -5,11 +5,15 @@ const SocketContext = createContext<Socket | null>(null);
 
 export const useSocket = () => useContext(SocketContext);
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3001");
+    socketRef.current = io(
+      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com:3001"
+    );
 
     socketRef.current.on("connect", () => {
       console.log("Conectado ao servidor WebSocket:", socketRef.current?.id);
