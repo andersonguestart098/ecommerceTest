@@ -9,7 +9,7 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import { motion } from "framer-motion";
 
 // Certifique-se de que o caminho da imagem está correto
- // Ajuste o caminho conforme necessário
+// Ajuste o caminho conforme necessário
 
 const Footer: React.FC = () => {
   return (
@@ -33,11 +33,13 @@ const Footer: React.FC = () => {
               <img
                 src="/icones/logo.png"
                 alt="Nato Pisos Logo"
-                style={{ width: '200px', filter: 'brightness(0) invert(1)' }}
+                style={{ width: "200px", filter: "brightness(0) invert(1)" }}
               />
-              <Typography variant="h5" fontWeight="bold" color="#E6E3DB">
-                
-              </Typography>
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                color="#E6E3DB"
+              ></Typography>
             </motion.div>
           </Box>
         </Grid>
@@ -49,12 +51,17 @@ const Footer: React.FC = () => {
             </Typography>
             <Typography variant="body1">
               <PhoneIcon sx={{ mr: 1 }} />
-              +55 11 91234-5678
+              +55 11 91234-6687
             </Typography>
           </Box>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            gap={2}
+          >
             <IconButton
               aria-label="Instagram"
               sx={{ color: "#E6E3DB" }}
