@@ -57,49 +57,39 @@ const CartList: React.FC = () => {
 
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
-    console.log("Iniciando cálculo de frete...");
-    console.log("CEP de destino inserido:", cepDestino);
-    console.log("Produtos no carrinho:", cart);
-
     const produtos = cart.map((item) => ({
       id: item.id,
-      width: parseInt(item.boxDimensions.split("x")[0], 10) || 0,
-      height: parseInt(item.boxDimensions.split("x")[1], 10) || 0,
-      length: parseInt(item.boxDimensions.split("x")[2], 10) || 0,
+      width: parseInt(item.boxDimensions.split("x")[0], 10),
+      height: parseInt(item.boxDimensions.split("x")[1], 10),
+      length: parseInt(item.boxDimensions.split("x")[2], 10),
       weight: item.weightPerBox,
       price: item.price,
       quantity: item.quantity,
     }));
-
-    console.log("Produtos para enviar:", produtos);
-
+    
     try {
-      console.log("Obtendo token de acesso para cálculo de frete...");
       const token = await obterTokenAcesso();
-      console.log("Token de acesso obtido:", token);
-
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
-        { cepDestino, produtos },
+        { cepOrigem: "12345000", cepDestino, produtos },
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
-
-      console.log("Resultado do cálculo do frete:", response.data);
-      setFreightOptions(response.data);
+  
+      setFreightOptions(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Erro ao calcular frete:", error);
-      alert(
-        "Erro ao calcular frete. Por favor, verifique o console para mais detalhes."
-      );
+      alert("Erro ao calcular frete. Confira o console para mais detalhes.");
     } finally {
       setLoadingFreight(false);
-      console.log("Cálculo de frete finalizado.");
     }
   };
+  
+
   return (
     <Box
       sx={{
