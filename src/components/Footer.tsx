@@ -91,20 +91,6 @@ const Footer: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Displaying Security Seals */}
-      <Box display="flex" justifyContent="center" gap={2} my={2}>
-  <img
-    src="/seloGoogle2.png"
-    alt="Conexão Segura - SSL"
-    style={{ width: 250, height: 'auto' }} // Tamanho ajustado para boa resolução
-  />
-  <img
-    src="/seloMercadoPago.png"
-    alt="Mercado Pago - Pagamento Seguro"
-    style={{ width: 250, height: 'auto' }} // Tamanho ajustado para boa resolução
-  />
-</Box>
-
     </Box>
   );
 };

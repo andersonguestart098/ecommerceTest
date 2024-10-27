@@ -98,7 +98,7 @@ const OrderTrackingAdmin: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/update-status/${orderId}`,
+        `http://localhost:3001/orders/update-status/${orderId}`,
         { status: newStatus },
         {
           headers: { "x-auth-token": token },
