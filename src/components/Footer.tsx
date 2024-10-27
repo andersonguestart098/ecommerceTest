@@ -8,9 +8,6 @@ import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import TwitterIcon from "@mui/icons-material/Twitter";
 import { motion } from "framer-motion";
 
-// Certifique-se de que o caminho da imagem está correto
-// Ajuste o caminho conforme necessário
-
 const Footer: React.FC = () => {
   return (
     <Box
@@ -29,20 +26,16 @@ const Footer: React.FC = () => {
               transition={{ duration: 0.3 }}
               style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-              {/* Substituindo o ícone pelo logo */}
               <img
                 src="/icones/logo.png"
                 alt="Nato Pisos Logo"
                 style={{ width: "200px", filter: "brightness(0) invert(1)" }}
               />
-              <Typography
-                variant="h5"
-                fontWeight="bold"
-                color="#E6E3DB"
-              ></Typography>
+              <Typography variant="h5" fontWeight="bold" color="#E6E3DB"></Typography>
             </motion.div>
           </Box>
         </Grid>
+        
         <Grid item xs={12} md={4}>
           <Box textAlign="center">
             <Typography variant="body1" sx={{ mb: 1 }}>
@@ -55,13 +48,9 @@ const Footer: React.FC = () => {
             </Typography>
           </Box>
         </Grid>
+        
         <Grid item xs={12} md={4}>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            gap={2}
-          >
+          <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
             <IconButton
               aria-label="Instagram"
               sx={{ color: "#E6E3DB" }}
@@ -96,11 +85,26 @@ const Footer: React.FC = () => {
 
       <Divider sx={{ my: 3, backgroundColor: "#E6E3DB" }} />
 
-      <Box textAlign="center">
+      <Box textAlign="center" my={2}>
         <Typography variant="body2" color="#E6E3DB">
           © {new Date().getFullYear()} Nato Pisos - Todos os direitos reservados
         </Typography>
       </Box>
+
+      {/* Displaying Security Seals */}
+      <Box display="flex" justifyContent="center" gap={2} my={2}>
+  <img
+    src="/seloGoogle2.png"
+    alt="Conexão Segura - SSL"
+    style={{ width: 250, height: 'auto' }} // Tamanho ajustado para boa resolução
+  />
+  <img
+    src="/seloMercadoPago.png"
+    alt="Mercado Pago - Pagamento Seguro"
+    style={{ width: 250, height: 'auto' }} // Tamanho ajustado para boa resolução
+  />
+</Box>
+
     </Box>
   );
 };

@@ -18,6 +18,11 @@ import OrderTrackingAdmin from "../components/OrderTrackingAdmin";
 import OrderTrackingCustomer from "../components/OrderTrackingCustomer";
 import ProductList from "../components/ProductList";
 
+// Importing the new payment result components
+import SuccessPage from "../components/mercadoPago/sucesso";
+import FailurePage from "../components/mercadoPago/falha";
+import PendingPage from "../components/mercadoPago/pendente";
+
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +103,11 @@ const App: React.FC = () => {
                     path="/product-list"
                     element={<ProductList {...filters} />}
                   />
+                  
+                  {/* New Routes for Payment Status */}
+                  <Route path="/sucesso" element={<SuccessPage />} />
+                  <Route path="/falha" element={<FailurePage />} />
+                  <Route path="/pendente" element={<PendingPage />} />
                 </Routes>
               </Box>
             </CartProvider>

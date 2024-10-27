@@ -16,9 +16,13 @@ import {
   FormControlLabel,
   RadioGroup,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet"; // Example for PIX
+import ReceiptIcon from "@mui/icons-material/Receipt"; // Example for Boleto
+import CreditCardIcon from "@mui/icons-material/CreditCard"; // Example for Credit Card
 
 interface CartItem {
   id: string;
@@ -29,13 +33,14 @@ interface CartItem {
 }
 
 const Checkout: React.FC = () => {
-  const [cart, setCart] = useState<CartItem[]>([]); // Estado local do carrinho
-  const [shippingCost, setShippingCost] = useState<number>(0); // Custo do frete
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
 
   useEffect(() => {
-    // Recupera o carrinho do localStorage
     const storedCart = localStorage.getItem("cart");
     const storedShipping = localStorage.getItem("shippingCost");
 
@@ -43,11 +48,18 @@ const Checkout: React.FC = () => {
       setCart(JSON.parse(storedCart));
     }
 
-    // Recupera o valor do frete do localStorage
     if (storedShipping) {
       setShippingCost(parseFloat(storedShipping));
     }
   }, []);
+
+  useEffect(() => {
+    const total = cart.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
+    ) + shippingCost;
+    setTotalPrice(total);
+  }, [cart, shippingCost]);
 
   const handleCheckout = async () => {
     const token = localStorage.getItem("token");
@@ -57,24 +69,18 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Calcula o preço total, incluindo o custo de envio
-      const totalPrice =
-        cart.reduce(
-          (total: number, product: CartItem) =>
-            total + product.price * product.quantity,
-          0
-        ) + shippingCost;
-
-      console.log("Iniciando o processo de finalização do pedido...");
-      console.log("Carrinho:", cart);
-      console.log("Total:", totalPrice);
-      console.log("Forma de Pagamento:", paymentMethod);
-
-      // Faz a requisição para criar um novo pedido
       const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
-        { products: cart, totalPrice, paymentMethod, shippingCost },
+        "http://localhost:3001/payment/create-payment",
+        {
+          products: cart,
+          totalPrice,
+          paymentMethod,
+          shippingCost,
+          email: "usuario@teste.com",
+        },
         {
           headers: {
             "x-auth-token": token,
@@ -82,29 +88,19 @@ const Checkout: React.FC = () => {
         }
       );
 
-      console.log("Pedido finalizado com sucesso:", response.data);
-
-      // Limpa o carrinho após finalizar a compra
-      setCart([]);
-      localStorage.removeItem("cart");
-      localStorage.removeItem("shippingCost");
-
-      // Navega para a página de confirmação do pedido
-      navigate("/order-confirmation");
+      const paymentUrl = response.data.init_point;
+      window.location.href = paymentUrl;
     } catch (err) {
       console.error("Erro ao finalizar o pedido:", err);
       alert("Erro ao finalizar o pedido.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleContinueShopping = () => {
     navigate("/");
   };
-
-  const totalPrice = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
 
   return (
     <Box
@@ -114,7 +110,6 @@ const Checkout: React.FC = () => {
         minHeight: "100vh",
       }}
     >
-      {/* Botão de Voltar */}
       <IconButton
         onClick={handleContinueShopping}
         sx={{
@@ -140,7 +135,6 @@ const Checkout: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Seleção de Método de Pagamento */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
@@ -157,27 +151,44 @@ const Checkout: React.FC = () => {
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
-              <FormControlLabel value="PIX" control={<Radio />} label="PIX" />
               <FormControlLabel
-                value="Boleto Bancário"
-                control={<Radio />}
-                label="Boleto Bancário"
-              />
-              <FormControlLabel
-                value="Cartão de Crédito"
-                control={<Radio />}
-                label="Cartão de Crédito"
-              />
-              <FormControlLabel
-                value="NUPay"
-                control={<Radio />}
-                label="NUPay"
-              />
+                  value="PIX"
+                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
+                  label={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <img src="/icons8-pix.svg" alt="PIX Logo" style={{ width:56, height:56 }} />
+                      <Typography>PIX</Typography>
+                    </Box>
+                  }
+                />
+
+
+                <FormControlLabel
+                  value="Boleto Bancário"
+                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
+                  label={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <img src="/icons8-boleto-64.png" alt="Boleto Logo" style={{ width:56, height:56 }} />
+                      <Typography>Boleto Bancário</Typography>
+                    </Box>
+                  }
+                />
+
+                <FormControlLabel
+                  value="Cartão de Crédito"
+                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
+                  label={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <img src="/icons8-mastercard-credit-card-80.png" alt="Cartão de Crédito Logo" style={{ width: 56, height: 56 }} />
+                      <Typography>Cartão de Crédito</Typography>
+                    </Box>
+                  }
+                />
+
             </RadioGroup>
           </Paper>
         </Grid>
 
-        {/* Resumo do Pedido */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
@@ -235,7 +246,7 @@ const Checkout: React.FC = () => {
               variant="h6"
               sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
             >
-              Total dos Produtos: R$ {totalPrice.toFixed(2)}
+              Total dos Produtos: R$ {(totalPrice - shippingCost).toFixed(2)}
             </Typography>
             <Typography
               variant="h6"
@@ -247,7 +258,7 @@ const Checkout: React.FC = () => {
               variant="h6"
               sx={{ fontWeight: "bold", mt: 1, textAlign: "right" }}
             >
-              Total Geral: R$ {(totalPrice + shippingCost).toFixed(2)}
+              Total Geral: R$ {totalPrice.toFixed(2)}
             </Typography>
             <Button
               variant="contained"
@@ -261,9 +272,12 @@ const Checkout: React.FC = () => {
                 padding: "10px 0",
                 fontSize: "1rem",
                 fontWeight: "bold",
+                position: "relative",
               }}
+              disabled={isLoading}
+              startIcon={isLoading ? <CircularProgress size={24} /> : null}
             >
-              Finalizar Pedido
+              {isLoading ? "Processando..." : "Finalizar Pedido"}
             </Button>
           </Paper>
         </Grid>
