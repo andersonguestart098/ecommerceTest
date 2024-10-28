@@ -37,7 +37,9 @@ const CartList: React.FC = () => {
 
   const obterTokenAcesso = async (): Promise<string> => {
     try {
-      const response = await axios.get("http://localhost:3001/shipping/token");
+      const response = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
+      );
       return response.data.token;
     } catch (error) {
       console.error("Erro ao obter token de acesso:", error);
@@ -58,7 +60,7 @@ const CartList: React.FC = () => {
         weight: 0.3,
       };
       const response = await axios.post(
-        "http://localhost:3001/shipping/calculate",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
         requestData,
         {
           headers: {
