@@ -12,18 +12,20 @@ import {
   Button,
   Divider,
   Grid,
-  Radio,
-  FormControlLabel,
-  RadioGroup,
   IconButton,
   CircularProgress,
-  TextField,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { loadMercadoPago } from "@mercadopago/sdk-js";
 
-const mp = loadMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY!);
+// Initialize Mercado Pago SDK
+let mp: any;
+loadMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY!).then(
+  (mercadoPago: any) => {
+    mp = mercadoPago;
+  }
+);
 
 interface CartItem {
   id: string;
@@ -38,7 +40,6 @@ const Checkout: React.FC = () => {
   const [shippingCost, setShippingCost] = useState<number>(0);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,8 +64,8 @@ const Checkout: React.FC = () => {
 
   const handleCheckout = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const token = localStorage.getItem("token");
+
     if (!token) {
       alert("Você precisa estar logado para finalizar a compra.");
       navigate("/login");
@@ -74,44 +75,92 @@ const Checkout: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const cardToken = await mp?.cardForm({
+      if (!mp) {
+        alert("Erro ao inicializar o Mercado Pago. Tente novamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Configuração do CardForm para capturar e tokenizar os dados do cartão
+      const cardForm = mp.cardForm({
         amount: totalPrice.toString(),
         form: {
           id: "form-checkout",
-          cardholderName: { id: "cardholderName" },
-          cardNumber: { id: "cardNumber" },
-          expirationDate: { id: "expirationDate" },
-          securityCode: { id: "securityCode" },
-          installments: { id: "installments" },
-          identificationType: { id: "identificationType" },
-          identificationNumber: { id: "identificationNumber" },
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome do Titular",
+          },
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do Cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/AA",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "CVV",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de Documento",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "Número do Documento",
+          },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) console.warn("Erro ao montar o CardForm:", error);
+          },
+          onError: (error: any) => {
+            console.error("Erro no CardForm:", error);
+          },
+          onSubmit: async (event: any) => {
+            event.preventDefault();
+            const { token: cardToken, error } = await cardForm.getCardToken();
+
+            if (error) {
+              console.error("Erro ao gerar token do cartão:", error);
+              alert(
+                "Erro ao processar pagamento. Verifique os dados do cartão."
+              );
+              setIsLoading(false);
+              return;
+            }
+
+            console.log("Token do cartão gerado:", cardToken);
+
+            // Envia os dados do token para o backend
+            const response = await axios.post(
+              "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-transparent",
+              {
+                token: cardToken,
+                transactionAmount: totalPrice,
+                description: "Compra de produtos",
+                installments: 1,
+                paymentMethodId: "visa",
+                email: "usuario@teste.com",
+                shippingCost,
+                products: cart,
+              },
+              {
+                headers: {
+                  "x-auth-token": token,
+                },
+              }
+            );
+
+            if (response.data.status === "approved") {
+              navigate("/sucesso");
+            } else {
+              alert("Pagamento pendente ou falhou. Verifique sua transação.");
+            }
+          },
         },
       });
-
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-transparent",
-        {
-          token: cardToken,
-          transactionAmount: totalPrice,
-          description: "Compra de produtos",
-          installments: 1,
-          paymentMethodId: paymentMethod,
-          email: "usuario@teste.com",
-          shippingCost,
-          products: cart,
-        },
-        {
-          headers: {
-            "x-auth-token": token,
-          },
-        }
-      );
-
-      if (response.data.status === "approved") {
-        navigate("/sucesso");
-      } else {
-        alert("Pagamento pendente ou falhou. Verifique sua transação.");
-      }
     } catch (error) {
       console.error("Erro ao processar pagamento:", error);
       alert("Erro ao finalizar o pagamento.");
@@ -128,7 +177,6 @@ const Checkout: React.FC = () => {
           color: "#313926",
           border: "1px solid #313926",
           marginBottom: "16px",
-          "&:hover": { backgroundColor: "#e0e0e0" },
         }}
       >
         <ArrowBackIcon />
@@ -158,37 +206,16 @@ const Checkout: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
                 Dados do Cartão:
               </Typography>
-              <TextField
-                id="cardholderName"
-                label="Nome do Titular"
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                id="cardNumber"
-                label="Número do Cartão"
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                id="expirationDate"
-                label="Data de Validade (MM/YY)"
-                fullWidth
-                margin="normal"
-                required
-              />
-              <TextField
-                id="securityCode"
-                label="Código de Segurança"
-                fullWidth
-                margin="normal"
-                required
-              />
+              <div id="form-checkout__cardholderName"></div>
+              <div id="form-checkout__cardNumber"></div>
+              <div id="form-checkout__expirationDate"></div>
+              <div id="form-checkout__securityCode"></div>
+              <div id="form-checkout__identificationType"></div>
+              <div id="form-checkout__identificationNumber"></div>
             </Paper>
           </Grid>
 
+          {/* Resumo do Pedido */}
           <Grid item xs={12} md={6}>
             <Paper
               elevation={3}
