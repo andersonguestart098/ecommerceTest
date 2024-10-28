@@ -23,6 +23,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet"; // Example for PIX
 import ReceiptIcon from "@mui/icons-material/Receipt"; // Example for Boleto
 import CreditCardIcon from "@mui/icons-material/CreditCard"; // Example for Credit Card
+import * as mercadopago from "@mercadopago/sdk-js";
+
+mercadopago.init("SUA_PUBLIC_KEY_DO_MERCADOPAGO");
 
 interface CartItem {
   id: string;
@@ -100,7 +103,6 @@ const Checkout: React.FC = () => {
   const handleContinueShopping = () => {
     navigate("/");
   };
-
   return (
     <Box
       sx={{
