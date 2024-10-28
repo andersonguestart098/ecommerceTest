@@ -20,6 +20,10 @@ import {
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { initMercadoPago } from "@mercadopago/sdk-js";
+
+const MercadoPago = require("@mercadopago/sdk-js");
+MercadoPago.initMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY!);
 
 interface CartItem {
   id: string;
@@ -72,8 +76,7 @@ const Checkout: React.FC = () => {
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-payment",
         {
           products: cart,
-          totalPrice,
-          paymentMethod,
+          paymentMethod, // Envia o método de pagamento escolhido
           shippingCost,
           email: "usuario@teste.com",
         },
@@ -85,7 +88,7 @@ const Checkout: React.FC = () => {
       );
 
       const paymentUrl = response.data.init_point;
-      window.location.href = paymentUrl;
+      window.location.href = paymentUrl; // Redireciona o usuário para o checkout do Mercado Pago
     } catch (err) {
       console.error("Erro ao finalizar o pedido:", err);
       alert("Erro ao finalizar o pedido.");

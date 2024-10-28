@@ -53,6 +53,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/react-router-dom": "^5.3.3",
     "@types/react-slick": "^0.23.13",
     "@types/socket.io-client": "^3.0.0"
