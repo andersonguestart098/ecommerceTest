@@ -54,10 +54,9 @@ const Checkout: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const total = cart.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    ) + shippingCost;
+    const total =
+      cart.reduce((acc, item) => acc + item.price * item.quantity, 0) +
+      shippingCost;
     setTotalPrice(total);
   }, [cart, shippingCost]);
 
@@ -73,7 +72,7 @@ const Checkout: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/payment/create-payment",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-payment",
         {
           products: cart,
           totalPrice,
@@ -152,39 +151,70 @@ const Checkout: React.FC = () => {
               onChange={(e) => setPaymentMethod(e.target.value)}
             >
               <FormControlLabel
-                  value="PIX"
-                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <img src="/icons8-pix.svg" alt="PIX Logo" style={{ width:56, height:56 }} />
-                      <Typography>PIX</Typography>
-                    </Box>
-                  }
-                />
+                value="PIX"
+                control={
+                  <Radio
+                    sx={{
+                      color: "#313926",
+                      "&.Mui-checked": { color: "#313926" },
+                    }}
+                  />
+                }
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <img
+                      src="/icons8-pix.svg"
+                      alt="PIX Logo"
+                      style={{ width: 56, height: 56 }}
+                    />
+                    <Typography>PIX</Typography>
+                  </Box>
+                }
+              />
 
+              <FormControlLabel
+                value="Boleto Bancário"
+                control={
+                  <Radio
+                    sx={{
+                      color: "#313926",
+                      "&.Mui-checked": { color: "#313926" },
+                    }}
+                  />
+                }
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <img
+                      src="/icons8-boleto-64.png"
+                      alt="Boleto Logo"
+                      style={{ width: 56, height: 56 }}
+                    />
+                    <Typography>Boleto Bancário</Typography>
+                  </Box>
+                }
+              />
 
-                <FormControlLabel
-                  value="Boleto Bancário"
-                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <img src="/icons8-boleto-64.png" alt="Boleto Logo" style={{ width:56, height:56 }} />
-                      <Typography>Boleto Bancário</Typography>
-                    </Box>
-                  }
-                />
-
-                <FormControlLabel
-                  value="Cartão de Crédito"
-                  control={<Radio sx={{ color: "#313926", "&.Mui-checked": { color: "#313926" } }} />}
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <img src="/icons8-mastercard-credit-card-80.png" alt="Cartão de Crédito Logo" style={{ width: 56, height: 56 }} />
-                      <Typography>Cartão de Crédito</Typography>
-                    </Box>
-                  }
-                />
-
+              <FormControlLabel
+                value="Cartão de Crédito"
+                control={
+                  <Radio
+                    sx={{
+                      color: "#313926",
+                      "&.Mui-checked": { color: "#313926" },
+                    }}
+                  />
+                }
+                label={
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <img
+                      src="/icons8-mastercard-credit-card-80.png"
+                      alt="Cartão de Crédito Logo"
+                      style={{ width: 56, height: 56 }}
+                    />
+                    <Typography>Cartão de Crédito</Typography>
+                  </Box>
+                }
+              />
             </RadioGroup>
           </Paper>
         </Grid>

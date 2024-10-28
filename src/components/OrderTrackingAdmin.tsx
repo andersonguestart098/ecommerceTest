@@ -98,7 +98,7 @@ const OrderTrackingAdmin: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:3001/orders/update-status/${orderId}`,
+        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/update-status/${orderId}`,
         { status: newStatus },
         {
           headers: { "x-auth-token": token },
@@ -125,7 +125,9 @@ const OrderTrackingAdmin: React.FC = () => {
     );
 
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
         {statusSteps.map((step, index) => {
           let backgroundColor = "#E6E3DB"; // Default color for future steps
           if (index < currentStepIndex) {
@@ -152,7 +154,10 @@ const OrderTrackingAdmin: React.FC = () => {
                   color: "#fff",
                   width: 50,
                   height: 50,
-                  boxShadow: index === currentStepIndex ? "0px 0px 15px rgba(0,0,0,0.3)" : "",
+                  boxShadow:
+                    index === currentStepIndex
+                      ? "0px 0px 15px rgba(0,0,0,0.3)"
+                      : "",
                   transition: "all 0.3s ease-in-out",
                   cursor: "pointer",
                 }}
@@ -161,7 +166,9 @@ const OrderTrackingAdmin: React.FC = () => {
               </Avatar>
               <Typography
                 variant="caption"
-                sx={{ color: index <= currentStepIndex ? "#313926" : "#E6E3DB" }}
+                sx={{
+                  color: index <= currentStepIndex ? "#313926" : "#E6E3DB",
+                }}
               >
                 {step.label}
               </Typography>
