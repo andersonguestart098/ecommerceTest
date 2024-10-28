@@ -21,10 +21,9 @@ import {
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { initMercadoPago, CardForm } from "@mercadopago/sdk-js";
+import { loadMercadoPago } from "@mercadopago/sdk-js";
 
-// Inicializa o SDK do Mercado Pago
-initMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY!);
+const mp = loadMercadoPago(process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY!);
 
 interface CartItem {
   id: string;
@@ -74,26 +73,8 @@ const Checkout: React.FC = () => {
 
     setIsLoading(true);
 
-    const cardFormData = {
-      cardholderName: (
-        document.getElementById("cardholderName") as HTMLInputElement
-      ).value,
-      cardNumber: (document.getElementById("cardNumber") as HTMLInputElement)
-        .value,
-      expirationDate: (
-        document.getElementById("expirationDate") as HTMLInputElement
-      ).value,
-      securityCode: (
-        document.getElementById("securityCode") as HTMLInputElement
-      ).value,
-      installments: 1, // ou o número de parcelas escolhido
-      identificationType: "CPF", // ou outro tipo de identificação
-      identificationNumber: "12345678909",
-    };
-
     try {
-      // Gera o token usando o SDK do Mercado Pago
-      const cardForm = new CardForm({
+      const cardToken = await mp?.cardForm({
         amount: totalPrice.toString(),
         form: {
           id: "form-checkout",
@@ -106,8 +87,6 @@ const Checkout: React.FC = () => {
           identificationNumber: { id: "identificationNumber" },
         },
       });
-
-      const { token: cardToken } = await cardForm.createCardToken();
 
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-transparent",
