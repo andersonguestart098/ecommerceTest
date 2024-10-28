@@ -29,6 +29,12 @@ const CartList: React.FC = () => {
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
 
+  const authorizationUrl = `https://sandbox.melhorenvio.com.br/oauth/authorize?client_id=${process.env.REACT_APP_MELHOR_ENVIO_CLIENT_ID}&redirect_uri=http://localhost:3001/callback&response_type=code&scope=public`;
+
+  const handleAuthorizationRedirect = () => {
+    window.location.href = authorizationUrl;
+  };
+
   const handleCheckoutRedirect = () => {
     navigate("/checkout");
   };
@@ -42,9 +48,7 @@ const CartList: React.FC = () => {
   const obterTokenAcesso = async (): Promise<string> => {
     try {
       console.log("Solicitando token de acesso...");
-      const response = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
-      );
+      const response = await axios.get("http://localhost:3001/shipping/token");
       console.log("Token de acesso obtido:", response.data.token);
       return response.data.token;
     } catch (error) {
@@ -72,7 +76,7 @@ const CartList: React.FC = () => {
       console.log("Iniciando cálculo de frete com o token:", token);
 
       const response = await axios.post(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate`,
+        `http://localhost:3001/shipping/calculate`,
         {
           cepOrigem: "12345000",
           cepDestino: cepDestino,
@@ -148,6 +152,16 @@ const CartList: React.FC = () => {
           </List>
 
           <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", mt: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAuthorizationRedirect}
+              fullWidth
+              sx={{ mb: 2 }}
+            >
+              Autorizar Melhor Envio
+            </Button>
+
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>Opções de Frete:</Typography>
             <TextField
               label="Insira seu CEP"
