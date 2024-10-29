@@ -6,22 +6,34 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
-  const totalAmount = 100.5; // Valor fixo ou variável com o valor do pedido
 
   useEffect(() => {
+    const checkoutData = localStorage.getItem("checkoutData");
+    const parsedData = checkoutData
+      ? JSON.parse(checkoutData)
+      : { amount: 100.5 };
+
+    console.log(
+      "Dados carregados do localStorage para o checkout:",
+      parsedData
+    );
+
     if (!publicKey) {
       console.error("Chave pública do Mercado Pago não encontrada!");
       return;
     }
 
     const initializeMercadoPago = () => {
-      console.log("Inicializando o SDK do Mercado Pago...");
+      console.log(
+        "Inicializando o SDK do Mercado Pago com amount:",
+        parsedData.amount
+      );
       const mp = new (window as any).MercadoPago(publicKey, {
         locale: "pt-BR",
       });
 
       const cardForm = mp.cardForm({
-        amount: String(totalAmount), // Valor do amount atualizado aqui
+        amount: String(parsedData.amount),
         iframe: true,
         form: {
           id: "form-checkout",
@@ -61,31 +73,16 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error) {
-              console.warn("Erro ao montar o formulário: ", error);
-              return;
-            }
+            if (error)
+              return console.warn("Erro ao montar o formulário: ", error);
             setIsMpReady(true);
             console.log("Formulário montado com sucesso.");
           },
-          onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
-            if (error) {
-              console.error("Erro ao obter métodos de pagamento:", error);
-            } else {
-              console.log("Métodos de pagamento recebidos:", paymentMethods);
-            }
-          },
-          onError: (error: any) => {
-            console.error("Erro geral capturado pelo onError:", error);
-          },
           onSubmit: async (event: any) => {
             event.preventDefault();
-            console.log("Submetendo formulário...");
-
             const formData = cardForm.getCardFormData();
             console.log("Dados do formulário obtidos:", formData);
 
-            // Cheque o valor `amount` antes de enviar para o backend
             if (!formData.amount || Number(formData.amount) <= 0) {
               console.error(
                 "Valor de `transaction_amount` é inválido ou não fornecido."
@@ -94,7 +91,6 @@ const Checkout: React.FC = () => {
               return;
             }
 
-            // Dados completos de pagamento
             const paymentData = {
               token: formData.token,
               issuer_id: formData.issuerId,
@@ -131,15 +127,6 @@ const Checkout: React.FC = () => {
               console.error("Erro ao processar pagamento:", error);
               alert("Erro ao finalizar o pagamento.");
             }
-          },
-          onFetching: (resource: any) => {
-            console.log("Buscando recurso: ", resource);
-            const progressBar = document.querySelector(".progress-bar");
-            progressBar?.removeAttribute("value");
-
-            return () => {
-              progressBar?.setAttribute("value", "0");
-            };
           },
         },
       });

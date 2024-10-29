@@ -84,7 +84,12 @@ const CartList: React.FC = () => {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
+
     const totalPrice = totalProductAmount + (selectedFreightOption?.price || 0);
+    console.log("Salvando no localStorage:", {
+      amount: totalProductAmount,
+      totalPrice,
+    });
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount, totalPrice })
@@ -111,121 +116,16 @@ const CartList: React.FC = () => {
         />
         Meu Carrinho
       </Typography>
-      {cart.length === 0 ? (
-        <Typography
-          variant="h6"
-          color="textSecondary"
-          sx={{ textAlign: "center", mt: 4 }}
-        >
-          Seu carrinho está vazio.
-        </Typography>
-      ) : (
-        <Paper
-          elevation={3}
-          sx={{ padding: 2, maxWidth: 800, margin: "0 auto", mt: 3 }}
-        >
-          <List>
-            {cart.map((item) => (
-              <div key={item.id}>
-                <ListItem
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Avatar
-                      variant="square"
-                      src={item.image}
-                      alt={item.name}
-                      sx={{ width: 60, height: 60, marginRight: 2 }}
-                    />
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`Quantidade: ${item.quantity}`}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2">
-                      R$ {(item.price * item.quantity).toFixed(2)}
-                    </Typography>
-                    <IconButton onClick={() => increaseQuantity(item.id)}>
-                      <AddIcon />
-                    </IconButton>
-                    <IconButton onClick={() => decreaseQuantity(item.id)}>
-                      <RemoveIcon />
-                    </IconButton>
-                    <IconButton onClick={() => removeFromCart(item.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </ListItem>
-                <Divider />
-              </div>
-            ))}
-          </List>
-          <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", mt: 2 }}>
-            <TextField
-              label="Insira seu CEP"
-              value={cepDestino}
-              onChange={(e) => setCepDestino(e.target.value)}
-              variant="outlined"
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleCalculateFreight}
-              fullWidth
-              disabled={loadingFreight}
-            >
-              {loadingFreight ? "Calculando..." : "Calcular Frete"}
-            </Button>
-            {freightOptions.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-                  Opções de Frete Disponíveis:
-                </Typography>
-                <List>
-                  {freightOptions.map((option) => (
-                    <ListItem key={option.id}>
-                      <ListItemButton
-                        onClick={() => setSelectedFreightOption(option)}
-                        selected={selectedFreightOption?.id === option.id}
-                      >
-                        <ListItemText
-                          primary={`${option.name} - R$ ${option.price}`}
-                          secondary={`Prazo: ${option.delivery_time} dias úteis`}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
-            >
-              Valor Total do Pedido: R${" "}
-              {(
-                totalProductAmount + Number(selectedFreightOption?.price || 0)
-              ).toFixed(2)}
-            </Typography>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleCheckout}
-              fullWidth
-              sx={{ mt: 2 }}
-            >
-              Finalizar Compra
-            </Button>
-          </Box>
-        </Paper>
-      )}
+      {/* Conteúdo do Carrinho */}
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleCheckout}
+        fullWidth
+        sx={{ mt: 2 }}
+      >
+        Finalizar Compra
+      </Button>
     </Box>
   );
 };
