@@ -9,7 +9,7 @@ import {
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const [totalPrice, setTotalPrice] = useState(100); // ajuste o valor conforme necessário
+  const [totalPrice, setTotalPrice] = useState(100);
   const [mercadoPago, setMercadoPago] = useState<any>(null);
 
   const publicKey =
@@ -17,12 +17,13 @@ const Checkout: React.FC = () => {
     "APP_USR-51fa4fd6-96e4-4133-bd76-398dc77afe2e";
 
   useEffect(() => {
+    console.log("Chave Pública Mercado Pago:", publicKey);
     if (!publicKey) {
       console.error("Chave pública não encontrada!");
       return;
     }
 
-    // Inicializa o MercadoPago após a carga do SDK
+    // Inicializa o SDK do Mercado Pago e define o objeto `mercadoPago`
     const mpInstance = new (window as any).MercadoPago(publicKey);
     setMercadoPago(mpInstance);
   }, [publicKey]);
