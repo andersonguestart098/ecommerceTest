@@ -6,6 +6,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
+  const totalAmount = 100.5; // Valor fixo ou variável com o valor do pedido
 
   useEffect(() => {
     if (!publicKey) {
@@ -20,7 +21,7 @@ const Checkout: React.FC = () => {
       });
 
       const cardForm = mp.cardForm({
-        amount: "100.5", // Este valor será usado no formulário
+        amount: String(totalAmount), // Valor do amount atualizado aqui
         iframe: true,
         form: {
           id: "form-checkout",
@@ -72,13 +73,16 @@ const Checkout: React.FC = () => {
             const formData = cardForm.getCardFormData();
             console.log("Dados do formulário obtidos:", formData);
 
-            if (!formData.token) {
-              console.error("Token de cartão não gerado corretamente.");
-              alert("Erro ao gerar token do cartão. Verifique os dados.");
+            // Cheque o valor `amount` antes de enviar para o backend
+            if (!formData.amount || Number(formData.amount) <= 0) {
+              console.error(
+                "Valor de `transaction_amount` é inválido ou não fornecido."
+              );
+              alert("Erro: valor do pagamento é inválido.");
               return;
             }
 
-            // Log detalhado para confirmar dados antes do envio
+            // Dados completos de pagamento
             const paymentData = {
               token: formData.token,
               issuer_id: formData.issuerId,
@@ -143,23 +147,6 @@ const Checkout: React.FC = () => {
   return (
     <div>
       <h2>Pagamento</h2>
-      <style>
-        {`
-          #form-checkout {
-            display: flex;
-            flex-direction: column;
-            max-width: 600px;
-          }
-
-          .container {
-            height: 18px;
-            display: inline-block;
-            border: 1px solid rgb(118, 118, 118);
-            border-radius: 2px;
-            padding: 1px 2px;
-          }
-        `}
-      </style>
       <form id="form-checkout">
         <div id="form-checkout__cardNumber" className="container"></div>
         <div id="form-checkout__expirationDate" className="container"></div>
