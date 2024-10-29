@@ -11,7 +11,7 @@ const Checkout: React.FC = () => {
     const checkoutData = localStorage.getItem("checkoutData");
     const parsedData = checkoutData
       ? JSON.parse(checkoutData)
-      : { amount: "100.5", totalPrice: "100.5" };
+      : { amount: 100.5 };
 
     console.log(
       "Dados carregados do localStorage para o checkout:",
@@ -78,44 +78,16 @@ const Checkout: React.FC = () => {
             setIsMpReady(true);
             console.log("Formulário montado com sucesso.");
           },
-          onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
-            if (error) {
-              console.error("Erro ao obter métodos de pagamento:", error);
-              return;
-            }
-
-            if (paymentMethods && paymentMethods[0]?.payer_costs) {
-              const installmentOptions = paymentMethods[0].payer_costs;
-              // Preenche o campo com o primeiro valor de parcelamento como "1x"
-              const installmentsSelect = document.getElementById(
-                "form-checkout__installments"
-              ) as HTMLSelectElement;
-              installmentsSelect.innerHTML = ""; // Limpa as opções anteriores
-
-              installmentOptions.forEach((option: any) => {
-                const optionElement = document.createElement("option");
-                optionElement.value = option.installments;
-                optionElement.text = `${option.installments}x de ${option.recommended_message}`;
-                installmentsSelect.appendChild(optionElement);
-              });
-
-              // Seleciona a opção de 1 parcela como padrão
-              installmentsSelect.value = "1";
-            } else {
-              alert("Nenhuma opção de parcelamento disponível.");
-            }
-          },
-
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
+            console.log("Dados do formulário obtidos:", formData);
 
-            // Verifica se o campo `installments` é um número válido
-            if (
-              isNaN(Number(formData.installments)) ||
-              formData.installments === "Parcelas"
-            ) {
-              alert("Selecione o número de parcelas válido.");
+            if (!formData.amount || Number(formData.amount) <= 0) {
+              console.error(
+                "Valor de `transaction_amount` é inválido ou não fornecido."
+              );
+              alert("Erro: valor do pagamento é inválido.");
               return;
             }
 
@@ -155,19 +127,6 @@ const Checkout: React.FC = () => {
               console.error("Erro ao processar pagamento:", error);
               alert("Erro ao finalizar o pagamento.");
             }
-          },
-          onError: (error: any) => {
-            console.error("Erro geral capturado pelo onError:", error);
-            alert("Erro inesperado ao processar pagamento.");
-          },
-          onFetching: (resource: any) => {
-            console.log("Buscando recurso: ", resource);
-            const progressBar = document.querySelector(".progress-bar");
-            progressBar?.removeAttribute("value");
-
-            return () => {
-              progressBar?.setAttribute("value", "0");
-            };
           },
         },
       });
