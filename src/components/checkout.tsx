@@ -78,6 +78,32 @@ const Checkout: React.FC = () => {
             setIsMpReady(true);
             console.log("Formulário montado com sucesso.");
           },
+          onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
+            if (error) {
+              console.error("Erro ao obter métodos de pagamento:", error);
+              return;
+            }
+
+            if (paymentMethods && paymentMethods[0]?.payer_costs) {
+              const installmentOptions = paymentMethods[0].payer_costs;
+              const installmentsSelect = document.getElementById(
+                "form-checkout__installments"
+              ) as HTMLSelectElement;
+              installmentsSelect.innerHTML = ""; // Limpa as opções anteriores
+
+              installmentOptions.forEach((option: any) => {
+                const optionElement = document.createElement("option");
+                optionElement.value = option.installments;
+                optionElement.text = `${option.installments}x de ${option.recommended_message}`;
+                installmentsSelect.appendChild(optionElement);
+              });
+
+              // Seleciona a primeira opção de parcelamento automaticamente
+              installmentsSelect.value = "1";
+            } else {
+              alert("Nenhuma opção de parcelamento disponível.");
+            }
+          },
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
@@ -88,6 +114,11 @@ const Checkout: React.FC = () => {
                 "Valor de `transaction_amount` é inválido ou não fornecido."
               );
               alert("Erro: valor do pagamento é inválido.");
+              return;
+            }
+
+            if (isNaN(Number(formData.installments))) {
+              alert("Selecione o número de parcelas válido.");
               return;
             }
 
