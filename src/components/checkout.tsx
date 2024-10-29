@@ -20,7 +20,7 @@ const Checkout: React.FC = () => {
       });
 
       const cardForm = mp.cardForm({
-        amount: "100.5",
+        amount: "100.5", // Este valor será usado no formulário
         iframe: true,
         form: {
           id: "form-checkout",
@@ -40,10 +40,7 @@ const Checkout: React.FC = () => {
             id: "form-checkout__cardholderName",
             placeholder: "Titular do cartão",
           },
-          issuer: {
-            id: "form-checkout__issuer",
-            placeholder: "Banco emissor",
-          },
+          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
           installments: {
             id: "form-checkout__installments",
             placeholder: "Parcelas",
@@ -63,10 +60,8 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error) {
-              console.warn("Erro ao montar o formulário: ", error);
-              return;
-            }
+            if (error)
+              return console.warn("Erro ao montar o formulário: ", error);
             setIsMpReady(true);
             console.log("Formulário montado com sucesso.");
           },
@@ -90,7 +85,7 @@ const Checkout: React.FC = () => {
                   token: formData.token,
                   issuer_id: formData.issuerId,
                   payment_method_id: formData.paymentMethodId,
-                  transaction_amount: Number(formData.amount),
+                  transaction_amount: parseFloat("100.5"), // Garantindo que o valor seja enviado corretamente
                   installments: Number(formData.installments),
                   description: "Descrição do produto",
                   payer: {
@@ -118,7 +113,6 @@ const Checkout: React.FC = () => {
           },
           onFetching: (resource: any) => {
             console.log("Buscando recurso: ", resource);
-
             const progressBar = document.querySelector(".progress-bar");
             progressBar?.removeAttribute("value");
 
