@@ -31,10 +31,9 @@ const CartList: React.FC = () => {
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
   const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
 
-  const totalProductAmount = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
+  const totalProductAmount = cart
+    .reduce((total, item) => total + item.price * item.quantity, 0)
+    .toFixed(2); // Garantia de precisão monetária
 
   const obterTokenAcesso = async (): Promise<string> => {
     try {
@@ -85,19 +84,19 @@ const CartList: React.FC = () => {
       return;
     }
 
-    // Assegura que os valores são números antes de realizar a operação e aplicar o toFixed.
-    const freightPrice = Number(selectedFreightOption?.price || 0);
-    const totalPrice = (Number(totalProductAmount) + freightPrice).toFixed(2);
+    const freightPrice = Number(selectedFreightOption?.price || 0).toFixed(2);
+    const totalPrice = (
+      Number(totalProductAmount) + Number(freightPrice)
+    ).toFixed(2);
 
     console.log("Salvando no localStorage:", {
-      amount: totalProductAmount.toFixed(2),
+      amount: totalProductAmount,
       totalPrice,
     });
 
-    // Armazena como strings formatadas com toFixed(2) para manter a precisão monetária
     localStorage.setItem(
       "checkoutData",
-      JSON.stringify({ amount: totalProductAmount.toFixed(2), totalPrice })
+      JSON.stringify({ amount: totalProductAmount, totalPrice })
     );
 
     navigate("/checkout");
@@ -221,7 +220,8 @@ const CartList: React.FC = () => {
             >
               Valor Total do Pedido: R${" "}
               {(
-                totalProductAmount + Number(selectedFreightOption?.price || 0)
+                Number(totalProductAmount) +
+                Number(selectedFreightOption?.price || 0)
               ).toFixed(2)}
             </Typography>
             <Button
