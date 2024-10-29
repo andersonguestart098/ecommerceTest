@@ -78,24 +78,29 @@ const Checkout: React.FC = () => {
               return;
             }
 
+            // Log detalhado para confirmar dados antes do envio
+            const paymentData = {
+              token: formData.token,
+              issuer_id: formData.issuerId,
+              payment_method_id: formData.paymentMethodId,
+              transaction_amount: Number(formData.amount),
+              installments: Number(formData.installments),
+              description: "Descrição do produto",
+              payer: {
+                email: formData.cardholderEmail,
+                identification: {
+                  type: formData.identificationType,
+                  number: formData.identificationNumber,
+                },
+              },
+            };
+
+            console.log("Dados de pagamento enviados ao backend:", paymentData);
+
             try {
               const response = await axios.post(
                 "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-                {
-                  token: formData.token,
-                  issuer_id: formData.issuerId,
-                  payment_method_id: formData.paymentMethodId,
-                  transaction_amount: parseFloat("100.5"), // Garantindo que o valor seja enviado corretamente
-                  installments: Number(formData.installments),
-                  description: "Descrição do produto",
-                  payer: {
-                    email: formData.cardholderEmail,
-                    identification: {
-                      type: formData.identificationType,
-                      number: formData.identificationNumber,
-                    },
-                  },
-                }
+                paymentData
               );
               console.log("Resposta do servidor:", response.data);
 
