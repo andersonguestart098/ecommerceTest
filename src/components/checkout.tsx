@@ -1,14 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -16,13 +6,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: "",
-    expirationDate: "",
-    securityCode: "",
-    cardholderName: "",
-    installments: 1,
-  });
+  const [selectedInstallment, setSelectedInstallment] = useState(1); // Valor padrão como 1 parcela
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
   useEffect(() => {
@@ -42,7 +26,7 @@ const Checkout: React.FC = () => {
       });
 
       const cardForm = mp.cardForm({
-        amount: String(parsedData.amount),
+        amount: String(parsedData.amount > 1 ? parsedData.amount : 1), // Garantindo valor mínimo
         iframe: true,
         form: {
           id: "form-checkout",
@@ -67,6 +51,18 @@ const Checkout: React.FC = () => {
             id: "form-checkout__installments",
             placeholder: "Parcelas",
           },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de documento",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "CPF",
+          },
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail",
+          },
         },
         callbacks: {
           onFormMounted: (error: any) => {
@@ -81,19 +77,22 @@ const Checkout: React.FC = () => {
             }
 
             if (paymentMethods && paymentMethods[0]?.payer_costs) {
-              const installmentOptions = paymentMethods[0].payer_costs
-                .filter((option: any) => option.installments <= 12)
-                .map((option: any) => option.installments);
-              setInstallmentOptions(installmentOptions);
+              const installments = paymentMethods[0].payer_costs.map(
+                (option: any) => option.installments
+              );
+              setInstallmentOptions(installments);
+              setSelectedInstallment(installments[0] || 1); // Define o valor inicial como a primeira opção disponível
             } else {
               console.warn("Nenhuma opção de parcelamento disponível.");
               setInstallmentOptions([1]); // Define como pagamento em uma parcela
+              setSelectedInstallment(1);
             }
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
 
+            // Verificar se os campos obrigatórios estão preenchidos
             if (!formData.amount || Number(formData.amount) <= 0) {
               alert("Erro: valor do pagamento é inválido.");
               return;
@@ -103,13 +102,13 @@ const Checkout: React.FC = () => {
               token: formData.token,
               issuer_id: formData.issuerId,
               payment_method_id: formData.paymentMethodId,
-              transaction_amount: Number(formData.amount),
-              installments: Number(formData.installments),
+              transaction_amount: Math.max(Number(formData.amount), 1), // Garante valor mínimo de 1
+              installments: selectedInstallment,
               description: "Descrição do produto",
               payer: {
                 email: formData.cardholderEmail,
                 identification: {
-                  type: formData.identificationType,
+                  type: formData.identificationType || "CPF",
                   number: formData.identificationNumber,
                 },
               },
@@ -145,128 +144,70 @@ const Checkout: React.FC = () => {
     };
   }, [publicKey]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
-  };
-
   return (
-    <Box
-      sx={{
-        padding: 3,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Typography variant="h4" gutterBottom>
-        Pagamento
-      </Typography>
-
-      <Box
-        sx={{
-          border: "1px solid #ccc",
-          borderRadius: "8px",
-          padding: 2,
-          width: "300px",
-          marginBottom: 3,
-          textAlign: "center",
-          backgroundColor: "#f8f9fa",
-        }}
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <h2>Pagamento</h2>
+      <form
+        id="form-checkout"
+        style={{ display: "flex", flexDirection: "column" }}
       >
-        <Typography variant="h6">
-          {cardDetails.cardNumber || "**** **** **** ****"}
-        </Typography>
-        <Box display="flex" justifyContent="space-between" mt={1}>
-          <Typography variant="body2">
-            {cardDetails.expirationDate || "MM/YY"}
-          </Typography>
-          <Typography variant="body2">
-            {cardDetails.cardholderName || "Nome do Titular"}
-          </Typography>
-        </Box>
-      </Box>
-
-      <form id="form-checkout" style={{ width: "100%", maxWidth: 400 }}>
-        <div id="form-checkout__cardNumber">
-          <TextField
-            fullWidth
-            label="Número do Cartão"
-            placeholder="Número do cartão"
-            value={cardDetails.cardNumber}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-          />
-        </div>
-        <Box display="flex" gap={2}>
-          <div id="form-checkout__expirationDate">
-            <TextField
-              fullWidth
-              label="Data de Expiração"
-              placeholder="MM/YY"
-              value={cardDetails.expirationDate}
-              onChange={handleChange}
-              margin="normal"
-              variant="outlined"
-            />
-          </div>
-          <div id="form-checkout__securityCode">
-            <TextField
-              fullWidth
-              label="Código de Segurança"
-              placeholder="123"
-              value={cardDetails.securityCode}
-              onChange={handleChange}
-              margin="normal"
-              variant="outlined"
-            />
-          </div>
-        </Box>
-        <div id="form-checkout__cardholderName">
-          <TextField
-            fullWidth
-            label="Titular do Cartão"
-            placeholder="Nome do titular"
-            value={cardDetails.cardholderName}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-          />
-        </div>
-        <FormControl fullWidth margin="normal" variant="outlined">
-          <InputLabel>Parcelas</InputLabel>
-          <Select
-            label="Parcelas"
-            id="form-checkout__installments"
-            value={cardDetails.installments}
-            onChange={(e) =>
-              setCardDetails({
-                ...cardDetails,
-                installments: Number(e.target.value),
-              })
-            }
-          >
-            {installmentOptions.map((installment) => (
-              <MenuItem key={installment} value={installment}>
-                {installment}x
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          fullWidth
-          disabled={!isMpReady}
+        <div id="form-checkout__cardNumber" className="container"></div>
+        <div id="form-checkout__expirationDate" className="container"></div>
+        <div id="form-checkout__securityCode" className="container"></div>
+        <input
+          type="text"
+          id="form-checkout__cardholderName"
+          placeholder="Titular do cartão"
+        />
+        <select id="form-checkout__issuer"></select>
+        <select
+          id="form-checkout__installments"
+          value={selectedInstallment}
+          onChange={(e) => setSelectedInstallment(Number(e.target.value))}
         >
-          PAGAR
-        </Button>
+          {installmentOptions.map((installment) => (
+            <option key={installment} value={installment}>
+              {installment}x
+            </option>
+          ))}
+        </select>
+        <select id="form-checkout__identificationType"></select>
+        <input
+          type="text"
+          id="form-checkout__identificationNumber"
+          placeholder="CPF"
+        />
+        <input
+          type="email"
+          id="form-checkout__cardholderEmail"
+          placeholder="E-mail"
+        />
+
+        <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>
+          Pagar
+        </button>
+        <progress value="0" className="progress-bar">
+          Carregando...
+        </progress>
       </form>
-    </Box>
+      <style>
+        {`
+          .container {
+            height: 18px;
+            display: inline-block;
+            border: 1px solid rgb(118, 118, 118);
+            border-radius: 2px;
+            padding: 1px 2px;
+            margin-bottom: 10px;
+          }
+          #form-checkout {
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+          }
+        `}
+      </style>
+    </div>
   );
 };
 
