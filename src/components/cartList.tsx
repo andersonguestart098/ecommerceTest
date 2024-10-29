@@ -89,14 +89,18 @@ const CartList: React.FC = () => {
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
 
-    console.log("Salvando no localStorage:", {
-      amount: totalProductAmount,
-      totalPrice,
-    });
+    const items = cart.map((item) => ({
+      id: item.id,
+      title: item.name,
+      quantity: item.quantity,
+      unit_price: item.price,
+      description: item.description || "Produto sem descrição",
+      category_id: item.category_id || "default",
+    }));
 
     localStorage.setItem(
       "checkoutData",
-      JSON.stringify({ amount: totalProductAmount, totalPrice })
+      JSON.stringify({ amount: totalProductAmount, totalPrice, items })
     );
 
     navigate("/checkout");

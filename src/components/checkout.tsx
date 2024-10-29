@@ -8,7 +8,6 @@ const Checkout: React.FC = () => {
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
-  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkoutData = localStorage.getItem("checkoutData");
@@ -25,10 +24,6 @@ const Checkout: React.FC = () => {
       const mp = new (window as any).MercadoPago(publicKey, {
         locale: "pt-BR",
       });
-
-      // Capturando o `deviceId` corretamente
-      const mpDeviceId = mp.fields.create("deviceId");
-      setDeviceId(mpDeviceId);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -75,29 +70,28 @@ const Checkout: React.FC = () => {
               return console.warn("Erro ao montar o formulário: ", error);
             setIsMpReady(true);
           },
-          onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
+          onValidityChange: (error: any, field: any) => {
             if (error) {
-              console.error("Erro ao obter métodos de pagamento:", error);
-              return;
-            }
-            if (paymentMethods && paymentMethods[0]?.payer_costs) {
-              const installments = paymentMethods[0].payer_costs.map(
-                (option: any) => option.installments
+              console.error("Erro de validação no formulário:", field);
+              alert(
+                "Erro de validação em um ou mais campos. Corrija antes de continuar."
               );
-              setInstallmentOptions(installments);
-              setSelectedInstallment(installments[0] || 1);
-            } else {
-              console.warn("Nenhuma opção de parcelamento disponível.");
-              setInstallmentOptions([1]);
-              setSelectedInstallment(1);
             }
+          },
+          onError: (error: any) => {
+            console.error("Erro ao criar token de cartão:", error);
+            alert(
+              `Erro ao processar pagamento: ${
+                error.message || "verifique os dados e tente novamente"
+              }`
+            );
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
 
-            if (!formData.amount || Number(formData.amount) <= 0) {
-              alert("Erro: valor do pagamento é inválido.");
+            if (!formData.token) {
+              alert("Erro: Não foi possível criar o token do cartão.");
               return;
             }
 
@@ -110,26 +104,14 @@ const Checkout: React.FC = () => {
               description: "Descrição do produto",
               payer: {
                 email: formData.cardholderEmail,
-                first_name: formData.cardholderName.split(" ")[0] || "",
+                first_name: formData.cardholderName?.split(" ")[0] || "",
                 last_name:
-                  formData.cardholderName.split(" ").slice(1).join(" ") || "",
+                  formData.cardholderName?.split(" ").slice(1).join(" ") || "",
                 identification: {
                   type: formData.identificationType || "CPF",
                   number: formData.identificationNumber,
                 },
               },
-              device_id: deviceId,
-              items: [
-                {
-                  id: "1234",
-                  title: "Produto Exemplo",
-                  quantity: 1,
-                  unit_price: Number(formData.amount),
-                  description: "Descrição detalhada do produto",
-                  category_id: "electronics",
-                },
-              ],
-              external_reference: "pedido1234",
             };
 
             try {

@@ -20,11 +20,12 @@ interface Product {
   boxDimensions?: string;
   materialType?: string;
   freightClass?: number;
+  category_id?: string; // Adiciona o campo category_id opcional
 }
 
 interface CartItem extends Product {
   quantity: number;
-  metersPerBox: number; // Certificando de que esses campos sempre estejam presentes
+  metersPerBox: number;
   weightPerBox: number;
   boxDimensions: string;
   materialType: string;
@@ -56,6 +57,7 @@ const convertToCartItem = (product: Product): CartItem => ({
   materialType: product.materialType || "Desconhecido",
   freightClass: product.freightClass || 0,
   quantity: 1,
+  category_id: product.category_id || "default", // Valor padrão para category_id
 });
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
