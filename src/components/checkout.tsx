@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { CardPayment } from "@mercadopago/sdk-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ const Checkout: React.FC = () => {
         "https://seu-backend.herokuapp.com/payment/create-transparent",
         formData
       );
-  
+
       if (response.data.status === "approved") {
         navigate("/sucesso");
       } else {
@@ -29,7 +29,6 @@ const Checkout: React.FC = () => {
       alert("Erro ao finalizar o pagamento.");
     }
   };
-  
 
   const onError = (error: any) => {
     console.error("Erro no Brick:", error);
