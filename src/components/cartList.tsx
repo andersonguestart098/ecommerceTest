@@ -31,13 +31,11 @@ const CartList: React.FC = () => {
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
   const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
 
-  // Calcula o preço total dos produtos no carrinho
   const totalProductAmount = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
-  // Função para obter o token de acesso para a API de frete
   const obterTokenAcesso = async (): Promise<string> => {
     try {
       const response = await axios.get(
@@ -50,13 +48,12 @@ const CartList: React.FC = () => {
     }
   };
 
-  // Função para calcular o frete
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
     try {
       const token = await obterTokenAcesso();
       const requestData = {
-        cepOrigem: "01002001", // CEP de origem fixo ou dinâmico
+        cepOrigem: "01002001",
         cepDestino: cepDestino,
         height: 4,
         width: 12,
@@ -82,19 +79,18 @@ const CartList: React.FC = () => {
     }
   };
 
-  // Função para finalizar a compra e ir para o checkout
   const handleCheckout = () => {
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
-    navigate("/checkout", {
-      state: {
-        amount: totalProductAmount, // Valor dos produtos para o checkout
-        totalPrice: totalProductAmount + (selectedFreightOption?.price || 0), // Valor total do pedido com frete
-        freightOption: selectedFreightOption, // Opção de frete selecionada
-      },
-    });
+    const totalPrice = totalProductAmount + (selectedFreightOption?.price || 0);
+    localStorage.setItem(
+      "checkoutData",
+      JSON.stringify({ amount: totalProductAmount, totalPrice })
+    );
+
+    navigate("/checkout");
   };
 
   return (
@@ -218,7 +214,6 @@ const CartList: React.FC = () => {
                 totalProductAmount + Number(selectedFreightOption?.price || 0)
               ).toFixed(2)}
             </Typography>
-
             <Button
               variant="contained"
               color="secondary"

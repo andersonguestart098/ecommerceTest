@@ -6,7 +6,10 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
-  const totalAmount = 100.5; // Valor fixo ou variável com o valor do pedido
+
+  // Carregar dados do `localStorage`
+  const checkoutData = JSON.parse(localStorage.getItem("checkoutData") || "{}");
+  const totalAmount = checkoutData.amount || 0;
 
   useEffect(() => {
     if (!publicKey) {
@@ -68,21 +71,8 @@ const Checkout: React.FC = () => {
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
-            console.log("Submetendo formulário...");
-
             const formData = cardForm.getCardFormData();
-            console.log("Dados do formulário obtidos:", formData);
 
-            // Cheque o valor `amount` antes de enviar para o backend
-            if (!formData.amount || Number(formData.amount) <= 0) {
-              console.error(
-                "Valor de `transaction_amount` é inválido ou não fornecido."
-              );
-              alert("Erro: valor do pagamento é inválido.");
-              return;
-            }
-
-            // Dados completos de pagamento
             const paymentData = {
               token: formData.token,
               issuer_id: formData.issuerId,
@@ -99,35 +89,22 @@ const Checkout: React.FC = () => {
               },
             };
 
-            console.log("Dados de pagamento enviados ao backend:", paymentData);
-
             try {
               const response = await axios.post(
                 "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
                 paymentData
               );
-              console.log("Resposta do servidor:", response.data);
-
               if (response.data.status === "approved") {
                 console.log("Pagamento aprovado!");
+                localStorage.removeItem("checkoutData"); // Limpa o localStorage
                 navigate("/sucesso");
               } else {
-                console.warn("Pagamento pendente ou falhou:", response.data);
                 alert("Pagamento pendente ou falhou. Verifique a transação.");
               }
             } catch (error) {
               console.error("Erro ao processar pagamento:", error);
               alert("Erro ao finalizar o pagamento.");
             }
-          },
-          onFetching: (resource: any) => {
-            console.log("Buscando recurso: ", resource);
-            const progressBar = document.querySelector(".progress-bar");
-            progressBar?.removeAttribute("value");
-
-            return () => {
-              progressBar?.setAttribute("value", "0");
-            };
           },
         },
       });
@@ -172,9 +149,6 @@ const Checkout: React.FC = () => {
         <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>
           Pagar
         </button>
-        <progress value="0" className="progress-bar">
-          Carregando...
-        </progress>
       </form>
     </div>
   );
