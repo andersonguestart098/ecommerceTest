@@ -33,7 +33,7 @@ const Checkout: React.FC = () => {
       });
 
       const cardForm = mp.cardForm({
-        amount: String(parsedData.amount),
+        amount: String(parsedData.amount), // AQUI: valor a ser passado ao SDK
         iframe: true,
         form: {
           id: "form-checkout",
@@ -78,16 +78,35 @@ const Checkout: React.FC = () => {
             setIsMpReady(true);
             console.log("Formulário montado com sucesso.");
           },
+          onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
+            if (error) {
+              console.error("Erro ao obter métodos de pagamento:", error);
+            } else {
+              console.log("Métodos de pagamento recebidos:", paymentMethods);
+              if (!paymentMethods || !paymentMethods.length) {
+                alert("Método de pagamento inválido ou não encontrado.");
+              }
+            }
+          },
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
             console.log("Dados do formulário obtidos:", formData);
 
+            // Cheque se os valores essenciais estão presentes antes de enviar ao backend
             if (!formData.amount || Number(formData.amount) <= 0) {
               console.error(
                 "Valor de `transaction_amount` é inválido ou não fornecido."
               );
               alert("Erro: valor do pagamento é inválido.");
+              return;
+            }
+
+            if (!formData.paymentMethodId || !formData.token) {
+              console.error(
+                "Erro: Dados essenciais ausentes (token ou método de pagamento)."
+              );
+              alert("Erro ao processar pagamento. Dados ausentes.");
               return;
             }
 
@@ -127,6 +146,19 @@ const Checkout: React.FC = () => {
               console.error("Erro ao processar pagamento:", error);
               alert("Erro ao finalizar o pagamento.");
             }
+          },
+          onError: (error: any) => {
+            console.error("Erro geral capturado pelo onError:", error);
+            alert("Erro inesperado ao processar pagamento.");
+          },
+          onFetching: (resource: any) => {
+            console.log("Buscando recurso: ", resource);
+            const progressBar = document.querySelector(".progress-bar");
+            progressBar?.removeAttribute("value");
+
+            return () => {
+              progressBar?.setAttribute("value", "0");
+            };
           },
         },
       });
