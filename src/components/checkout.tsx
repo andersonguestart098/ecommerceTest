@@ -1,4 +1,3 @@
-// Checkout.tsx
 import React, { useState, useEffect } from "react";
 import { CardPayment } from "@mercadopago/sdk-react";
 import axios from "axios";
@@ -7,7 +6,6 @@ import {
   ICardPaymentBrickPayer,
   ICardPaymentFormData,
 } from "@mercadopago/sdk-react/bricks/cardPayment/type";
-import { loadMercadoPago } from "@mercadopago/sdk-js"; // Importação correta para carregar o SDK
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -24,8 +22,8 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    // Carrega o SDK do Mercado Pago com a chave pública
-    const mpInstance = loadMercadoPago(publicKey);
+    // Inicializa o MercadoPago após a carga do SDK
+    const mpInstance = new (window as any).MercadoPago(publicKey);
     setMercadoPago(mpInstance);
   }, [publicKey]);
 
