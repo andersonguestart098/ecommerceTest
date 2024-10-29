@@ -15,7 +15,7 @@ const Checkout: React.FC = () => {
   const onSubmit = async (formData: ICardPaymentFormData<ICardPaymentBrickPayer>): Promise<void> => {
     try {
       const response = await axios.post(
-        "https://seu-backend.herokuapp.com/payment/create-transparent",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-transparent",
         formData
       );
 
