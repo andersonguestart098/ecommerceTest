@@ -9,9 +9,9 @@ import {
   Box,
   Paper,
   Avatar,
-  Grid,
   IconButton,
   TextField,
+  ListItemButton,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
@@ -23,18 +23,20 @@ import { useCart } from "../contexts/CartContext";
 import axios from "axios";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
-    useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
   const navigate = useNavigate();
   const [cepDestino, setCepDestino] = useState<string>("");
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
+  const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
 
+  // Calcula o preço total dos produtos no carrinho
   const totalPrice = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
+  // Função para obter o token de acesso para a API de frete
   const obterTokenAcesso = async (): Promise<string> => {
     try {
       const response = await axios.get(
@@ -47,6 +49,7 @@ const CartList: React.FC = () => {
     }
   };
 
+  // Função para calcular o frete
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
     try {
@@ -76,6 +79,20 @@ const CartList: React.FC = () => {
     } finally {
       setLoadingFreight(false);
     }
+  };
+
+  // Função para finalizar a compra e ir para o checkout
+  const handleCheckout = () => {
+    if (!selectedFreightOption) {
+      alert("Por favor, selecione uma opção de frete antes de continuar.");
+      return;
+    }
+    navigate("/checkout", {
+      state: {
+        totalPrice: totalPrice + (selectedFreightOption?.price || 0), // Valor total do pedido com frete
+        freightOption: selectedFreightOption,
+      },
+    });
   };
 
   return (
@@ -175,12 +192,18 @@ const CartList: React.FC = () => {
                 </Typography>
                 <List>
                   {freightOptions.map((option) => (
-                    <ListItem key={option.id}>
-                      <ListItemText
-                        primary={`${option.name} - R$ ${option.price}`}
-                        secondary={`Prazo: ${option.delivery_time} dias úteis`}
-                      />
-                    </ListItem>
+              <ListItem key={option.id}>
+              <ListItemButton
+                onClick={() => setSelectedFreightOption(option)}
+                selected={selectedFreightOption?.id === option.id}
+              >
+                <ListItemText
+                  primary={`${option.name} - R$ ${option.price}`}
+                  secondary={`Prazo: ${option.delivery_time} dias úteis`}
+                />
+              </ListItemButton>
+            </ListItem>
+            
                   ))}
                 </List>
               </Box>
@@ -189,8 +212,17 @@ const CartList: React.FC = () => {
               variant="h6"
               sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
             >
-              Valor Total do Pedido: R$ {totalPrice.toFixed(2)}
+              Valor Total do Pedido: R$ {(totalPrice + (selectedFreightOption?.price || 0)).toFixed(2)}
             </Typography>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleCheckout}
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              Finalizar Compra
+            </Button>
           </Box>
         </Paper>
       )}
