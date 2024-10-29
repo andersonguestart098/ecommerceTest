@@ -54,7 +54,7 @@ const Checkout: React.FC = () => {
           },
           identificationNumber: {
             id: "form-checkout__identificationNumber",
-            placeholder: "Número do documento",
+            placeholder: "CPF",
           },
           cardholderEmail: {
             id: "form-checkout__cardholderEmail",
@@ -84,7 +84,7 @@ const Checkout: React.FC = () => {
             }
 
             try {
-              const response = await axios.post("/process_payment", {
+              const response = await axios.post("/payment/process_payment", {
                 token: formData.token,
                 issuer_id: formData.issuerId,
                 payment_method_id: formData.paymentMethodId,
@@ -173,7 +173,7 @@ const Checkout: React.FC = () => {
         <input
           type="text"
           id="form-checkout__identificationNumber"
-          placeholder="Número do documento"
+          placeholder="CPF"
         />
         <input
           type="email"
