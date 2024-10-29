@@ -23,7 +23,8 @@ import { useCart } from "../contexts/CartContext";
 import axios from "axios";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
+    useCart();
   const navigate = useNavigate();
   const [cepDestino, setCepDestino] = useState<string>("");
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
@@ -31,7 +32,7 @@ const CartList: React.FC = () => {
   const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
 
   // Calcula o preço total dos produtos no carrinho
-  const totalPrice = cart.reduce(
+  const totalProductAmount = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
@@ -89,8 +90,9 @@ const CartList: React.FC = () => {
     }
     navigate("/checkout", {
       state: {
-        totalPrice: totalPrice + (selectedFreightOption?.price || 0), // Valor total do pedido com frete
-        freightOption: selectedFreightOption,
+        amount: totalProductAmount, // Valor dos produtos para o checkout
+        totalPrice: totalProductAmount + (selectedFreightOption?.price || 0), // Valor total do pedido com frete
+        freightOption: selectedFreightOption, // Opção de frete selecionada
       },
     });
   };
@@ -192,28 +194,30 @@ const CartList: React.FC = () => {
                 </Typography>
                 <List>
                   {freightOptions.map((option) => (
-              <ListItem key={option.id}>
-              <ListItemButton
-                onClick={() => setSelectedFreightOption(option)}
-                selected={selectedFreightOption?.id === option.id}
-              >
-                <ListItemText
-                  primary={`${option.name} - R$ ${option.price}`}
-                  secondary={`Prazo: ${option.delivery_time} dias úteis`}
-                />
-              </ListItemButton>
-            </ListItem>
-            
+                    <ListItem key={option.id}>
+                      <ListItemButton
+                        onClick={() => setSelectedFreightOption(option)}
+                        selected={selectedFreightOption?.id === option.id}
+                      >
+                        <ListItemText
+                          primary={`${option.name} - R$ ${option.price}`}
+                          secondary={`Prazo: ${option.delivery_time} dias úteis`}
+                        />
+                      </ListItemButton>
+                    </ListItem>
                   ))}
                 </List>
               </Box>
             )}
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
-          >
-            Valor Total do Pedido: R$ {(totalPrice + Number(selectedFreightOption?.price || 0)).toFixed(2)}
-          </Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
+            >
+              Valor Total do Pedido: R${" "}
+              {(
+                totalProductAmount + Number(selectedFreightOption?.price || 0)
+              ).toFixed(2)}
+            </Typography>
 
             <Button
               variant="contained"
