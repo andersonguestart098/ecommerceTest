@@ -11,7 +11,7 @@ const Checkout: React.FC = () => {
     const checkoutData = localStorage.getItem("checkoutData");
     const parsedData = checkoutData
       ? JSON.parse(checkoutData)
-      : { amount: 100.5 };
+      : { amount: "100.5", totalPrice: "100.5" };
 
     console.log(
       "Dados carregados do localStorage para o checkout:",

@@ -85,14 +85,16 @@ const CartList: React.FC = () => {
       return;
     }
 
-    const totalPrice = totalProductAmount + (selectedFreightOption?.price || 0);
+    const totalPrice = (
+      totalProductAmount + (selectedFreightOption?.price || 0)
+    ).toFixed(2);
     console.log("Salvando no localStorage:", {
-      amount: totalProductAmount,
+      amount: totalProductAmount.toFixed(2),
       totalPrice,
     });
     localStorage.setItem(
       "checkoutData",
-      JSON.stringify({ amount: totalProductAmount, totalPrice })
+      JSON.stringify({ amount: totalProductAmount.toFixed(2), totalPrice })
     );
 
     navigate("/checkout");
