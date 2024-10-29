@@ -89,7 +89,6 @@ const Checkout: React.FC = () => {
               return;
             }
 
-            // Prossiga com a criação do pagamento se o securityCode for válido
             try {
               const response = await axios.post("/process_payment", {
                 token,
@@ -129,7 +128,6 @@ const Checkout: React.FC = () => {
       });
     };
 
-    // Carrega o script do Mercado Pago
     const script = document.createElement("script");
     script.src = "https://sdk.mercadopago.com/js/v2";
     script.async = true;
