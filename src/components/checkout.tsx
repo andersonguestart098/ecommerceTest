@@ -112,13 +112,19 @@ const Checkout: React.FC = () => {
                   number: formData.identificationNumber,
                 },
               },
+              device_id: mp.getDeviceID(), // Adiciona o device_id
+              items: parsedData.items || [], // Enviar itens com categoria ao backend
             };
+
+            console.log("Dados de pagamento:", paymentData); // Log para verificar os dados enviados
 
             try {
               const response = await axios.post(
                 "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
                 paymentData
               );
+
+              console.log("Resposta do servidor:", response.data); // Log da resposta do servidor
 
               if (response.data.status === "approved") {
                 navigate("/sucesso");
