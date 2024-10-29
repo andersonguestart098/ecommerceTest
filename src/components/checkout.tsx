@@ -8,6 +8,7 @@ const Checkout: React.FC = () => {
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkoutData = localStorage.getItem("checkoutData");
@@ -24,6 +25,11 @@ const Checkout: React.FC = () => {
       const mp = new (window as any).MercadoPago(publicKey, {
         locale: "pt-BR",
       });
+
+      // Criar Device ID para rastrear o dispositivo do cliente
+      const deviceModule = mp.device;
+      const generatedDeviceId = deviceModule.create();
+      setDeviceId(generatedDeviceId);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -112,7 +118,7 @@ const Checkout: React.FC = () => {
                   number: formData.identificationNumber,
                 },
               },
-              device_id: mp.getDeviceID(), // Adiciona o device_id
+              device_id: deviceId, // Enviar o device_id gerado
               items: parsedData.items || [], // Enviar itens com categoria ao backend
             };
 
