@@ -1,14 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CardPayment } from "@mercadopago/sdk-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { ICardPaymentBrickPayer, ICardPaymentFormData } from "@mercadopago/sdk-react/bricks/cardPayment/type";
+import { MercadoPagoInstance } from "../components/services/MercadoPagoInstance"; // ajuste o caminho conforme necessário
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [totalPrice, setTotalPrice] = useState(100); // ajuste o valor conforme necessário
+  const [mercadoPago, setMercadoPago] = useState<any>(null);
 
-  console.log("Chave Pública Mercado Pago:", process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY);
+  useEffect(() => {
+    const initializeMercadoPago = async () => {
+      const instance = await MercadoPagoInstance.getInstance();
+      setMercadoPago(instance);
+    };
+    initializeMercadoPago();
+  }, []);
+
+  if (!mercadoPago) {
+    return <div>Carregando pagamento...</div>;
+  }
 
   const initialization = {
     amount: totalPrice,
