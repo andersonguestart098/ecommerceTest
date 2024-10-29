@@ -6,8 +6,9 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
-  const [selectedInstallment, setSelectedInstallment] = useState(1); // Valor padrão como 1 parcela
+  const [selectedInstallment, setSelectedInstallment] = useState(1);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkoutData = localStorage.getItem("checkoutData");
@@ -25,8 +26,12 @@ const Checkout: React.FC = () => {
         locale: "pt-BR",
       });
 
+      // Captura o `deviceId`
+      const deviceId = mp?.getIdentification();
+      setDeviceId(deviceId);
+
       const cardForm = mp.cardForm({
-        amount: String(parsedData.amount > 1 ? parsedData.amount : 1), // Garantindo valor mínimo
+        amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
         iframe: true,
         form: {
           id: "form-checkout",
@@ -75,16 +80,15 @@ const Checkout: React.FC = () => {
               console.error("Erro ao obter métodos de pagamento:", error);
               return;
             }
-
             if (paymentMethods && paymentMethods[0]?.payer_costs) {
               const installments = paymentMethods[0].payer_costs.map(
                 (option: any) => option.installments
               );
               setInstallmentOptions(installments);
-              setSelectedInstallment(installments[0] || 1); // Define o valor inicial como a primeira opção disponível
+              setSelectedInstallment(installments[0] || 1);
             } else {
               console.warn("Nenhuma opção de parcelamento disponível.");
-              setInstallmentOptions([1]); // Define como pagamento em uma parcela
+              setInstallmentOptions([1]);
               setSelectedInstallment(1);
             }
           },
@@ -92,7 +96,6 @@ const Checkout: React.FC = () => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
 
-            // Verificar se os campos obrigatórios estão preenchidos
             if (!formData.amount || Number(formData.amount) <= 0) {
               alert("Erro: valor do pagamento é inválido.");
               return;
@@ -102,16 +105,31 @@ const Checkout: React.FC = () => {
               token: formData.token,
               issuer_id: formData.issuerId,
               payment_method_id: formData.paymentMethodId,
-              transaction_amount: Math.max(Number(formData.amount), 1), // Garante valor mínimo de 1
+              transaction_amount: Math.max(Number(formData.amount), 1),
               installments: selectedInstallment,
               description: "Descrição do produto",
               payer: {
                 email: formData.cardholderEmail,
+                first_name: formData.cardholderName.split(" ")[0] || "",
+                last_name:
+                  formData.cardholderName.split(" ").slice(1).join(" ") || "",
                 identification: {
                   type: formData.identificationType || "CPF",
                   number: formData.identificationNumber,
                 },
               },
+              device_id: deviceId, // Adiciona o deviceId aqui
+              items: [
+                {
+                  id: "1234",
+                  title: "Produto Exemplo",
+                  quantity: 1,
+                  unit_price: Number(formData.amount),
+                  description: "Descrição detalhada do produto",
+                  category_id: "electronics",
+                },
+              ],
+              external_reference: "pedido1234", // Referência externa para conciliação
             };
 
             try {
