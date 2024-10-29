@@ -82,11 +82,12 @@ const Checkout: React.FC = () => {
 
             if (paymentMethods && paymentMethods[0]?.payer_costs) {
               const installmentOptions = paymentMethods[0].payer_costs
-                .filter((option: any) => option.installments <= 12) // Limita até 12x
+                .filter((option: any) => option.installments <= 12)
                 .map((option: any) => option.installments);
               setInstallmentOptions(installmentOptions);
             } else {
-              alert("Nenhuma opção de parcelamento disponível.");
+              console.warn("Nenhuma opção de parcelamento disponível.");
+              setInstallmentOptions([1]); // Define como pagamento em uma parcela
             }
           },
           onSubmit: async (event: any) => {
@@ -188,52 +189,52 @@ const Checkout: React.FC = () => {
       </Box>
 
       <form id="form-checkout" style={{ width: "100%", maxWidth: 400 }}>
-        <TextField
-          fullWidth
-          label="Número do Cartão"
-          id="form-checkout__cardNumber"
-          name="cardNumber"
-          placeholder="Número do cartão"
-          value={cardDetails.cardNumber}
-          onChange={handleChange}
-          margin="normal"
-          variant="outlined"
-        />
+        <div id="form-checkout__cardNumber">
+          <TextField
+            fullWidth
+            label="Número do Cartão"
+            placeholder="Número do cartão"
+            value={cardDetails.cardNumber}
+            onChange={handleChange}
+            margin="normal"
+            variant="outlined"
+          />
+        </div>
         <Box display="flex" gap={2}>
-          <TextField
-            fullWidth
-            label="Data de Expiração"
-            id="form-checkout__expirationDate"
-            name="expirationDate"
-            placeholder="MM/YY"
-            value={cardDetails.expirationDate}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-          />
-          <TextField
-            fullWidth
-            label="Código de Segurança"
-            id="form-checkout__securityCode"
-            name="securityCode"
-            placeholder="123"
-            value={cardDetails.securityCode}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-          />
+          <div id="form-checkout__expirationDate">
+            <TextField
+              fullWidth
+              label="Data de Expiração"
+              placeholder="MM/YY"
+              value={cardDetails.expirationDate}
+              onChange={handleChange}
+              margin="normal"
+              variant="outlined"
+            />
+          </div>
+          <div id="form-checkout__securityCode">
+            <TextField
+              fullWidth
+              label="Código de Segurança"
+              placeholder="123"
+              value={cardDetails.securityCode}
+              onChange={handleChange}
+              margin="normal"
+              variant="outlined"
+            />
+          </div>
         </Box>
-        <TextField
-          fullWidth
-          label="Titular do Cartão"
-          id="form-checkout__cardholderName"
-          name="cardholderName"
-          placeholder="Nome do titular"
-          value={cardDetails.cardholderName}
-          onChange={handleChange}
-          margin="normal"
-          variant="outlined"
-        />
+        <div id="form-checkout__cardholderName">
+          <TextField
+            fullWidth
+            label="Titular do Cartão"
+            placeholder="Nome do titular"
+            value={cardDetails.cardholderName}
+            onChange={handleChange}
+            margin="normal"
+            variant="outlined"
+          />
+        </div>
         <FormControl fullWidth margin="normal" variant="outlined">
           <InputLabel>Parcelas</InputLabel>
           <Select
