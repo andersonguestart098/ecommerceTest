@@ -81,32 +81,23 @@ const Checkout: React.FC = () => {
           onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
             if (error) {
               console.error("Erro ao obter métodos de pagamento:", error);
+            } else if (!paymentMethods || !paymentMethods[0]?.payer_costs) {
+              alert("Nenhuma opção de parcelamento disponível.");
             } else {
               console.log("Métodos de pagamento recebidos:", paymentMethods);
-              if (!paymentMethods || !paymentMethods.length) {
-                alert("Método de pagamento inválido ou não encontrado.");
-              }
             }
           },
+
           onSubmit: async (event: any) => {
             event.preventDefault();
             const formData = cardForm.getCardFormData();
-            console.log("Dados do formulário obtidos:", formData);
 
-            // Cheque se os valores essenciais estão presentes antes de enviar ao backend
-            if (!formData.amount || Number(formData.amount) <= 0) {
-              console.error(
-                "Valor de `transaction_amount` é inválido ou não fornecido."
-              );
-              alert("Erro: valor do pagamento é inválido.");
-              return;
-            }
-
-            if (!formData.paymentMethodId || !formData.token) {
-              console.error(
-                "Erro: Dados essenciais ausentes (token ou método de pagamento)."
-              );
-              alert("Erro ao processar pagamento. Dados ausentes.");
+            // Verifica se o campo `installments` é um número válido
+            if (
+              isNaN(Number(formData.installments)) ||
+              formData.installments === "Parcelas"
+            ) {
+              alert("Selecione o número de parcelas válido.");
               return;
             }
 
@@ -115,7 +106,7 @@ const Checkout: React.FC = () => {
               issuer_id: formData.issuerId,
               payment_method_id: formData.paymentMethodId,
               transaction_amount: Number(formData.amount),
-              installments: Number(formData.installments),
+              installments: Number(formData.installments), // Garantia de ser um número
               description: "Descrição do produto",
               payer: {
                 email: formData.cardholderEmail,
