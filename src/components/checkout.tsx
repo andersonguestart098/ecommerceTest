@@ -33,7 +33,7 @@ const Checkout: React.FC = () => {
       });
 
       const cardForm = mp.cardForm({
-        amount: String(parsedData.amount), // AQUI: valor a ser passado ao SDK
+        amount: String(parsedData.amount),
         iframe: true,
         form: {
           id: "form-checkout",
@@ -81,10 +81,28 @@ const Checkout: React.FC = () => {
           onPaymentMethodsReceived: (error: any, paymentMethods: any) => {
             if (error) {
               console.error("Erro ao obter métodos de pagamento:", error);
-            } else if (!paymentMethods || !paymentMethods[0]?.payer_costs) {
-              alert("Nenhuma opção de parcelamento disponível.");
+              return;
+            }
+
+            if (paymentMethods && paymentMethods[0]?.payer_costs) {
+              const installmentOptions = paymentMethods[0].payer_costs;
+              // Preenche o campo com o primeiro valor de parcelamento como "1x"
+              const installmentsSelect = document.getElementById(
+                "form-checkout__installments"
+              ) as HTMLSelectElement;
+              installmentsSelect.innerHTML = ""; // Limpa as opções anteriores
+
+              installmentOptions.forEach((option: any) => {
+                const optionElement = document.createElement("option");
+                optionElement.value = option.installments;
+                optionElement.text = `${option.installments}x de ${option.recommended_message}`;
+                installmentsSelect.appendChild(optionElement);
+              });
+
+              // Seleciona a opção de 1 parcela como padrão
+              installmentsSelect.value = "1";
             } else {
-              console.log("Métodos de pagamento recebidos:", paymentMethods);
+              alert("Nenhuma opção de parcelamento disponível.");
             }
           },
 
@@ -106,7 +124,7 @@ const Checkout: React.FC = () => {
               issuer_id: formData.issuerId,
               payment_method_id: formData.paymentMethodId,
               transaction_amount: Number(formData.amount),
-              installments: Number(formData.installments), // Garantia de ser um número
+              installments: Number(formData.installments),
               description: "Descrição do produto",
               payer: {
                 email: formData.cardholderEmail,
