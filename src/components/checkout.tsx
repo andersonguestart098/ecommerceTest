@@ -14,7 +14,7 @@ const Checkout: React.FC = () => {
     const checkoutData = localStorage.getItem("checkoutData");
     const parsedData = checkoutData
       ? JSON.parse(checkoutData)
-      : { amount: 100.5 };
+      : { amount: 100.5, items: [] }; // Defina um valor padrão para items
 
     if (!publicKey) {
       console.error("Chave pública do Mercado Pago não encontrada!");
@@ -26,8 +26,8 @@ const Checkout: React.FC = () => {
         locale: "pt-BR",
       });
 
-      // Acessa o Device ID gerado pelo SDK de segurança do Mercado Pago
-      setDeviceId(window.MP_DEVICE_SESSION_ID);
+      // Obtém o device_id do SDK
+      setDeviceId(mp.getIdentification());
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -70,16 +70,13 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error)
-              return console.warn("Erro ao montar o formulário: ", error);
+            if (error) return console.warn("Erro ao montar o formulário: ", error);
             setIsMpReady(true);
           },
           onValidityChange: (error: any, field: any) => {
             if (error) {
               console.error("Erro de validação no formulário:", field);
-              alert(
-                "Erro de validação em um ou mais campos. Corrija antes de continuar."
-              );
+              alert("Erro de validação em um ou mais campos. Corrija antes de continuar.");
             }
           },
           onError: (error: any) => {
@@ -99,6 +96,16 @@ const Checkout: React.FC = () => {
               return;
             }
 
+            // Garante que items estão formatados corretamente
+            const items = parsedData.items.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              description: item.description,
+              category_id: item.category_id || "default",
+            }));
+
             const paymentData = {
               token: formData.token,
               issuer_id: formData.issuerId,
@@ -116,8 +123,8 @@ const Checkout: React.FC = () => {
                   number: formData.identificationNumber,
                 },
               },
-              device_id: deviceId, // Enviar o device_id gerado
-              items: parsedData.items || [], // Enviar itens com categoria ao backend
+              device_id: deviceId, // Envia o device_id capturado
+              items, // Envia os items formatados
             };
 
             console.log("Dados de pagamento:", paymentData); // Log para verificar os dados enviados
