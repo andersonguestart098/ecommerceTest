@@ -85,13 +85,16 @@ const CartList: React.FC = () => {
       return;
     }
 
-    const totalPrice = (
-      totalProductAmount + (selectedFreightOption?.price || 0)
-    ).toFixed(2);
+    // Assegura que os valores são números antes de realizar a operação e aplicar o toFixed.
+    const freightPrice = Number(selectedFreightOption?.price || 0);
+    const totalPrice = (Number(totalProductAmount) + freightPrice).toFixed(2);
+
     console.log("Salvando no localStorage:", {
       amount: totalProductAmount.toFixed(2),
       totalPrice,
     });
+
+    // Armazena como strings formatadas com toFixed(2) para manter a precisão monetária
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount.toFixed(2), totalPrice })
