@@ -26,9 +26,9 @@ const Checkout: React.FC = () => {
         locale: "pt-BR",
       });
 
-      // Captura o `deviceId`
-      const deviceId = mp?.getIdentification();
-      setDeviceId(deviceId);
+      // Capturando o `deviceId` corretamente
+      const mpDeviceId = mp.fields.create("deviceId");
+      setDeviceId(mpDeviceId);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -118,7 +118,7 @@ const Checkout: React.FC = () => {
                   number: formData.identificationNumber,
                 },
               },
-              device_id: deviceId, // Adiciona o deviceId aqui
+              device_id: deviceId,
               items: [
                 {
                   id: "1234",
@@ -129,7 +129,7 @@ const Checkout: React.FC = () => {
                   category_id: "electronics",
                 },
               ],
-              external_reference: "pedido1234", // Referência externa para conciliação
+              external_reference: "pedido1234",
             };
 
             try {
@@ -167,7 +167,7 @@ const Checkout: React.FC = () => {
       <h2>Pagamento</h2>
       <form
         id="form-checkout"
-        style={{ display: "flex", flexDirection: "column" }}
+        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
       >
         <div id="form-checkout__cardNumber" className="container"></div>
         <div id="form-checkout__expirationDate" className="container"></div>
@@ -215,13 +215,24 @@ const Checkout: React.FC = () => {
             display: inline-block;
             border: 1px solid rgb(118, 118, 118);
             border-radius: 2px;
-            padding: 1px 2px;
+            padding: 8px;
             margin-bottom: 10px;
           }
           #form-checkout {
             display: flex;
             flex-direction: column;
             max-width: 600px;
+          }
+          #form-checkout__submit {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+          }
+          #form-checkout__submit:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
           }
         `}
       </style>
