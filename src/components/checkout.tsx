@@ -200,7 +200,7 @@ const Checkout: React.FC = () => {
           placeholder="E-mail"
         />
         <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>
-          Pagar
+          PAGAR
         </button>
         <progress value="0" className="progress-bar">
           Carregando...
