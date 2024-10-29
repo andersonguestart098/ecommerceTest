@@ -84,21 +84,24 @@ const Checkout: React.FC = () => {
             }
 
             try {
-              const response = await axios.post("/payment/process_payment", {
-                token: formData.token,
-                issuer_id: formData.issuerId,
-                payment_method_id: formData.paymentMethodId,
-                transaction_amount: Number(formData.amount),
-                installments: Number(formData.installments),
-                description: "Descrição do produto",
-                payer: {
-                  email: formData.cardholderEmail,
-                  identification: {
-                    type: formData.identificationType,
-                    number: formData.identificationNumber,
+              const response = await axios.post(
+                "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+                {
+                  token: formData.token,
+                  issuer_id: formData.issuerId,
+                  payment_method_id: formData.paymentMethodId,
+                  transaction_amount: Number(formData.amount),
+                  installments: Number(formData.installments),
+                  description: "Descrição do produto",
+                  payer: {
+                    email: formData.cardholderEmail,
+                    identification: {
+                      type: formData.identificationType,
+                      number: formData.identificationNumber,
+                    },
                   },
-                },
-              });
+                }
+              );
               console.log("Resposta do servidor:", response.data);
 
               if (response.data.status === "approved") {
