@@ -26,10 +26,8 @@ const Checkout: React.FC = () => {
         locale: "pt-BR",
       });
 
-      // Criar Device ID para rastrear o dispositivo do cliente
-      const deviceModule = mp.device;
-      const generatedDeviceId = deviceModule.create();
-      setDeviceId(generatedDeviceId);
+      // Acessa o Device ID gerado pelo SDK de segurança do Mercado Pago
+      setDeviceId(window.MP_DEVICE_SESSION_ID);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -145,14 +143,21 @@ const Checkout: React.FC = () => {
       });
     };
 
-    const script = document.createElement("script");
-    script.src = "https://sdk.mercadopago.com/js/v2";
-    script.async = true;
-    script.onload = initializeMercadoPago;
-    document.body.appendChild(script);
+    // Adiciona o SDK do Mercado Pago e o script de segurança
+    const scriptSdk = document.createElement("script");
+    scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
+    scriptSdk.async = true;
+    scriptSdk.onload = initializeMercadoPago;
+    document.body.appendChild(scriptSdk);
+
+    const scriptSecurity = document.createElement("script");
+    scriptSecurity.src = "https://www.mercadopago.com/v2/security.js";
+    scriptSecurity.setAttribute("view", "checkout");
+    document.body.appendChild(scriptSecurity);
 
     return () => {
-      document.body.removeChild(script);
+      document.body.removeChild(scriptSdk);
+      document.body.removeChild(scriptSecurity);
     };
   }, [publicKey]);
 
