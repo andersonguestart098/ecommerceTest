@@ -14,6 +14,7 @@ const Checkout: React.FC = () => {
     }
 
     const initializeMercadoPago = () => {
+      console.log("Inicializando o SDK do Mercado Pago...");
       const mp = new (window as any).MercadoPago(publicKey, {
         locale: "pt-BR",
       });
@@ -67,39 +68,44 @@ const Checkout: React.FC = () => {
               return;
             }
             setIsMpReady(true);
+            console.log("Formulário montado com sucesso.");
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
-            const {
-              paymentMethodId: payment_method_id,
-              issuerId: issuer_id,
-              cardholderEmail: email,
-              amount,
-              token,
-              installments,
-              identificationNumber,
-              identificationType,
-            } = cardForm.getCardFormData();
+            console.log("Submetendo formulário...");
+
+            const formData = cardForm.getCardFormData();
+            console.log("Dados do formulário obtidos:", formData);
+
+            if (!formData.token) {
+              console.error("Token de cartão não gerado corretamente.");
+              alert("Erro ao gerar token do cartão. Verifique os dados.");
+              return;
+            }
 
             try {
               const response = await axios.post("/process_payment", {
-                token,
-                issuer_id,
-                payment_method_id,
-                transaction_amount: Number(amount),
-                installments: Number(installments),
+                token: formData.token,
+                issuer_id: formData.issuerId,
+                payment_method_id: formData.paymentMethodId,
+                transaction_amount: Number(formData.amount),
+                installments: Number(formData.installments),
                 description: "Descrição do produto",
                 payer: {
-                  email,
+                  email: formData.cardholderEmail,
                   identification: {
-                    type: identificationType,
-                    number: identificationNumber,
+                    type: formData.identificationType,
+                    number: formData.identificationNumber,
                   },
                 },
               });
+              console.log("Resposta do servidor:", response.data);
+
               if (response.data.status === "approved") {
+                console.log("Pagamento aprovado!");
                 navigate("/sucesso");
               } else {
+                console.warn("Pagamento pendente ou falhou:", response.data);
                 alert("Pagamento pendente ou falhou. Verifique a transação.");
               }
             } catch (error) {
@@ -108,7 +114,7 @@ const Checkout: React.FC = () => {
             }
           },
           onFetching: (resource: any) => {
-            console.log("Fetching resource: ", resource);
+            console.log("Buscando recurso: ", resource);
 
             const progressBar = document.querySelector(".progress-bar");
             progressBar?.removeAttribute("value");
