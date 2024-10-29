@@ -208,12 +208,13 @@ const CartList: React.FC = () => {
                 </List>
               </Box>
             )}
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
-            >
-              Valor Total do Pedido: R$ {(totalPrice + (selectedFreightOption?.price || 0)).toFixed(2)}
-            </Typography>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
+          >
+            Valor Total do Pedido: R$ {(totalPrice + Number(selectedFreightOption?.price || 0)).toFixed(2)}
+          </Typography>
+
             <Button
               variant="contained"
               color="secondary"
