@@ -8,6 +8,8 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [totalPrice, setTotalPrice] = useState(100); // ajuste o valor conforme necessário
 
+  console.log("Chave Pública Mercado Pago:", process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY);
+
   const initialization = {
     amount: totalPrice,
   };
