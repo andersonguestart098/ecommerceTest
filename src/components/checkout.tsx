@@ -7,12 +7,13 @@ import {
   ICardPaymentBrickPayer,
   ICardPaymentFormData,
 } from "@mercadopago/sdk-react/bricks/cardPayment/type";
+import { loadMercadoPago } from "@mercadopago/sdk-js"; // Importação correta para carregar o SDK
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [totalPrice, setTotalPrice] = useState(100); // ajuste o valor conforme necessário
+  const [mercadoPago, setMercadoPago] = useState<any>(null);
 
-  // Use a chave pública diretamente ou garanta que o ambiente esteja configurado
   const publicKey =
     process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY ||
     "APP_USR-51fa4fd6-96e4-4133-bd76-398dc77afe2e";
@@ -23,11 +24,14 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    // Use o SDK com a chave pública para instanciar o MercadoPago
-    import("@mercadopago/sdk-js").then((MercadoPago) => {
-      new MercadoPago(publicKey);
-    });
+    // Carrega o SDK do Mercado Pago com a chave pública
+    const mpInstance = loadMercadoPago(publicKey);
+    setMercadoPago(mpInstance);
   }, [publicKey]);
+
+  if (!mercadoPago) {
+    return <div>Carregando pagamento...</div>;
+  }
 
   const initialization = {
     amount: totalPrice,
