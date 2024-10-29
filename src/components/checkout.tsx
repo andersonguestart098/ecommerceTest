@@ -18,7 +18,7 @@ const Checkout: React.FC = () => {
         locale: "pt-BR",
       });
 
-      mp.cardForm({
+      const cardForm = mp.cardForm({
         amount: "100.5",
         iframe: true,
         form: {
@@ -34,14 +34,15 @@ const Checkout: React.FC = () => {
           securityCode: {
             id: "form-checkout__securityCode",
             placeholder: "Código de segurança",
-            type: "text",
-            maxlength: "3",
           },
           cardholderName: {
             id: "form-checkout__cardholderName",
             placeholder: "Titular do cartão",
           },
-          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
+          issuer: {
+            id: "form-checkout__issuer",
+            placeholder: "Banco emissor",
+          },
           installments: {
             id: "form-checkout__installments",
             placeholder: "Parcelas",
@@ -61,44 +62,35 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error)
-              return console.warn("Erro ao montar o formulário: ", error);
+            if (error) {
+              console.warn("Erro ao montar o formulário: ", error);
+              return;
+            }
             setIsMpReady(true);
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
             const {
-              paymentMethodId,
-              issuerId,
-              cardholderEmail,
+              paymentMethodId: payment_method_id,
+              issuerId: issuer_id,
+              cardholderEmail: email,
               amount,
               token,
               installments,
               identificationNumber,
               identificationType,
-              securityCode,
-            } = mp.cardForm().getCardFormData();
-
-            // Validação extra de securityCode
-            if (
-              !securityCode ||
-              isNaN(Number(securityCode)) ||
-              securityCode.length !== 3
-            ) {
-              alert("O código de segurança deve ser numérico e ter 3 dígitos.");
-              return;
-            }
+            } = cardForm.getCardFormData();
 
             try {
               const response = await axios.post("/process_payment", {
                 token,
-                issuer_id: issuerId,
-                payment_method_id: paymentMethodId,
+                issuer_id,
+                payment_method_id,
                 transaction_amount: Number(amount),
                 installments: Number(installments),
                 description: "Descrição do produto",
                 payer: {
-                  email: cardholderEmail,
+                  email,
                   identification: {
                     type: identificationType,
                     number: identificationNumber,
@@ -117,6 +109,7 @@ const Checkout: React.FC = () => {
           },
           onFetching: (resource: any) => {
             console.log("Fetching resource: ", resource);
+
             const progressBar = document.querySelector(".progress-bar");
             progressBar?.removeAttribute("value");
 
@@ -142,6 +135,23 @@ const Checkout: React.FC = () => {
   return (
     <div>
       <h2>Pagamento</h2>
+      <style>
+        {`
+          #form-checkout {
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+          }
+
+          .container {
+            height: 18px;
+            display: inline-block;
+            border: 1px solid rgb(118, 118, 118);
+            border-radius: 2px;
+            padding: 1px 2px;
+          }
+        `}
+      </style>
       <form id="form-checkout">
         <div id="form-checkout__cardNumber" className="container"></div>
         <div id="form-checkout__expirationDate" className="container"></div>
