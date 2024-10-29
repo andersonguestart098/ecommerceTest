@@ -1,9 +1,13 @@
+// Checkout.tsx
 import React, { useState, useEffect } from "react";
 import { CardPayment } from "@mercadopago/sdk-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ICardPaymentBrickPayer, ICardPaymentFormData } from "@mercadopago/sdk-react/bricks/cardPayment/type";
-import { MercadoPagoInstance } from "../components/services/MercadoPagoInstance"; // ajuste o caminho conforme necessário
+import {
+  ICardPaymentBrickPayer,
+  ICardPaymentFormData,
+} from "@mercadopago/sdk-react/bricks/cardPayment/type";
+import { MercadoPagoInstance } from "../components/services/MercadoPagoInstance";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +16,7 @@ const Checkout: React.FC = () => {
 
   useEffect(() => {
     const initializeMercadoPago = async () => {
-      const instance = await MercadoPagoInstance.getInstance();
+      const instance = await MercadoPagoInstance.getInstance(); // Agora usa a chave pública definida na classe
       setMercadoPago(instance);
     };
     initializeMercadoPago();
@@ -26,7 +30,9 @@ const Checkout: React.FC = () => {
     amount: totalPrice,
   };
 
-  const onSubmit = async (formData: ICardPaymentFormData<ICardPaymentBrickPayer>): Promise<void> => {
+  const onSubmit = async (
+    formData: ICardPaymentFormData<ICardPaymentBrickPayer>
+  ): Promise<void> => {
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/create-transparent",
