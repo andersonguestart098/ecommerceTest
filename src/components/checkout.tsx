@@ -34,6 +34,8 @@ const Checkout: React.FC = () => {
           securityCode: {
             id: "form-checkout__securityCode",
             placeholder: "Código de segurança",
+            type: "text",
+            maxlength: "3",
           },
           cardholderName: {
             id: "form-checkout__cardholderName",
@@ -74,8 +76,20 @@ const Checkout: React.FC = () => {
               installments,
               identificationNumber,
               identificationType,
+              securityCode,
             } = mp.cardForm().getCardFormData();
 
+            // Validação extra de securityCode
+            if (
+              !securityCode ||
+              isNaN(Number(securityCode)) ||
+              securityCode.length !== 3
+            ) {
+              alert("O código de segurança deve ser numérico e ter 3 dígitos.");
+              return;
+            }
+
+            // Prossiga com a criação do pagamento se o securityCode for válido
             try {
               const response = await axios.post("/process_payment", {
                 token,
