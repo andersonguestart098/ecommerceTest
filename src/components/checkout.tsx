@@ -14,7 +14,7 @@ const Checkout: React.FC = () => {
     const checkoutData = localStorage.getItem("checkoutData");
     const parsedData = checkoutData
       ? JSON.parse(checkoutData)
-      : { amount: 100.5, items: [] }; // Defina um valor padrão para items
+      : { amount: 100.5, items: [] };
 
     if (!publicKey) {
       console.error("Chave pública do Mercado Pago não encontrada!");
@@ -22,12 +22,10 @@ const Checkout: React.FC = () => {
     }
 
     const initializeMercadoPago = () => {
-      const mp = new (window as any).MercadoPago(publicKey, {
-        locale: "pt-BR",
-      });
+      const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
 
-      // Obtém o device_id do SDK
-      setDeviceId(mp.getIdentification());
+      // Acessa o Device ID gerado pelo SDK de segurança do Mercado Pago
+      setDeviceId(window.MP_DEVICE_SESSION_ID);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -70,8 +68,11 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error) return console.warn("Erro ao montar o formulário: ", error);
-            setIsMpReady(true);
+            if (error) {
+              console.warn("Erro ao montar o formulário: ", error);
+            } else {
+              setIsMpReady(true);
+            }
           },
           onValidityChange: (error: any, field: any) => {
             if (error) {
@@ -96,7 +97,6 @@ const Checkout: React.FC = () => {
               return;
             }
 
-            // Garante que items estão formatados corretamente
             const items = parsedData.items.map((item: any) => ({
               id: item.id,
               title: item.title,
@@ -123,11 +123,11 @@ const Checkout: React.FC = () => {
                   number: formData.identificationNumber,
                 },
               },
-              device_id: deviceId, // Envia o device_id capturado
-              items, // Envia os items formatados
+              device_id: deviceId,
+              items,
             };
 
-            console.log("Dados de pagamento:", paymentData); // Log para verificar os dados enviados
+            console.log("Dados de pagamento:", paymentData);
 
             try {
               const response = await axios.post(
@@ -135,7 +135,7 @@ const Checkout: React.FC = () => {
                 paymentData
               );
 
-              console.log("Resposta do servidor:", response.data); // Log da resposta do servidor
+              console.log("Resposta do servidor:", response.data);
 
               if (response.data.status === "approved") {
                 navigate("/sucesso");
@@ -206,7 +206,6 @@ const Checkout: React.FC = () => {
           id="form-checkout__cardholderEmail"
           placeholder="E-mail"
         />
-
         <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>
           Pagar
         </button>
@@ -214,34 +213,6 @@ const Checkout: React.FC = () => {
           Carregando...
         </progress>
       </form>
-      <style>
-        {`
-          .container {
-            height: 18px;
-            display: inline-block;
-            border: 1px solid rgb(118, 118, 118);
-            border-radius: 2px;
-            padding: 8px;
-            margin-bottom: 10px;
-          }
-          #form-checkout {
-            display: flex;
-            flex-direction: column;
-            max-width: 600px;
-          }
-          #form-checkout__submit {
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-          }
-          #form-checkout__submit:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-          }
-        `}
-      </style>
     </div>
   );
 };
