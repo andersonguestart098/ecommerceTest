@@ -45,6 +45,44 @@ const CartList: React.FC = () => {
     .reduce((total, item) => total + item.price * item.quantity, 0)
     .toFixed(2);
 
+  const handleCalculateFreight = async () => {
+    setLoadingFreight(true);
+    try {
+      const tokenResponse = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
+      );
+      const token = tokenResponse.data.token;
+
+      const requestData = {
+        cepOrigem: "01002001", // CEP de origem fixo
+        cepDestino,
+        height: 4,
+        width: 12,
+        length: 17,
+        weight: 0.3,
+      };
+
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setFreightOptions(response.data);
+      console.log("Opções de frete recebidas:", response.data);
+    } catch (error) {
+      console.error("Erro ao calcular frete:", error);
+      alert("Erro ao calcular frete. Verifique o console para mais detalhes.");
+    } finally {
+      setLoadingFreight(false);
+    }
+  };
+
   const handleCheckout = () => {
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
@@ -56,7 +94,6 @@ const CartList: React.FC = () => {
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
 
-    // Estrutura dos itens conforme esperado pelo Mercado Pago
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -66,10 +103,8 @@ const CartList: React.FC = () => {
       category_id: item.category_id || "default",
     }));
 
-    // Log para verificar os dados antes de salvar no `localStorage`
     console.log("Itens prontos para o localStorage:", items);
 
-    // Validação para garantir que cada item tenha `productId` e `quantity`
     if (
       items.some((item) => item.productId === "undefined" || item.quantity <= 0)
     ) {
@@ -80,7 +115,6 @@ const CartList: React.FC = () => {
       return;
     }
 
-    // Armazenar os dados de checkout no localStorage, incluindo o userId
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount, totalPrice, items, userId })
@@ -173,10 +207,11 @@ const CartList: React.FC = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => console.log("Calcular frete aqui")}
+              onClick={handleCalculateFreight}
               fullWidth
+              disabled={loadingFreight}
             >
-              Calcular Frete
+              {loadingFreight ? "Calculando..." : "Calcular Frete"}
             </Button>
             {freightOptions.length > 0 && (
               <Box sx={{ mt: 2 }}>
