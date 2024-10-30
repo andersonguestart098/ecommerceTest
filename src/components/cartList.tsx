@@ -30,8 +30,6 @@ const CartList: React.FC = () => {
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
   const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
-
-  // Captura do userId do localStorage
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,81 +43,52 @@ const CartList: React.FC = () => {
 
   const totalProductAmount = cart
     .reduce((total, item) => total + item.price * item.quantity, 0)
-    .toFixed(2); // Garantia de precisão monetária
-
-  const obterTokenAcesso = async (): Promise<string> => {
-    try {
-      const response = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
-      );
-      return response.data.token;
-    } catch (error) {
-      console.error("Erro ao obter token de acesso:", error);
-      throw new Error("Falha ao obter token de acesso");
-    }
-  };
-
-  const handleCalculateFreight = async () => {
-    setLoadingFreight(true);
-    try {
-      const token = await obterTokenAcesso();
-      const requestData = {
-        cepOrigem: "01002001",
-        cepDestino: cepDestino,
-        height: 4,
-        width: 12,
-        length: 17,
-        weight: 0.3,
-      };
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setFreightOptions(response.data);
-    } catch (error) {
-      console.error("Erro ao calcular frete:", error);
-      alert("Erro ao calcular frete. Confira o console para mais detalhes.");
-    } finally {
-      setLoadingFreight(false);
-    }
-  };
+    .toFixed(2);
 
   const handleCheckout = () => {
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
-  
+
     const freightPrice = Number(selectedFreightOption?.price || 0).toFixed(2);
     const totalPrice = (
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
-  
-    // Estrutura dos itens conforme esperado pelo Mercado Pago, incluindo productId
+
+    // Estrutura dos itens conforme esperado pelo Mercado Pago
     const items = cart.map((item) => ({
-      productId: String(item.id), // Alterado para incluir `productId` corretamente
+      productId: String(item.id),
       title: item.name,
       quantity: Number(item.quantity),
       unit_price: Number(item.price),
       description: item.description || "Produto sem descrição",
       category_id: item.category_id || "default",
     }));
-  
+
+    // Log para verificar os dados antes de salvar no `localStorage`
+    console.log("Itens prontos para o localStorage:", items);
+
+    // Validação para garantir que cada item tenha `productId` e `quantity`
+    if (
+      items.some((item) => item.productId === "undefined" || item.quantity <= 0)
+    ) {
+      console.error(
+        "Erro: Um ou mais itens têm `productId` ou `quantity` inválidos."
+      );
+      alert("Erro ao processar itens: verifique o carrinho e tente novamente.");
+      return;
+    }
+
     // Armazenar os dados de checkout no localStorage, incluindo o userId
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount, totalPrice, items, userId })
     );
-  
+
     navigate("/checkout");
   };
-  
+
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <IconButton
@@ -204,11 +173,10 @@ const CartList: React.FC = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleCalculateFreight}
+              onClick={() => console.log("Calcular frete aqui")}
               fullWidth
-              disabled={loadingFreight}
             >
-              {loadingFreight ? "Calculando..." : "Calcular Frete"}
+              Calcular Frete
             </Button>
             {freightOptions.length > 0 && (
               <Box sx={{ mt: 2 }}>
