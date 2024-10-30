@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
+  const [sdkLoaded, setSdkLoaded] = useState(false); // Controle para o carregamento do SDK
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [deviceId, setDeviceId] = useState<string | null>("default_device_id");
@@ -38,6 +39,7 @@ const Checkout: React.FC = () => {
       return new Promise<void>((resolve, reject) => {
         if (window.MercadoPago) {
           console.log("SDK do Mercado Pago já carregado");
+          setSdkLoaded(true); // Marca o SDK como carregado
           resolve();
         } else {
           const scriptSdk = document.createElement("script");
@@ -45,6 +47,7 @@ const Checkout: React.FC = () => {
           scriptSdk.async = true;
           scriptSdk.onload = () => {
             console.log("SDK do Mercado Pago carregado com sucesso");
+            setSdkLoaded(true); // Marca o SDK como carregado
             resolve();
           };
           scriptSdk.onerror = (error) => {
@@ -78,18 +81,18 @@ const Checkout: React.FC = () => {
     console.log("Device ID gerado:", capturedDeviceId);
   };
 
-  // useEffect para montar o cardForm quando o método de pagamento é "card"
+  // useEffect para montar o cardForm quando SDK está carregado e "Cartão" foi selecionado
   useEffect(() => {
-    console.log("useEffect para selectedPaymentMethod:", selectedPaymentMethod);
+    console.log("useEffect para configurar o cardForm");
 
-    if (selectedPaymentMethod === "card" && window.MercadoPago && publicKey) {
+    if (sdkLoaded && selectedPaymentMethod === "card" && publicKey) {
       console.log("Inicializando cardForm para pagamento com cartão");
       const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
       initializeCardForm(mp);
     } else {
-      console.log("selectedPaymentMethod não é 'card' ou SDK não carregado");
+      console.log("SDK não carregado ou selectedPaymentMethod não é 'card'");
     }
-  }, [selectedPaymentMethod, publicKey, checkoutData.amount]);
+  }, [sdkLoaded, selectedPaymentMethod, publicKey, checkoutData.amount]);
 
   const initializeCardForm = (mp: any) => {
     console.log("Configurando o cardForm...");
