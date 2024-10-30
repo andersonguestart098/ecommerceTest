@@ -11,17 +11,23 @@ const Checkout: React.FC = () => {
   const [deviceId, setDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
+    const checkoutData = localStorage.getItem("checkoutData");
+    const parsedData = checkoutData
+      ? JSON.parse(checkoutData)
+      : { amount: 100.5, items: [] };
+
+    console.log("Dados de checkout carregados:", parsedData);
+
+    if (!publicKey) {
+      console.error("Chave pública do Mercado Pago não encontrada!");
+      return;
+    }
+
     const initializeMercadoPago = () => {
       const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
-  
-      // Captura o device ID gerado pelo SDK de segurança do Mercado Pago
+
       setDeviceId(window.MP_DEVICE_SESSION_ID);
       console.log("Device ID gerado:", window.MP_DEVICE_SESSION_ID);
-
-      const checkoutData = localStorage.getItem("checkoutData");
-      const parsedData = checkoutData
-        ? JSON.parse(checkoutData)
-        : { amount: 100.5, items: [] };
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -102,18 +108,18 @@ const Checkout: React.FC = () => {
         },
       });
     };
-  
+
     const scriptSdk = document.createElement("script");
     scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
     scriptSdk.async = true;
     scriptSdk.onload = initializeMercadoPago;
     document.body.appendChild(scriptSdk);
-  
+
     const scriptSecurity = document.createElement("script");
     scriptSecurity.src = "https://www.mercadopago.com/v2/security.js";
     scriptSecurity.setAttribute("view", "checkout");
     document.body.appendChild(scriptSecurity);
-  
+
     return () => {
       document.body.removeChild(scriptSdk);
       document.body.removeChild(scriptSecurity);
