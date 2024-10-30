@@ -168,7 +168,7 @@ const Checkout: React.FC = () => {
 
     try {
       const userResponse = await axios.get(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/user/${userId}`
+        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
       );
       const userData = userResponse.data;
 
