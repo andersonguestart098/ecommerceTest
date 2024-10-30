@@ -7,6 +7,7 @@ const Checkout: React.FC = () => {
   const [isMpReady, setIsMpReady] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
+  const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
   >(null);
@@ -41,11 +42,11 @@ const Checkout: React.FC = () => {
       sdkLoaded &&
       mpInstance &&
       selectedPaymentMethod === "card" &&
-      formRef.current
+      !cardFormInstance
     ) {
       initializeCardForm();
     }
-  }, [sdkLoaded, mpInstance, selectedPaymentMethod, formRef.current]);
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod, cardFormInstance]);
 
   const initializeCardForm = () => {
     if (mpInstance && formRef.current) {
@@ -111,12 +112,15 @@ const Checkout: React.FC = () => {
           },
         },
       });
+      setCardFormInstance(cardForm); // Armazena a instância para reutilização
     }
   };
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
-    const formData = mpInstance.getCardFormData();
+    if (!cardFormInstance) return;
+
+    const formData = cardFormInstance.getCardFormData(); // Usa a instância do cardForm para obter os dados
     const paymentData = {
       token: formData.token,
       issuer_id: formData.issuerId,
