@@ -138,7 +138,11 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const response = await axios.post("/process_payment", paymentData);
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/process_payment", // Certifique-se de que o endpoint está correto
+        paymentData,
+        { headers: { "Content-Type": "application/json" } }
+      );
       response.data.status === "approved"
         ? navigate("/sucesso")
         : alert("Pagamento pendente ou falhou.");
