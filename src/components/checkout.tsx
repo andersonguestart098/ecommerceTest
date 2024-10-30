@@ -23,11 +23,12 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const initializeMercadoPago = () => {
-      const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
+const initializeMercadoPago = () => {
+  const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
 
-      setDeviceId(window.MP_DEVICE_SESSION_ID);
-      console.log("Device ID gerado:", window.MP_DEVICE_SESSION_ID);
+  // Captura o `device_id`
+  setDeviceId(window.MP_DEVICE_SESSION_ID);
+  console.log("Device ID gerado:", window.MP_DEVICE_SESSION_ID);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
