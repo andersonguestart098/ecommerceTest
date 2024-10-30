@@ -23,11 +23,21 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const initializeMercadoPago = () => {
+    const initializeMercadoPago = async () => {
       const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
 
-      setDeviceId(window.MP_DEVICE_SESSION_ID);
-      console.log("Device ID gerado:", window.MP_DEVICE_SESSION_ID);
+      const capturedDeviceId = await new Promise<string>((resolve) => {
+        const interval = setInterval(() => {
+          const device = window.MP_DEVICE_SESSION_ID;
+          if (device) {
+            clearInterval(interval);
+            resolve(device);
+          }
+        }, 100); // Verifica a cada 100ms até capturar
+      });
+
+      setDeviceId(capturedDeviceId);
+      console.log("Device ID gerado:", capturedDeviceId);
 
       const cardForm = mp.cardForm({
         amount: String(parsedData.amount > 1 ? parsedData.amount : 1),
@@ -81,7 +91,7 @@ const Checkout: React.FC = () => {
                 last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "",
                 identification: { type: formData.identificationType || "CPF", number: formData.identificationNumber },
               },
-              device_id: deviceId,
+              device_id: capturedDeviceId,
               items,
             };
 
@@ -150,4 +160,4 @@ const Checkout: React.FC = () => {
   );
 };
 
-export default Checkout;  
+export default Checkout;
