@@ -146,6 +146,20 @@ const Checkout: React.FC = () => {
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <style>{`
+        #form-checkout {
+          display: flex;
+          flex-direction: column;
+          max-width: 600px;
+        }
+        .container {
+          height: 18px;
+          display: inline-block;
+          border: 1px solid rgb(118, 118, 118);
+          border-radius: 2px;
+          padding: 1px 2px;
+        }
+      `}</style>
       <h2>Resumo do Pedido</h2>
       <p>Total: R$ {checkoutData.totalPrice}</p>
       <p>Frete: R$ {checkoutData.shippingCost}</p>
@@ -157,41 +171,17 @@ const Checkout: React.FC = () => {
       </button>
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-          <input
-            type="text"
-            id="form-checkout__cardNumber"
-            placeholder="Número do cartão"
-          />
-          <input
-            type="text"
-            id="form-checkout__expirationDate"
-            placeholder="Data de expiração (MM/YY)"
-          />
-          <input
-            type="text"
-            id="form-checkout__securityCode"
-            placeholder="Código de segurança"
-          />
+          <div id="form-checkout__cardNumber" className="container"></div>
+          <div id="form-checkout__expirationDate" className="container"></div>
+          <div id="form-checkout__securityCode" className="container"></div>
           <input
             type="text"
             id="form-checkout__cardholderName"
             placeholder="Nome do titular"
           />
-          <input
-            type="text"
-            id="form-checkout__issuer"
-            placeholder="Banco emissor"
-          />
-          <input
-            type="text"
-            id="form-checkout__installments"
-            placeholder="Número de parcelas"
-          />
-          <input
-            type="text"
-            id="form-checkout__identificationType"
-            placeholder="Tipo de documento (ex: CPF)"
-          />
+          <select id="form-checkout__issuer"></select>
+          <select id="form-checkout__installments"></select>
+          <select id="form-checkout__identificationType"></select>
           <input
             type="text"
             id="form-checkout__identificationNumber"
@@ -207,8 +197,11 @@ const Checkout: React.FC = () => {
             id="form-checkout__submit"
             disabled={!isMpReady}
           >
-            Pagar com Cartão
+            Pagar
           </button>
+          <progress value="0" className="progress-bar">
+            Carregando...
+          </progress>
         </form>
       )}
     </div>
