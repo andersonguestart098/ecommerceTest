@@ -99,7 +99,6 @@ const Checkout: React.FC = () => {
               },
               device_id: capturedDeviceId || "default_device_id",
               items,
-              userId,  // Envio do userId junto com os dados de pagamento
             };
 
             console.log("Dados de pagamento prontos para envio:", paymentData);
@@ -107,7 +106,7 @@ const Checkout: React.FC = () => {
             try {
               const response = await axios.post(
                 "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-                paymentData
+                { ...paymentData, userId }
               );
 
               console.log("Resposta do servidor após pagamento:", response.data);
