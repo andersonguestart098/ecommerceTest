@@ -83,28 +83,31 @@ const CartList: React.FC = () => {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
-
+  
     const freightPrice = Number(selectedFreightOption?.price || 0).toFixed(2);
     const totalPrice = (
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
-
+  
+    // Estrutura dos itens conforme esperado pelo Mercado Pago
     const items = cart.map((item) => ({
       id: item.id,
-      title: item.name,
+      title: item.name, // "name" no contexto do carrinho é equivalente ao "title" no MP
       quantity: item.quantity,
-      unit_price: item.price,
+      unit_price: item.price, // Verifique se está correto
       description: item.description || "Produto sem descrição",
       category_id: item.category_id || "default",
     }));
-
+  
+    // Armazenar os dados de checkout no localStorage
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount, totalPrice, items })
     );
-
+  
     navigate("/checkout");
   };
+  
 
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
