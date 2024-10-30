@@ -150,4 +150,4 @@ const Checkout: React.FC = () => {
   );
 };
 
-export default Checkout;
+export default Checkout;  
