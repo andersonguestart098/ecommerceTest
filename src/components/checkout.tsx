@@ -9,7 +9,6 @@ const Checkout: React.FC = () => {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [selectedInstallment, setSelectedInstallment] = useState(1);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem("checkoutData") || "{}");
@@ -20,70 +19,60 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const initializeMercadoPago = async () => {
+    const initializeMercadoPago = () => {
       const mp = new (window as any).MercadoPago(publicKey, {
         locale: "pt-BR",
       });
 
-      const deviceID = await new Promise<string>((resolve) => {
-        const interval = setInterval(() => {
-          const device = window.MP_DEVICE_SESSION_ID;
-          if (device) {
-            clearInterval(interval);
-            resolve(device);
-          }
-        }, 100);
-      });
+      const deviceID = window.MP_DEVICE_SESSION_ID;
       setDeviceId(deviceID);
 
-      if (selectedPaymentMethod === "card") {
-        mp.cardForm({
-          amount: String(data.amount || 1),
-          iframe: true,
-          form: {
-            id: "form-checkout",
-            cardNumber: {
-              id: "form-checkout__cardNumber",
-              placeholder: "Número do cartão",
-            },
-            expirationDate: {
-              id: "form-checkout__expirationDate",
-              placeholder: "MM/YY",
-            },
-            securityCode: {
-              id: "form-checkout__securityCode",
-              placeholder: "Código de segurança",
-            },
-            cardholderName: {
-              id: "form-checkout__cardholderName",
-              placeholder: "Nome",
-            },
-            installments: {
-              id: "form-checkout__installments",
-              placeholder: "Parcelas",
-            },
-            identificationType: {
-              id: "form-checkout__identificationType",
-              placeholder: "Tipo de documento",
-            },
-            identificationNumber: {
-              id: "form-checkout__identificationNumber",
-              placeholder: "CPF",
-            },
-            cardholderEmail: {
-              id: "form-checkout__cardholderEmail",
-              placeholder: "E-mail",
-            },
+      mp.cardForm({
+        amount: String(data.amount || 1),
+        iframe: true,
+        form: {
+          id: "form-checkout",
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
           },
-          callbacks: {
-            onFormMounted: (error: any) => {
-              if (error) console.warn("Erro ao montar o formulário:", error);
-              setIsMpReady(true);
-            },
-            onSubmit: handleCardSubmit,
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/YY",
           },
-        });
-      }
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "Código de segurança",
+          },
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome",
+          },
+          installments: {
+            id: "form-checkout__installments",
+            placeholder: "Parcelas",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de documento",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "CPF",
+          },
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail",
+          },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) console.warn("Erro ao montar o formulário:", error);
+            setIsMpReady(true);
+          },
+          onSubmit: handleCardSubmit,
+        },
+      });
     };
 
     const scriptSdk = document.createElement("script");
@@ -97,7 +86,7 @@ const Checkout: React.FC = () => {
         document.body.removeChild(scriptSdk);
       }
     };
-  }, [publicKey, selectedPaymentMethod]);
+  }, [publicKey]);
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
@@ -141,44 +130,30 @@ const Checkout: React.FC = () => {
   return (
     <div>
       <h2>Checkout</h2>
-      <div>
-        <button onClick={() => setSelectedPaymentMethod("card")}>
-          Pagar com Cartão
+      <form id="form-checkout" onSubmit={handleCardSubmit}>
+        <div id="form-checkout__cardNumber"></div>
+        <div id="form-checkout__expirationDate"></div>
+        <div id="form-checkout__securityCode"></div>
+        <input
+          type="text"
+          id="form-checkout__cardholderName"
+          placeholder="Nome"
+        />
+        <input
+          type="email"
+          id="form-checkout__cardholderEmail"
+          placeholder="E-mail"
+        />
+        <div id="form-checkout__identificationType"></div>
+        <input
+          type="text"
+          id="form-checkout__identificationNumber"
+          placeholder="CPF"
+        />
+        <button type="submit" disabled={!isMpReady}>
+          Pagar
         </button>
-        <button onClick={() => setSelectedPaymentMethod("pix")}>
-          Pagar com Pix
-        </button>
-        <button onClick={() => setSelectedPaymentMethod("boleto")}>
-          Gerar Boleto
-        </button>
-      </div>
-
-      {selectedPaymentMethod === "card" && (
-        <form id="form-checkout" onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber"></div>
-          <div id="form-checkout__expirationDate"></div>
-          <div id="form-checkout__securityCode"></div>
-          <input
-            type="text"
-            id="form-checkout__cardholderName"
-            placeholder="Nome"
-          />
-          <input
-            type="email"
-            id="form-checkout__cardholderEmail"
-            placeholder="E-mail"
-          />
-          <div id="form-checkout__identificationType"></div>
-          <input
-            type="text"
-            id="form-checkout__identificationNumber"
-            placeholder="CPF"
-          />
-          <button type="submit" disabled={!isMpReady}>
-            Pagar
-          </button>
-        </form>
-      )}
+      </form>
     </div>
   );
 };
