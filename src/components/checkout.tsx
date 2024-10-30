@@ -16,6 +16,14 @@ const Checkout: React.FC = () => {
 
     console.log("Dados de checkout carregados:", parsedData);
 
+    // Captura do userId do localStorage
+    const user = localStorage.getItem("user");
+    const userId = user ? JSON.parse(user).id : null;
+    if (!userId) {
+      console.error("User ID não encontrado no localStorage.");
+      return;
+    }
+
     if (!publicKey) {
       console.error("Chave pública do Mercado Pago não encontrada!");
       return;
@@ -91,6 +99,7 @@ const Checkout: React.FC = () => {
               },
               device_id: capturedDeviceId || "default_device_id",
               items,
+              userId,  // Envio do userId junto com os dados de pagamento
             };
 
             console.log("Dados de pagamento prontos para envio:", paymentData);
