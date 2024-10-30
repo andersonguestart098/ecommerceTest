@@ -8,12 +8,12 @@ const Checkout: React.FC = () => {
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
-  const [deviceId, setDeviceId] = useState<string | null>("default_device_id");
+  const [deviceId, setDeviceId] = useState<string | null>(null);
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [userId, setUserId] = useState<string | null>(null);
-  let mpInstance: any; // Adicionar uma variável para armazenar a instância do MercadoPago
+  let mpInstance: any; // Variável global para a instância do MercadoPago
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -33,6 +33,7 @@ const Checkout: React.FC = () => {
     const loadMercadoPagoSdk = () => {
       return new Promise<void>((resolve, reject) => {
         if (window.MercadoPago) {
+          console.log("SDK do Mercado Pago já carregado");
           setSdkLoaded(true);
           resolve();
         } else {
@@ -40,6 +41,7 @@ const Checkout: React.FC = () => {
           scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
           scriptSdk.async = true;
           scriptSdk.onload = () => {
+            console.log("SDK do Mercado Pago carregado com sucesso");
             setSdkLoaded(true);
             resolve();
           };
@@ -50,14 +52,20 @@ const Checkout: React.FC = () => {
     };
 
     loadMercadoPagoSdk()
-      .then(() => initializeMercadoPago())
+      .then(() => {
+        if (window.MercadoPago) {
+          mpInstance = new window.MercadoPago(publicKey, { locale: "pt-BR" });
+          initializeDeviceId();
+        } else {
+          console.error(
+            "Erro: MercadoPago não está disponível após o carregamento do SDK."
+          );
+        }
+      })
       .catch((error) => console.error("Erro ao carregar o SDK:", error));
   }, [publicKey]);
 
-  const initializeMercadoPago = async () => {
-    if (!publicKey) return;
-    mpInstance = new window.MercadoPago(publicKey, { locale: "pt-BR" });
-
+  const initializeDeviceId = async () => {
     const capturedDeviceId = await new Promise<string>((resolve) => {
       const interval = setInterval(() => {
         const device = window.MP_DEVICE_SESSION_ID;
@@ -68,11 +76,13 @@ const Checkout: React.FC = () => {
       }, 100);
     });
     setDeviceId(capturedDeviceId);
+    console.log("Device ID gerado:", capturedDeviceId);
   };
 
   useEffect(() => {
     if (sdkLoaded && selectedPaymentMethod === "card" && publicKey) {
       if (mpInstance) {
+        console.log("Configurando o cardForm...");
         initializeCardForm(mpInstance);
       } else {
         console.warn("Instância do MercadoPago não está definida.");
@@ -179,7 +189,6 @@ const Checkout: React.FC = () => {
       </button>
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" onSubmit={handleCardSubmit}>
-          {/* Campos do formulário */}
           <button
             type="submit"
             id="form-checkout__submit"
