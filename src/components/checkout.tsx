@@ -126,10 +126,12 @@ const Checkout: React.FC = () => {
       issuer_id: formData.issuerId,
       payment_method_id: formData.paymentMethodId,
       transaction_amount: Number(checkoutData.amount || 100.5),
-      installments: Number(formData.installments),
+      installments: Number(formData.installments || 1),
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
+        first_name: formData.cardholderName.split(" ")[0] || "",
+        last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "",
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
