@@ -121,6 +121,10 @@ const Checkout: React.FC = () => {
     if (!cardFormInstance) return;
 
     const formData = cardFormInstance.getCardFormData(); // Usa a instância do cardForm para obter os dados
+    const [firstName, ...lastNameParts] = formData.cardholderName
+      ? formData.cardholderName.split(" ")
+      : ["", ""]; // Se undefined, usa strings vazias
+
     const paymentData = {
       token: formData.token,
       issuer_id: formData.issuerId,
@@ -130,8 +134,8 @@ const Checkout: React.FC = () => {
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName.split(" ")[0] || "",
-        last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "",
+        first_name: firstName,
+        last_name: lastNameParts.join(" "), // Junta o restante como sobrenome
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
@@ -141,7 +145,7 @@ const Checkout: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", // Certifique-se de que o endpoint está correto
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData,
         { headers: { "Content-Type": "application/json" } }
       );
