@@ -91,12 +91,12 @@ const CartList: React.FC = () => {
   
     // Estrutura dos itens conforme esperado pelo Mercado Pago
     const items = cart.map((item) => ({
-      id: item.id,
-      title: item.name, // "name" no contexto do carrinho é equivalente ao "title" no MP
-      quantity: item.quantity,
-      unit_price: item.price, // Verifique se está correto
+      id: String(item.id), // Garantindo que o ID seja uma string
+      title: item.name, // Nome do produto como título
+      quantity: Number(item.quantity), // Garantindo que seja um número
+      unit_price: Number(item.price), // Garantindo que seja um número
       description: item.description || "Produto sem descrição",
-      category_id: item.category_id || "default",
+      category_id: item.category_id || "default", // Categoria padrão se não houver
     }));
   
     // Armazenar os dados de checkout no localStorage
@@ -107,6 +107,7 @@ const CartList: React.FC = () => {
   
     navigate("/checkout");
   };
+  
   
 
   return (
