@@ -76,13 +76,13 @@ const Checkout: React.FC = () => {
             }
 
             const items = parsedData.items.map((item: any) => ({
-              id: String(item.id),
-              title: item.title,
+              productId: String(item.id), // substitua 'id' por 'productId'
               quantity: Number(item.quantity),
               unit_price: Number(item.unit_price),
               description: item.description,
               category_id: item.category_id || "default",
             }));
+            
 
             const paymentData = {
               token: formData.token,
