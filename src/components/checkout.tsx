@@ -11,8 +11,18 @@ const Checkout: React.FC = () => {
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Captura userId do localStorage
+    const user = localStorage.getItem("user");
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      setUserId(parsedUser.id);
+      console.log("ID do usuário capturado:", parsedUser.id);
+    }
+
+    // Recupera dados do checkout
     const data = JSON.parse(localStorage.getItem("checkoutData") || "{}");
     setCheckoutData(data);
 
@@ -151,18 +161,41 @@ const Checkout: React.FC = () => {
   };
 
   const handlePixSubmit = async () => {
+    if (!userId) {
+      console.error("User ID não encontrado.");
+      return;
+    }
+
     try {
+      const userResponse = await axios.get(
+        `https://seu-dominio.com/user/${userId}`
+      );
+      const userData = userResponse.data;
+
+      const paymentData = {
+        transaction_amount: checkoutData.amount,
+        payment_method_id: "pix",
+        payer: {
+          email: userData.email,
+          first_name: userData.name.split(" ")[0],
+          last_name: userData.name.split(" ").slice(1).join(" "),
+          identification: { type: "CPF", number: userData.cpf },
+          phone: userData.phone,
+          address: {
+            street_name: userData.address.street,
+            zip_code: userData.address.postalCode,
+            city: userData.address.city,
+            state: userData.address.state,
+          },
+        },
+        items: checkoutData.items,
+        userId: checkoutData.userId,
+        device_id: deviceId,
+      };
+
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          transaction_amount: checkoutData.amount,
-          payment_method_id: "pix",
-          payer: { email: checkoutData.email },
-          description: "Compra no e-commerce",
-          items: checkoutData.items,
-          userId: checkoutData.userId,
-          device_id: deviceId,
-        }
+        paymentData
       );
       alert("QR Code para Pix gerado com sucesso! Verifique o link.");
       navigate("/sucesso");
