@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
-  const [sdkLoaded, setSdkLoaded] = useState(false); // Controle para o carregamento do SDK
+  const [sdkLoaded, setSdkLoaded] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [deviceId, setDeviceId] = useState<string | null>("default_device_id");
@@ -13,47 +13,37 @@ const Checkout: React.FC = () => {
   const [installmentOptions, setInstallmentOptions] = useState<number[]>([]);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [userId, setUserId] = useState<string | null>(null);
+  let mpInstance: any; // Adicionar uma variável para armazenar a instância do MercadoPago
 
   useEffect(() => {
-    console.log("Executando useEffect para carregar dados iniciais");
-
     const user = localStorage.getItem("user");
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserId(parsedUser.id);
-      console.log("ID do usuário capturado:", parsedUser.id);
     }
 
     const data = JSON.parse(localStorage.getItem("checkoutData") || "{}");
     setCheckoutData(data);
-    console.log("Dados do checkout capturados:", data);
 
     if (!publicKey) {
       console.error("Chave pública do Mercado Pago não encontrada!");
       return;
     }
 
-    console.log("Carregando SDK do Mercado Pago...");
-
     const loadMercadoPagoSdk = () => {
       return new Promise<void>((resolve, reject) => {
         if (window.MercadoPago) {
-          console.log("SDK do Mercado Pago já carregado");
-          setSdkLoaded(true); // Marca o SDK como carregado
+          setSdkLoaded(true);
           resolve();
         } else {
           const scriptSdk = document.createElement("script");
           scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
           scriptSdk.async = true;
           scriptSdk.onload = () => {
-            console.log("SDK do Mercado Pago carregado com sucesso");
-            setSdkLoaded(true); // Marca o SDK como carregado
+            setSdkLoaded(true);
             resolve();
           };
-          scriptSdk.onerror = (error) => {
-            console.error("Erro ao carregar o SDK:", error);
-            reject(error);
-          };
+          scriptSdk.onerror = (error) => reject(error);
           document.body.appendChild(scriptSdk);
         }
       });
@@ -65,8 +55,8 @@ const Checkout: React.FC = () => {
   }, [publicKey]);
 
   const initializeMercadoPago = async () => {
-    console.log("Inicializando Mercado Pago...");
-    const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
+    if (!publicKey) return;
+    mpInstance = new window.MercadoPago(publicKey, { locale: "pt-BR" });
 
     const capturedDeviceId = await new Promise<string>((resolve) => {
       const interval = setInterval(() => {
@@ -78,24 +68,19 @@ const Checkout: React.FC = () => {
       }, 100);
     });
     setDeviceId(capturedDeviceId);
-    console.log("Device ID gerado:", capturedDeviceId);
   };
 
-  // useEffect para montar o cardForm quando SDK está carregado e "Cartão" foi selecionado
   useEffect(() => {
-    console.log("useEffect para configurar o cardForm");
-
     if (sdkLoaded && selectedPaymentMethod === "card" && publicKey) {
-      console.log("Inicializando cardForm para pagamento com cartão");
-      const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
-      initializeCardForm(mp);
-    } else {
-      console.log("SDK não carregado ou selectedPaymentMethod não é 'card'");
+      if (mpInstance) {
+        initializeCardForm(mpInstance);
+      } else {
+        console.warn("Instância do MercadoPago não está definida.");
+      }
     }
   }, [sdkLoaded, selectedPaymentMethod, publicKey, checkoutData.amount]);
 
   const initializeCardForm = (mp: any) => {
-    console.log("Configurando o cardForm...");
     mp.cardForm({
       amount: String(checkoutData.amount > 1 ? checkoutData.amount : 1),
       form: {
@@ -137,10 +122,7 @@ const Checkout: React.FC = () => {
       callbacks: {
         onFormMounted: (error: any) => {
           if (error) console.warn("Erro ao montar o formulário: ", error);
-          else {
-            console.log("Formulário montado com sucesso");
-            setIsMpReady(true);
-          }
+          else setIsMpReady(true);
         },
         onSubmit: handleCardSubmit,
       },
@@ -149,7 +131,6 @@ const Checkout: React.FC = () => {
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
-    console.log("Submetendo formulário do cartão...");
     const formData = (window as any).MercadoPago.getCardFormData();
     const paymentData = {
       token: formData.token,
@@ -177,13 +158,8 @@ const Checkout: React.FC = () => {
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData
       );
-      if (response.data.status === "approved") {
-        console.log("Pagamento aprovado");
-        navigate("/sucesso");
-      } else {
-        console.warn("Pagamento pendente ou falhou:", response.data);
-        alert("Pagamento pendente ou falhou. Verifique a transação.");
-      }
+      if (response.data.status === "approved") navigate("/sucesso");
+      else alert("Pagamento pendente ou falhou. Verifique a transação.");
     } catch (error) {
       console.error("Erro ao finalizar o pagamento:", error);
       alert("Erro ao finalizar o pagamento.");
@@ -195,54 +171,15 @@ const Checkout: React.FC = () => {
       <h2>Resumo do Pedido</h2>
       <p>Total: R$ {checkoutData.totalPrice}</p>
       <p>Frete: R$ {checkoutData.shippingCost}</p>
-
       <h3>Selecione a forma de pagamento</h3>
-      <button
-        onClick={() => {
-          console.log("Botão 'Cartão' clicado");
-          setSelectedPaymentMethod("card");
-        }}
-      >
-        Cartão
-      </button>
+      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
       <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
       <button onClick={() => setSelectedPaymentMethod("boleto")}>
         Boleto Bancário
       </button>
-
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber" className="container"></div>
-          <div id="form-checkout__expirationDate" className="container"></div>
-          <div id="form-checkout__securityCode" className="container"></div>
-          <input
-            type="text"
-            id="form-checkout__cardholderName"
-            placeholder="Titular do cartão"
-          />
-          <select id="form-checkout__issuer"></select>
-          <select
-            id="form-checkout__installments"
-            value={selectedInstallment}
-            onChange={(e) => setSelectedInstallment(Number(e.target.value))}
-          >
-            {installmentOptions.map((installment) => (
-              <option key={installment} value={installment}>
-                {installment}x
-              </option>
-            ))}
-          </select>
-          <select id="form-checkout__identificationType"></select>
-          <input
-            type="text"
-            id="form-checkout__identificationNumber"
-            placeholder="CPF"
-          />
-          <input
-            type="email"
-            id="form-checkout__cardholderEmail"
-            placeholder="E-mail"
-          />
+          {/* Campos do formulário */}
           <button
             type="submit"
             id="form-checkout__submit"
