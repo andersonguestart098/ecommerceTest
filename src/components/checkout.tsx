@@ -193,6 +193,8 @@ const Checkout: React.FC = () => {
         device_id: deviceId,
       };
 
+      console.log("Dados de pagamento para envio:", paymentData);
+
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData
