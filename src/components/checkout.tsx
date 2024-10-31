@@ -151,6 +151,12 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    const installments = Number(formData.installments || 1); // Garante que installments tenha um valor numérico válido
+    if (isNaN(installments) || installments <= 0) {
+      alert("Número de parcelas inválido. Selecione um número válido.");
+      return;
+    }
+
     const [firstName, ...lastNameParts] = formData.cardholderName
       ? formData.cardholderName.split(" ")
       : ["", ""]; // Se undefined, usa strings vazias
@@ -160,7 +166,7 @@ const Checkout: React.FC = () => {
       issuer_id: formData.issuerId,
       payment_method_id: formData.paymentMethodId,
       transaction_amount: Number(checkoutData.amount || 100.5),
-      installments: Number(formData.installments || 1),
+      installments,
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
