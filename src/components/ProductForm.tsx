@@ -60,7 +60,7 @@ const ProductForm: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
+        "http://localhost:3001/products",
         formData,
         {
           headers: {

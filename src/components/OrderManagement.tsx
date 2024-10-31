@@ -21,7 +21,11 @@ type StatusIconProps = {
   isSelected: boolean;
 };
 
-const StatusIcon: React.FC<StatusIconProps> = ({ status, onClick, isSelected }) => (
+const StatusIcon: React.FC<StatusIconProps> = ({
+  status,
+  onClick,
+  isSelected,
+}) => (
   <Box
     onClick={onClick}
     sx={{
@@ -56,12 +60,9 @@ const OrderManagement: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
-          {
-            headers: { "x-auth-token": token },
-          }
-        );
+        const response = await axios.get("http://localhost:3001/orders", {
+          headers: { "x-auth-token": token },
+        });
         setOrders(response.data);
       } catch (error) {
         console.error("Erro ao buscar pedidos:", error);
@@ -75,7 +76,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/${orderId}`,
+        `http://localhost:3001/orders/${orderId}`,
         { status: newStatus },
         {
           headers: { "x-auth-token": token },

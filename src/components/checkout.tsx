@@ -120,7 +120,7 @@ const Checkout: React.FC = () => {
     event.preventDefault();
     if (!cardFormInstance) return;
 
-    const formData = cardFormInstance.getCardFormData(); // Usa a instância do cardForm para obter os dados
+    const formData = cardFormInstance.getCardFormData();
     const [firstName, ...lastNameParts] = formData.cardholderName
       ? formData.cardholderName.split(" ")
       : ["", ""]; // Se undefined, usa strings vazias
@@ -135,7 +135,7 @@ const Checkout: React.FC = () => {
       payer: {
         email: formData.cardholderEmail,
         first_name: firstName,
-        last_name: lastNameParts.join(" "), // Junta o restante como sobrenome
+        last_name: lastNameParts.join(" "),
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
@@ -144,14 +144,23 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        paymentData,
-        { headers: { "Content-Type": "application/json" } }
+      const response = await fetch(
+        "http://localhost:3001/payment/process_payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          mode: "no-cors", // Configuração de no-cors
+          body: JSON.stringify(paymentData),
+        }
       );
-      response.data.status === "approved"
-        ? navigate("/sucesso")
-        : alert("Pagamento pendente ou falhou.");
+
+      if (response.status === 200) {
+        navigate("/sucesso");
+      } else {
+        alert("Pagamento pendente ou falhou.");
+      }
     } catch (error) {
       console.error("Erro ao finalizar o pagamento:", error);
       alert("Erro ao finalizar o pagamento.");

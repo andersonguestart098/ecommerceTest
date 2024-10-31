@@ -40,17 +40,14 @@ const ProductList: React.FC<ProductListProps> = ({
 
     try {
       console.log("Buscando produtos com filtros...");
-      const response = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
-        {
-          params: {
-            search: searchTerm,
-            color,
-            minPrice: minPrice || undefined,
-            maxPrice: maxPrice || undefined,
-          },
-        }
-      );
+      const response = await axios.get("http://localhost:3001/products", {
+        params: {
+          search: searchTerm,
+          color,
+          minPrice: minPrice || undefined,
+          maxPrice: maxPrice || undefined,
+        },
+      });
 
       const processedProducts = response.data.map((product: any) => ({
         ...product,
