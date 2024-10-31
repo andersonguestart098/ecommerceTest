@@ -18,11 +18,14 @@ const Checkout: React.FC = () => {
 
   // Configuração do Socket.IO para evitar problemas de CORS
   useEffect(() => {
-    const socket = io("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com", {
-      path: "/socket.io",
-      transports: ["websocket"],
-      withCredentials: true,
-    });
+    const socket = io(
+      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/",
+      {
+        path: "/socket.io",
+        transports: ["websocket"],
+        withCredentials: true,
+      }
+    );
 
     socket.on("connect", () => {
       console.log("Conectado ao servidor de WebSocket.");
@@ -142,6 +145,12 @@ const Checkout: React.FC = () => {
     if (!cardFormInstance) return;
 
     const formData = cardFormInstance.getCardFormData();
+    if (!formData.token) {
+      console.error("Token de pagamento não gerado.");
+      alert("Erro ao gerar o token de pagamento. Por favor, tente novamente.");
+      return;
+    }
+
     const [firstName, ...lastNameParts] = formData.cardholderName
       ? formData.cardholderName.split(" ")
       : ["", ""]; // Se undefined, usa strings vazias
