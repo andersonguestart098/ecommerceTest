@@ -145,7 +145,7 @@ const Checkout: React.FC = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:3001/payment/process_payment",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           method: "POST",
           headers: {

@@ -75,9 +75,12 @@ const OrderTrackingAdmin: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:3001/orders", {
-        headers: { "x-auth-token": token },
-      });
+      const response = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
+        {
+          headers: { "x-auth-token": token },
+        }
+      );
       setOrders(response.data);
     } catch (err) {
       console.error("Erro ao buscar pedidos:", err);
@@ -95,7 +98,7 @@ const OrderTrackingAdmin: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:3001/orders/update-status/${orderId}`,
+        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/update-status/${orderId}`,
         { status: newStatus },
         {
           headers: { "x-auth-token": token },
