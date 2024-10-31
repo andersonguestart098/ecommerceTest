@@ -13,8 +13,33 @@ const Checkout: React.FC = () => {
   >(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
-
   const formRef = useRef<HTMLFormElement | null>(null);
+
+  // Carrega dados do usuário ao montar o componente
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/me"
+        ); // Ajuste para o endpoint correto
+        setCheckoutData({
+          ...checkoutData,
+          firstName: response.data.name,
+          lastName: response.data.last_name,
+          email: response.data.email,
+          identificationType: response.data.identification.type,
+          identificationNumber: response.data.identification.number,
+          amount: response.data.totalPrice || 100.5,
+          shippingCost: response.data.shippingCost,
+        });
+      } catch (error) {
+        console.error("Erro ao carregar dados do usuário:", error);
+        alert("Não foi possível carregar os dados do usuário.");
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
@@ -33,7 +58,6 @@ const Checkout: React.FC = () => {
         document.body.appendChild(scriptSdk);
       }
     };
-
     loadMercadoPagoSdk();
   }, [publicKey]);
 
@@ -71,10 +95,7 @@ const Checkout: React.FC = () => {
             id: "form-checkout__cardholderName",
             placeholder: "Nome do titular",
           },
-          issuer: {
-            id: "form-checkout__issuer",
-            placeholder: "Banco emissor",
-          },
+          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
           installments: {
             id: "form-checkout__installments",
             placeholder: "Número de parcelas",
@@ -112,7 +133,7 @@ const Checkout: React.FC = () => {
           },
         },
       });
-      setCardFormInstance(cardForm); // Armazena a instância para reutilização
+      setCardFormInstance(cardForm);
     }
   };
 
@@ -123,7 +144,7 @@ const Checkout: React.FC = () => {
     const formData = cardFormInstance.getCardFormData();
     const [firstName, ...lastNameParts] = formData.cardholderName
       ? formData.cardholderName.split(" ")
-      : ["", ""]; // Se undefined, usa strings vazias
+      : ["", ""];
 
     const paymentData = {
       token: formData.token,
@@ -166,24 +187,61 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const handlePixGeneration = async () => {
+    // Verifica se todos os campos obrigatórios estão preenchidos
+    if (
+      !checkoutData.email ||
+      !checkoutData.firstName ||
+      !checkoutData.lastName ||
+      !checkoutData.identificationType ||
+      !checkoutData.identificationNumber ||
+      !checkoutData.amount
+    ) {
+      alert("Preencha todos os dados do pagador antes de gerar o Pix.");
+      return;
+    }
+
+    const pixData = {
+      transaction_amount: Number(checkoutData.amount || 100.5),
+      payment_method_id: "pix",
+      description: "Descrição do produto via Pix",
+      payer: {
+        email: checkoutData.email,
+        first_name: checkoutData.firstName,
+        last_name: checkoutData.lastName,
+        identification: {
+          type: checkoutData.identificationType,
+          number: checkoutData.identificationNumber,
+        },
+      },
+    };
+
+    try {
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        pixData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (response.status === 200) {
+        const qrCode = response.data.qr_code;
+        const qrCodeUrl = response.data.qr_code_url;
+        alert(
+          `Pix gerado com sucesso! Escaneie o QR Code ou acesse a URL: ${qrCodeUrl}`
+        );
+      } else {
+        alert("Falha ao gerar Pix.");
+      }
+    } catch (error) {
+      console.error("Erro ao gerar o Pix:", error);
+      alert("Erro ao gerar o Pix.");
+    }
+  };
+
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <style>{`
-        #form-checkout {
-          display: flex;
-          flex-direction: column;
-          max-width: 600px;
-        }
-        .container {
-          height: 18px;
-          display: inline-block;
-          border: 1px solid rgb(118, 118, 118);
-          border-radius: 2px;
-          padding: 1px 2px;
-        }
-      `}</style>
       <h2>Resumo do Pedido</h2>
-      <p>Total: R$ {checkoutData.totalPrice}</p>
+      <p>Total: R$ {checkoutData.amount}</p>
       <p>Frete: R$ {checkoutData.shippingCost}</p>
       <h3>Selecione a forma de pagamento</h3>
       <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
@@ -191,6 +249,7 @@ const Checkout: React.FC = () => {
       <button onClick={() => setSelectedPaymentMethod("boleto")}>
         Boleto Bancário
       </button>
+
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
           <div id="form-checkout__cardNumber" className="container"></div>
@@ -225,6 +284,10 @@ const Checkout: React.FC = () => {
             Carregando...
           </progress>
         </form>
+      )}
+
+      {selectedPaymentMethod === "pix" && (
+        <button onClick={handlePixGeneration}>Gerar Pix</button>
       )}
     </div>
   );
