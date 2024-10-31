@@ -95,7 +95,7 @@ const CartList: React.FC = () => {
     ).toFixed(2);
 
     const items = cart.map((item) => ({
-      productId: String(item.id), // Certifique-se de que está usando o ID do produto corretamente
+      productId: String(item.id),
       title: item.name,
       quantity: Number(item.quantity),
       unit_price: Number(item.price),
@@ -103,20 +103,13 @@ const CartList: React.FC = () => {
       category_id: item.category_id || "default",
     }));
 
-    console.log("Itens prontos para o localStorage:", items);
-
-    // Verificação de itens antes de salvar no localStorage
     if (
       items.some((item) => item.productId === "undefined" || item.quantity <= 0)
     ) {
-      console.error(
-        "Erro: Um ou mais itens têm `productId` ou `quantity` inválidos."
-      );
       alert("Erro ao processar itens: verifique o carrinho e tente novamente.");
       return;
     }
 
-    // Armazena os dados de checkout, incluindo o ObjectId do productId
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({ amount: totalProductAmount, totalPrice, items, userId })

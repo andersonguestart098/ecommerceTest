@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -14,31 +13,8 @@ const Checkout: React.FC = () => {
   >(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
+
   const formRef = useRef<HTMLFormElement | null>(null);
-
-  // Configuração do Socket.IO para evitar problemas de CORS
-  useEffect(() => {
-    const socket = io(
-      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/",
-      {
-        path: "/socket.io",
-        transports: ["websocket"],
-        withCredentials: true,
-      }
-    );
-
-    socket.on("connect", () => {
-      console.log("Conectado ao servidor de WebSocket.");
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Desconectado do servidor de WebSocket.");
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
@@ -145,18 +121,6 @@ const Checkout: React.FC = () => {
     if (!cardFormInstance) return;
 
     const formData = cardFormInstance.getCardFormData();
-    if (!formData.token) {
-      console.error("Token de pagamento não gerado.");
-      alert("Erro ao gerar o token de pagamento. Por favor, tente novamente.");
-      return;
-    }
-
-    const installments = Number(formData.installments || 1); // Garante que installments tenha um valor numérico válido
-    if (isNaN(installments) || installments <= 0) {
-      alert("Número de parcelas inválido. Selecione um número válido.");
-      return;
-    }
-
     const [firstName, ...lastNameParts] = formData.cardholderName
       ? formData.cardholderName.split(" ")
       : ["", ""]; // Se undefined, usa strings vazias
@@ -166,7 +130,7 @@ const Checkout: React.FC = () => {
       issuer_id: formData.issuerId,
       payment_method_id: formData.paymentMethodId,
       transaction_amount: Number(checkoutData.amount || 100.5),
-      installments,
+      installments: Number(formData.installments || 1),
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
@@ -180,10 +144,15 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        paymentData,
-        { withCredentials: true } // Inclui as credenciais para o CORS
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(paymentData),
+        }
       );
 
       if (response.status === 200) {
