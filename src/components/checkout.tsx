@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -13,8 +14,28 @@ const Checkout: React.FC = () => {
   >(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
-
   const formRef = useRef<HTMLFormElement | null>(null);
+
+  // Configuração do Socket.IO para evitar problemas de CORS
+  useEffect(() => {
+    const socket = io("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com", {
+      path: "/socket.io",
+      transports: ["websocket"],
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Conectado ao servidor de WebSocket.");
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Desconectado do servidor de WebSocket.");
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
@@ -144,15 +165,10 @@ const Checkout: React.FC = () => {
     };
 
     try {
-      const response = await fetch(
+      const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(paymentData),
-        }
+        paymentData,
+        { withCredentials: true } // Inclui as credenciais para o CORS
       );
 
       if (response.status === 200) {
