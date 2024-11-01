@@ -8,41 +8,48 @@ const Checkout: React.FC = () => {
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
-    string | null
-  >(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
+  const [userId, setUserId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  // Carrega dados do usuário ao montar o componente
   useEffect(() => {
+    // Carrega o userId do localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      alert("Erro: Usuário não autenticado. Faça login para continuar.");
+      navigate("/login"); // Redireciona para a página de login se userId estiver ausente
+      return;
+    }
+    setUserId(storedUserId);
+
+    // Função para buscar os dados do usuário
     const fetchUserData = async () => {
       try {
         const response = await axios.get(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/me"
+          `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
         );
         setCheckoutData({
-          ...checkoutData,
           firstName: response.data.name,
           lastName: response.data.last_name,
           email: response.data.email,
-          identificationType: response.data.identification.type,
-          identificationNumber: response.data.identification.number,
+          identificationType: response.data.identification?.type || "CPF",
+          identificationNumber: response.data.identification?.number || "00000000000",
           amount: response.data.totalPrice || 100.5,
-          shippingCost: response.data.shippingCost,
-          userId: localStorage.getItem("userId") || response.data.id, // Captura o userId do localStorage
+          shippingCost: response.data.shippingCost || 0,
+          userId: storedUserId,
         });
       } catch (error) {
         console.error("Erro ao carregar dados do usuário:", error);
         alert("Não foi possível carregar os dados do usuário.");
       }
     };
-  
-    fetchUserData();
-  }, []);
-  
 
+    fetchUserData();
+  }, [navigate]);
+
+  // Carrega o SDK do Mercado Pago
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
       if (window.MercadoPago) {
@@ -62,6 +69,7 @@ const Checkout: React.FC = () => {
     };
     loadMercadoPagoSdk();
   }, [publicKey]);
+
 
   useEffect(() => {
     if (
@@ -166,6 +174,7 @@ const Checkout: React.FC = () => {
         },
         userId: checkoutData.userId, // Inclui o userId nos dados de pagamento
       };
+      
       
 
     try {
