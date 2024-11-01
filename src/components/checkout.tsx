@@ -167,8 +167,8 @@ const Checkout: React.FC = () => {
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName.split(" ")[0] || "",
-        last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "",
+        first_name: formData.cardholderName ? formData.cardholderName.split(" ")[0] : "",
+        last_name: formData.cardholderName ? formData.cardholderName.split(" ").slice(1).join(" ") : "",
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
@@ -176,6 +176,7 @@ const Checkout: React.FC = () => {
       },
       userId: checkoutData.userId,
     };
+    
   
     try {
       const response = await fetch(
