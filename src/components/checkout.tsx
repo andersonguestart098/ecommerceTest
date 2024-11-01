@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import Modal from "react-modal"; // Importa o Modal
 import { useNavigate } from "react-router-dom";
 
 const Checkout: React.FC = () => {
@@ -10,6 +11,7 @@ const Checkout: React.FC = () => {
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
+  const [isPixModalOpen, setIsPixModalOpen] = useState(false); // Estado para controlar o modal
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
@@ -17,7 +19,7 @@ const Checkout: React.FC = () => {
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
-    console.log("User ID from localStorage:", storedUserId);  // Log User ID
+    console.log("User ID from localStorage:", storedUserId);
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
       navigate("/login");
@@ -30,7 +32,7 @@ const Checkout: React.FC = () => {
         const response = await axios.get(
           `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
         );
-        console.log("Dados do usuário carregados:", response.data);  // Log User Data
+        console.log("Dados do usuário carregados:", response.data);
         setCheckoutData({
           firstName: response.data.name,
           lastName: response.data.last_name,
@@ -240,8 +242,9 @@ const Checkout: React.FC = () => {
   
       if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
         setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
+        setIsPixModalOpen(true); // Abre o modal ao obter o QR Code
       } else {
-        console.warn("Erro ao gerar QR code Pix:", result);
+        console.warn("QR Code Pix não encontrado. Status do pagamento:", result.status_detail);
         alert("Erro ao gerar QR code Pix.");
       }
     } catch (error) {
@@ -249,47 +252,55 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com Pix.");
     }
   };
-  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-  <h2>Resumo do Pedido</h2>
-  <p>Total: R$ {checkoutData.amount}</p>
-  <p>Frete: R$ {checkoutData.shippingCost}</p>
-  <h3>Selecione a forma de pagamento</h3>
-  <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-  <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-  <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
+      <h2>Resumo do Pedido</h2>
+      <p>Total: R$ {checkoutData.amount}</p>
+      <p>Frete: R$ {checkoutData.shippingCost}</p>
+      <h3>Selecione a forma de pagamento</h3>
+      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
+      <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
+      <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
 
-  {selectedPaymentMethod === "card" && (
-    <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-      <div id="form-checkout__cardNumber" className="container"></div>
-      <div id="form-checkout__expirationDate" className="container"></div>
-      <div id="form-checkout__securityCode" className="container"></div>
-      <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
-      <select id="form-checkout__issuer"></select>
-      <select id="form-checkout__installments"></select>
-      <select id="form-checkout__identificationType"></select>
-      <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
-      <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
-      <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
-      <progress value="0" className="progress-bar">Carregando...</progress>
-    </form>
-  )}
+      {selectedPaymentMethod === "card" && (
+        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+          <div id="form-checkout__cardNumber" className="container"></div>
+          <div id="form-checkout__expirationDate" className="container"></div>
+          <div id="form-checkout__securityCode" className="container"></div>
+          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+          <select id="form-checkout__issuer"></select>
+          <select id="form-checkout__installments"></select>
+          <select id="form-checkout__identificationType"></select>
+          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+          <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
+          <progress value="0" className="progress-bar">Carregando...</progress>
+        </form>
+      )}
 
-  {selectedPaymentMethod === "pix" && (
-    <div>
-      <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-      {pixQrCode && (
+      {selectedPaymentMethod === "pix" && (
         <div>
-          <h4>Escaneie o QR Code para pagamento via Pix</h4>
-          <img src={pixQrCode} alt="QR Code Pix" style={{ width: "200px", height: "200px" }} />
+          <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
         </div>
       )}
-    </div>
-  )}
-</div>
 
+      {/* Modal para exibir o QR Code Pix */}
+      <Modal
+        isOpen={isPixModalOpen}
+        onRequestClose={() => setIsPixModalOpen(false)}
+        contentLabel="QR Code Pix"
+        style={{
+          content: { maxWidth: "300px", margin: "auto", textAlign: "center" },
+        }}
+      >
+        <h4>Escaneie o QR Code para pagamento via Pix</h4>
+        {pixQrCode && (
+          <img src={pixQrCode} alt="QR Code Pix" style={{ width: "200px", height: "200px" }} />
+        )}
+        <button onClick={() => setIsPixModalOpen(false)}>Fechar</button>
+      </Modal>
+    </div>
   );
 };
 
