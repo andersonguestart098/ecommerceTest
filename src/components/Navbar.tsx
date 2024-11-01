@@ -35,7 +35,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const navigate = useNavigate();
   const { cart } = useCart();
   const theme = useTheme();
-  const socket = useSocket(); // Pegar a instância do socket
+  const socket = useSocket();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [userName, setUserName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -48,34 +48,20 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
       const parsedUser = JSON.parse(user);
       setUserName(parsedUser.name);
 
+      // Emitir evento de login caso o socket esteja conectado
       if (socket && socket.connected) {
         socket.emit("userLoggedIn", parsedUser.name);
-        console.log(
-          "Evento de login emitido para o servidor:",
-          parsedUser.name
-        );
       }
     }
 
-    // Configuração para receber mensagens de boas-vindas
+    // Escutar mensagem de boas-vindas via WebSocket
     socket?.on("welcomeMessage", (msg: string) => {
-      console.log("Mensagem de boas-vindas recebida:", msg);
       setSnackbarMessage(msg);
-      setOpenSnackbar(true);
-      const userNameFromMessage = msg.split(",")[1]?.trim(); // Assumindo que a mensagem segue o padrão "Bem-vindo(a), Nome!"
-      if (userNameFromMessage) setUserName(userNameFromMessage);
-    });
-
-    // Configuração para ouvir eventos de atualização de login
-    socket?.on("updateUserName", (newName: string) => {
-      setUserName(newName);
-      setSnackbarMessage(`Bem-vindo(a), ${newName}!`);
       setOpenSnackbar(true);
     });
 
     return () => {
       socket?.off("welcomeMessage");
-      socket?.off("updateUserName");
     };
   }, [socket]);
 
@@ -83,19 +69,11 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
     setOpenSnackbar(false);
   };
 
-  useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
-    if (hasSeenWelcome) {
-      setOpenSnackbar(false);
-    }
-  }, []);
-
   const handleCartClick = () => navigate("/cart");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("hasSeenWelcome");
     setUserName(null);
     navigate("/");
   };
@@ -123,7 +101,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         padding: "0 20px",
         height: "94px",
         zIndex: 1300,
-        borderBottom: "2px solid #E6E3DB", // Adiciona a borda inferior com a cor desejada
+        borderBottom: "2px solid #E6E3DB",
       }}
     >
       <Toolbar

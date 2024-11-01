@@ -16,13 +16,13 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Adicionando estado de loading
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const socket = useSocket();
 
   const handleLogin = async () => {
     setError("");
-    setLoading(true); // Inicia o spinner
+    setLoading(true);
 
     try {
       const response = await axios.post(
@@ -33,19 +33,13 @@ const Login: React.FC = () => {
         }
       );
 
-      console.log("Resposta completa do login:", response);
-
       const { token, user } = response.data;
-
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      console.log("Token gerado:", token);
-
       // Emitir o evento de login via WebSocket
       if (socket) {
-        socket.emit("userLoggedIn", user.name);
-        console.log("Evento de login emitido para o servidor:", user.name);
+        socket.emit("userLoggedIn", user.name); // Emitindo o evento com o nome do usuário
       }
 
       navigate("/");
@@ -56,7 +50,7 @@ const Login: React.FC = () => {
         err.response ? err.response.data : err.message
       );
     } finally {
-      setLoading(false); // Para o spinner após a tentativa de login
+      setLoading(false);
     }
   };
 
@@ -115,7 +109,7 @@ const Login: React.FC = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2, backgroundColor: "#313926" }}
-            disabled={loading} // Desativa o botão enquanto está carregando
+            disabled={loading}
           >
             {loading ? (
               <CircularProgress size={24} color="inherit" />
