@@ -208,32 +208,88 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const generatePixQrCode = async () => {
+    try {
+      console.log("Gerando QR Code para Pix...");
+  
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "pix",
+            transaction_amount: Number(checkoutData.amount || 100.5),
+            description: "Pagamento via Pix",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
+            },
+            userId: checkoutData.userId,
+          }),
+        }
+      );
+  
+      const result = await response.json();
+      console.log("Resposta do Mercado Pago:", result);
+  
+      if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
+        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
+      } else {
+        console.warn("Erro ao gerar QR code Pix:", result);
+        alert("Erro ao gerar QR code Pix.");
+      }
+    } catch (error) {
+      console.error("Erro ao processar pagamento com Pix:", error);
+      alert("Erro ao processar pagamento com Pix.");
+    }
+  };
+  
+
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <h2>Resumo do Pedido</h2>
-      <p>Total: R$ {checkoutData.amount}</p>
-      <p>Frete: R$ {checkoutData.shippingCost}</p>
-      <h3>Selecione a forma de pagamento</h3>
-      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-      <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-      <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
+  <h2>Resumo do Pedido</h2>
+  <p>Total: R$ {checkoutData.amount}</p>
+  <p>Frete: R$ {checkoutData.shippingCost}</p>
+  <h3>Selecione a forma de pagamento</h3>
+  <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
+  <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
+  <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
 
-      {selectedPaymentMethod === "card" && (
-        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber" className="container"></div>
-          <div id="form-checkout__expirationDate" className="container"></div>
-          <div id="form-checkout__securityCode" className="container"></div>
-          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
-          <select id="form-checkout__issuer"></select>
-          <select id="form-checkout__installments"></select>
-          <select id="form-checkout__identificationType"></select>
-          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
-          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
-          <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
-          <progress value="0" className="progress-bar">Carregando...</progress>
-        </form>
+  {selectedPaymentMethod === "card" && (
+    <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+      <div id="form-checkout__cardNumber" className="container"></div>
+      <div id="form-checkout__expirationDate" className="container"></div>
+      <div id="form-checkout__securityCode" className="container"></div>
+      <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+      <select id="form-checkout__issuer"></select>
+      <select id="form-checkout__installments"></select>
+      <select id="form-checkout__identificationType"></select>
+      <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+      <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+      <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
+      <progress value="0" className="progress-bar">Carregando...</progress>
+    </form>
+  )}
+
+  {selectedPaymentMethod === "pix" && (
+    <div>
+      <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
+      {pixQrCode && (
+        <div>
+          <h4>Escaneie o QR Code para pagamento via Pix</h4>
+          <img src={pixQrCode} alt="QR Code Pix" style={{ width: "200px", height: "200px" }} />
+        </div>
       )}
     </div>
+  )}
+</div>
+
   );
 };
 
