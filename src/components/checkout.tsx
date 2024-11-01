@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import Modal from "react-modal"; // Importa o Modal
+import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 
 const Checkout: React.FC = () => {
@@ -11,7 +11,7 @@ const Checkout: React.FC = () => {
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
-  const [isPixModalOpen, setIsPixModalOpen] = useState(false); // Estado para controlar o modal
+  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
