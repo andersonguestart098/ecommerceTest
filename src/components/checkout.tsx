@@ -14,6 +14,8 @@ const Checkout: React.FC = () => {
   >(null);
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
+  const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
+  const [isBoletoModalOpen, setIsBoletoModalOpen] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
@@ -275,8 +277,9 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
-      if (response.ok && result.barcode) {
-        alert("Boleto gerado com sucesso. Código de barras: " + result.barcode);
+      if (response.ok && result.ticket_url) {
+        setBoletoUrl(result.ticket_url);
+        setIsBoletoModalOpen(true);
       } else {
         alert("Erro ao gerar boleto.");
       }
@@ -293,7 +296,7 @@ const Checkout: React.FC = () => {
       <p>Frete: R$ {checkoutData.shippingCost}</p>
       <h3>Selecione a forma de pagamento</h3>
       <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-      <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
+      <button onClick={() => generatePixQrCode()}>Pix</button>
       <button onClick={handleBoletoPayment}>Boleto Bancário</button>
 
       {selectedPaymentMethod === "card" && (
@@ -332,12 +335,6 @@ const Checkout: React.FC = () => {
         </form>
       )}
 
-      {selectedPaymentMethod === "pix" && (
-        <div>
-          <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-        </div>
-      )}
-
       <Modal
         isOpen={isPixModalOpen}
         onRequestClose={() => setIsPixModalOpen(false)}
@@ -362,20 +359,43 @@ const Checkout: React.FC = () => {
           />
         )}
         <button
-          onClick={() => navigator.clipboard.writeText(pixQrCode || "")}
+          onClick={() => setIsPixModalOpen(false)}
           style={{
             marginTop: "10px",
-            backgroundColor: "#00b894",
+            backgroundColor: "#d63031",
             color: "#fff",
             padding: "10px 20px",
             border: "none",
             cursor: "pointer",
           }}
         >
-          Copiar Pix Copia e Cola
+          Fechar
         </button>
+      </Modal>
+
+      <Modal
+        isOpen={isBoletoModalOpen}
+        onRequestClose={() => setIsBoletoModalOpen(false)}
+        contentLabel="Boleto Bancário"
+        style={{
+          content: {
+            maxWidth: "400px",
+            margin: "auto",
+            textAlign: "center",
+            padding: "20px",
+          },
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+        }}
+      >
+        <h3>Pagamento via Boleto Bancário</h3>
+        <p>Utilize o link abaixo para acessar o boleto:</p>
+        {boletoUrl && (
+          <a href={boletoUrl} target="_blank" rel="noopener noreferrer">
+            Visualizar Boleto
+          </a>
+        )}
         <button
-          onClick={() => setIsPixModalOpen(false)}
+          onClick={() => setIsBoletoModalOpen(false)}
           style={{
             marginTop: "10px",
             backgroundColor: "#d63031",
