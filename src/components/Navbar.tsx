@@ -43,21 +43,21 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
+    // Carrega o nome do usuário do localStorage
     const user = localStorage.getItem("user");
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserName(parsedUser.name);
-
-      // Emitir evento de login caso o socket esteja conectado
-      if (socket && socket.connected) {
-        socket.emit("userLoggedIn", parsedUser.name);
-      }
     }
 
-    // Escutar mensagem de boas-vindas via WebSocket
+    // Escuta o evento de boas-vindas e atualiza o nome do usuário
     socket?.on("welcomeMessage", (msg: string) => {
       setSnackbarMessage(msg);
       setOpenSnackbar(true);
+      
+      // Extrair o nome do usuário da mensagem de boas-vindas e atualizar
+      const userNameFromMessage = msg.split(",")[1]?.trim();
+      if (userNameFromMessage) setUserName(userNameFromMessage);
     });
 
     return () => {
