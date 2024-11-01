@@ -37,9 +37,11 @@ const CartList: React.FC = () => {
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserId(parsedUser.id);
+      localStorage.setItem("userId", parsedUser.id); // Armazena o userId no localStorage
       console.log("ID do usuário capturado:", parsedUser.id);
     }
   }, []);
+  
 
   const totalProductAmount = cart
     .reduce((total, item) => total + item.price * item.quantity, 0)
