@@ -22,7 +22,6 @@ const Checkout: React.FC = () => {
   const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
-    // Inicializa userId e dados de checkout a partir do localStorage
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
@@ -185,9 +184,7 @@ const Checkout: React.FC = () => {
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(paymentData),
         }
       );
@@ -200,53 +197,6 @@ const Checkout: React.FC = () => {
       }
     } catch (error) {
       alert("Erro ao finalizar o pagamento.");
-    }
-  };
-
-  const generatePixQrCode = async () => {
-    if (!checkoutData.amount) {
-      alert("Erro: o valor total do pedido não está definido.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method_id: "pix",
-            transaction_amount: Number(checkoutData.amount),
-            description: "Pagamento via Pix",
-            payer: {
-              email: checkoutData.email,
-              first_name: checkoutData.firstName,
-              last_name: checkoutData.lastName,
-              identification: {
-                type: checkoutData.identificationType,
-                number: checkoutData.identificationNumber,
-              },
-            },
-            userId: checkoutData.userId,
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (
-        response.ok &&
-        result.point_of_interaction?.transaction_data?.qr_code_base64
-      ) {
-        setPixQrCode(
-          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
-        );
-        setIsPixModalOpen(true);
-      } else {
-        alert("Erro ao gerar QR code Pix.");
-      }
-    } catch (error) {
-      alert("Erro ao processar pagamento com Pix.");
     }
   };
 
@@ -281,13 +231,15 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
-      if (response.ok && result.ticket_url) {
-        setBoletoUrl(result.ticket_url);
+      if (response.ok && result.boleto_url) {
+        setBoletoUrl(result.boleto_url); // Alteração para usar o campo correto 'boleto_url'
         setIsBoletoModalOpen(true);
       } else {
+        console.error("Erro ao gerar boleto. Resposta:", result);
         alert("Erro ao gerar boleto.");
       }
     } catch (error) {
+      console.error("Erro ao processar pagamento com boleto:", error);
       alert("Erro ao processar pagamento com boleto.");
     }
   };
@@ -300,91 +252,14 @@ const Checkout: React.FC = () => {
       <h3>Selecione a forma de pagamento</h3>
       <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
       <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-      <button onClick={() => setSelectedPaymentMethod("boleto")}>
-        Boleto Bancário
-      </button>
-
-      {selectedPaymentMethod === "card" && (
-        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber" className="container"></div>
-          <div id="form-checkout__expirationDate" className="container"></div>
-          <div id="form-checkout__securityCode" className="container"></div>
-          <input
-            type="text"
-            id="form-checkout__cardholderName"
-            placeholder="Nome do titular"
-          />
-          <select id="form-checkout__issuer"></select>
-          <select id="form-checkout__installments"></select>
-          <select id="form-checkout__identificationType"></select>
-          <input
-            type="text"
-            id="form-checkout__identificationNumber"
-            placeholder="Número do documento"
-          />
-          <input
-            type="email"
-            id="form-checkout__cardholderEmail"
-            placeholder="E-mail do titular"
-          />
-          <button
-            type="submit"
-            id="form-checkout__submit"
-            disabled={!isMpReady}
-          >
-            Pagar
-          </button>
-          <progress value="0" className="progress-bar">
-            Carregando...
-          </progress>
-        </form>
-      )}
-
-      {selectedPaymentMethod === "pix" && (
-        <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-      )}
-
-      {selectedPaymentMethod === "boleto" && (
-        <button onClick={generateBoleto}>Gerar Boleto Bancário</button>
-      )}
-
-      <Modal
-        isOpen={isPixModalOpen}
-        onRequestClose={() => setIsPixModalOpen(false)}
-        contentLabel="QR Code Pix"
-        style={{
-          content: {
-            maxWidth: "400px",
-            margin: "auto",
-            textAlign: "center",
-            padding: "20px",
-          },
-          overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+      <button
+        onClick={() => {
+          setSelectedPaymentMethod("boleto");
+          generateBoleto();
         }}
       >
-        <h3>Pagamento via Pix</h3>
-        <p>Escaneie o QR Code abaixo para efetuar o pagamento:</p>
-        {pixQrCode && (
-          <img
-            src={pixQrCode}
-            alt="QR Code Pix"
-            style={{ width: "100%", maxWidth: "300px" }}
-          />
-        )}
-        <button
-          onClick={() => setIsPixModalOpen(false)}
-          style={{
-            marginTop: "10px",
-            backgroundColor: "#d63031",
-            color: "#fff",
-            padding: "10px 20px",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          Fechar
-        </button>
-      </Modal>
+        Boleto Bancário
+      </button>
 
       <Modal
         isOpen={isBoletoModalOpen}
