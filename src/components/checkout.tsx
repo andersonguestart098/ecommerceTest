@@ -9,6 +9,7 @@ const Checkout: React.FC = () => {
   const [mpInstance, setMpInstance] = useState<any>(null);
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
@@ -47,7 +48,6 @@ const Checkout: React.FC = () => {
     fetchUserData();
   }, [navigate]);
 
-  // Carrega o SDK do Mercado Pago
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
       console.log("Carregando SDK do Mercado Pago...");
@@ -206,7 +206,7 @@ const Checkout: React.FC = () => {
     }
   };
 
-  // Função auxiliar para criar o pedido
+  // Função para criar o pedido no backend após o pagamento
   const createOrder = async (paymentData: any) => {
     try {
       const response = await fetch(
@@ -235,6 +235,44 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const generatePixQrCode = async () => {
+    try {
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "pix",
+            transaction_amount: Number(checkoutData.amount || 100.5),
+            description: "Pagamento via Pix",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
+            },
+            userId: checkoutData.userId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
+        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
+      } else {
+        console.warn("Erro ao gerar QR code Pix.");
+        alert("Erro ao gerar QR code Pix.");
+      }
+    } catch (error) {
+      console.error("Erro ao processar pagamento com Pix:", error);
+      alert("Erro ao processar pagamento com Pix.");
+    }
+  };
+
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
       <h2>Resumo do Pedido</h2>
@@ -243,9 +281,7 @@ const Checkout: React.FC = () => {
       <h3>Selecione a forma de pagamento</h3>
       <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
       <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-      <button onClick={() => setSelectedPaymentMethod("boleto")}>
-        Boleto Bancário
-      </button>
+      <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
 
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
@@ -261,6 +297,18 @@ const Checkout: React.FC = () => {
           <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
           <progress value="0" className="progress-bar">Carregando...</progress>
         </form>
+      )}
+
+      {selectedPaymentMethod === "pix" && (
+        <div>
+          <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
+          {pixQrCode && (
+            <div>
+              <h4>Escaneie o QR Code para pagamento via Pix</h4>
+              <img src={pixQrCode} alt="QR Code Pix" style={{ width: "200px", height: "200px" }} />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
