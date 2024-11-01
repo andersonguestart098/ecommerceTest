@@ -20,10 +20,7 @@ const Checkout: React.FC = () => {
   const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
-    // Verifica se o userId está presente no localStorage
     const storedUserId = localStorage.getItem("userId");
-    console.log("User ID from localStorage:", storedUserId);
-
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
       navigate("/login");
@@ -31,25 +28,15 @@ const Checkout: React.FC = () => {
     }
 
     setUserId(storedUserId);
-
-    // Verifica se os dados de checkout estão salvos no localStorage
     const storedCheckoutData = localStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      const parsedCheckoutData = JSON.parse(storedCheckoutData);
-      console.log(
-        "Dados de checkout carregados do localStorage:",
-        parsedCheckoutData
-      );
-      setCheckoutData(parsedCheckoutData);
+      setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
-      // Caso os dados de checkout não estejam no localStorage, realiza a busca dos dados do usuário
       const fetchUserData = async () => {
         try {
           const response = await axios.get(
             `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
           );
-          console.log("Dados do usuário carregados:", response.data);
-
           setCheckoutData({
             firstName: response.data.name,
             lastName: response.data.last_name,
@@ -66,16 +53,13 @@ const Checkout: React.FC = () => {
           alert("Não foi possível carregar os dados do usuário.");
         }
       };
-
       fetchUserData();
     }
   }, [navigate]);
 
   useEffect(() => {
-    const loadMercadoPagoSdk = async () => {
-      console.log("Carregando SDK do Mercado Pago...");
+    const loadMercadoPagoSdk = () => {
       if (window.MercadoPago) {
-        console.log("SDK já carregado.");
         setSdkLoaded(true);
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
       } else {
@@ -83,11 +67,9 @@ const Checkout: React.FC = () => {
         scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
         scriptSdk.async = true;
         scriptSdk.onload = () => {
-          console.log("SDK do Mercado Pago carregado com sucesso.");
           setSdkLoaded(true);
           setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
         };
-        scriptSdk.onerror = () => console.error("Erro ao carregar o SDK.");
         document.body.appendChild(scriptSdk);
       }
     };
@@ -107,7 +89,6 @@ const Checkout: React.FC = () => {
 
   const initializeCardForm = () => {
     if (mpInstance && formRef.current) {
-      console.log("Inicializando CardForm...");
       const cardForm = mpInstance.cardForm({
         amount: String(checkoutData.amount || 100.5),
         iframe: true,
@@ -136,7 +117,7 @@ const Checkout: React.FC = () => {
           },
           identificationType: {
             id: "form-checkout__identificationType",
-            placeholder: "Tipo de documento (ex: CPF)",
+            placeholder: "Tipo de documento",
           },
           identificationNumber: {
             id: "form-checkout__identificationNumber",
@@ -149,23 +130,14 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error) {
-              console.warn("Form Mounted handling error:", error);
-            } else {
-              console.log("Form mounted com sucesso");
-              setIsMpReady(true);
-            }
+            if (error) console.warn("Erro ao montar o formulário:", error);
+            else setIsMpReady(true);
           },
           onSubmit: handleCardSubmit,
           onFetching: (resource: any) => {
-            console.log("Fetching resource:", resource);
             const progressBar = document.querySelector(".progress-bar");
-            if (progressBar) {
-              progressBar.removeAttribute("value");
-            }
-            return () => {
-              if (progressBar) progressBar.setAttribute("value", "0");
-            };
+            if (progressBar) progressBar.removeAttribute("value");
+            return () => progressBar?.setAttribute("value", "0");
           },
         },
       });
@@ -176,9 +148,7 @@ const Checkout: React.FC = () => {
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
     if (!cardFormInstance) return;
-
     const formData = cardFormInstance.getCardFormData();
-    console.log("Dados do cartão recebidos:", formData);
 
     if (!formData.token) {
       alert("Erro ao gerar token do cartão. Tente novamente.");
@@ -208,30 +178,18 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
-    console.log("Dados de pagamento a serem enviados:", paymentData);
-
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(paymentData),
         }
       );
-
       const result = await response.json();
-      console.log("Resposta do pagamento:", result);
-
-      if (response.ok) {
-        console.log("Pagamento processado com sucesso.");
-        navigate("/sucesso");
-      } else {
-        console.warn("Pagamento pendente ou falhou. Status:", response.status);
-        alert("Pagamento pendente ou falhou.");
-      }
+      if (response.ok) navigate("/sucesso");
+      else alert("Pagamento pendente ou falhou.");
     } catch (error) {
       console.error("Erro ao finalizar o pagamento:", error);
       alert("Erro ao finalizar o pagamento.");
@@ -245,8 +203,6 @@ const Checkout: React.FC = () => {
     }
 
     try {
-      console.log("Gerando QR Code para Pix...");
-
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -271,37 +227,62 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
-      console.log("Resposta completa do Mercado Pago:", result);
-
-      if (response.ok) {
-        if (result.point_of_interaction?.transaction_data?.qr_code_base64) {
-          console.log(
-            "QR Code base64 encontrado:",
-            result.point_of_interaction.transaction_data.qr_code_base64
-          );
-          setPixQrCode(
-            `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
-          );
-          setIsPixModalOpen(true);
-        } else {
-          console.warn(
-            "QR Code Pix não encontrado no formato base64. Estrutura de transaction_data:",
-            result.point_of_interaction?.transaction_data
-          );
-          alert("QR Code Pix não foi gerado. Tente novamente.");
-        }
-      } else {
-        console.warn(
-          "Erro ao gerar o pagamento via Pix. Status:",
-          response.status,
-          "Detalhes:",
-          result.status_detail
+      if (
+        response.ok &&
+        result.point_of_interaction?.transaction_data?.qr_code_base64
+      ) {
+        setPixQrCode(
+          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
         );
+        setIsPixModalOpen(true);
+      } else {
         alert("Erro ao gerar QR code Pix.");
       }
     } catch (error) {
       console.error("Erro ao processar pagamento com Pix:", error);
       alert("Erro ao processar pagamento com Pix.");
+    }
+  };
+
+  const handleBoletoPayment = async () => {
+    if (!checkoutData.amount) {
+      alert("Erro: o valor total do pedido não está definido.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "bolbradesco",
+            transaction_amount: Number(checkoutData.amount),
+            description: "Pagamento via Boleto Bancário",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
+            },
+            userId: checkoutData.userId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok && result.barcode) {
+        alert("Boleto gerado com sucesso. Código de barras: " + result.barcode);
+      } else {
+        alert("Erro ao gerar boleto.");
+      }
+    } catch (error) {
+      console.error("Erro ao processar pagamento com boleto:", error);
+      alert("Erro ao processar pagamento com boleto.");
     }
   };
 
@@ -313,9 +294,7 @@ const Checkout: React.FC = () => {
       <h3>Selecione a forma de pagamento</h3>
       <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
       <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-      <button onClick={() => setSelectedPaymentMethod("boleto")}>
-        Boleto Bancário
-      </button>
+      <button onClick={handleBoletoPayment}>Boleto Bancário</button>
 
       {selectedPaymentMethod === "card" && (
         <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
