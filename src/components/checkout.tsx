@@ -17,6 +17,7 @@ const Checkout: React.FC = () => {
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
+    console.log("User ID from localStorage:", storedUserId);  // Log User ID
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
       navigate("/login");
@@ -29,6 +30,7 @@ const Checkout: React.FC = () => {
         const response = await axios.get(
           `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
         );
+        console.log("Dados do usuário carregados:", response.data);  // Log User Data
         setCheckoutData({
           firstName: response.data.name,
           lastName: response.data.last_name,
@@ -72,12 +74,7 @@ const Checkout: React.FC = () => {
   }, [publicKey]);
 
   useEffect(() => {
-    if (
-      sdkLoaded &&
-      mpInstance &&
-      selectedPaymentMethod === "card" &&
-      !cardFormInstance
-    ) {
+    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card" && !cardFormInstance) {
       initializeCardForm();
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod, cardFormInstance]);
@@ -126,13 +123,16 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (error) return console.warn("Form Mounted handling error: ", error);
-            console.log("Form mounted com sucesso");
-            setIsMpReady(true);
+            if (error) {
+              console.warn("Form Mounted handling error:", error);
+            } else {
+              console.log("Form mounted com sucesso");
+              setIsMpReady(true);
+            }
           },
           onSubmit: handleCardSubmit,
           onFetching: (resource: any) => {
-            console.log("Fetching resource: ", resource);
+            console.log("Fetching resource:", resource);
             const progressBar = document.querySelector(".progress-bar");
             if (progressBar) {
               progressBar.removeAttribute("value");
@@ -192,10 +192,12 @@ const Checkout: React.FC = () => {
         }
       );
 
-      if (response.status === 200) {
+      const result = await response.json();
+      console.log("Resposta do pagamento:", result);
+
+      if (response.ok) {
         console.log("Pagamento processado com sucesso.");
         navigate("/sucesso");
-        await createOrder(paymentData);
       } else {
         console.warn("Pagamento pendente ou falhou. Status:", response.status);
         alert("Pagamento pendente ou falhou.");
@@ -203,73 +205,6 @@ const Checkout: React.FC = () => {
     } catch (error) {
       console.error("Erro ao finalizar o pagamento:", error);
       alert("Erro ao finalizar o pagamento.");
-    }
-  };
-
-  // Função para criar o pedido no backend após o pagamento
-  const createOrder = async (paymentData: any) => {
-    try {
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: paymentData.userId,
-            items: checkoutData.items,
-            totalAmount: paymentData.transaction_amount,
-            paymentId: paymentData.id,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        console.log("Pedido criado com sucesso.");
-      } else {
-        console.error("Erro ao criar pedido. Status:", response.status);
-      }
-    } catch (error) {
-      console.error("Erro ao criar pedido:", error);
-    }
-  };
-
-  const generatePixQrCode = async () => {
-    try {
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method_id: "pix",
-            transaction_amount: Number(checkoutData.amount || 100.5),
-            description: "Pagamento via Pix",
-            payer: {
-              email: checkoutData.email,
-              first_name: checkoutData.firstName,
-              last_name: checkoutData.lastName,
-              identification: {
-                type: checkoutData.identificationType,
-                number: checkoutData.identificationNumber,
-              },
-            },
-            userId: checkoutData.userId,
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
-        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
-      } else {
-        console.warn("Erro ao gerar QR code Pix.");
-        alert("Erro ao gerar QR code Pix.");
-      }
-    } catch (error) {
-      console.error("Erro ao processar pagamento com Pix:", error);
-      alert("Erro ao processar pagamento com Pix.");
     }
   };
 
@@ -297,18 +232,6 @@ const Checkout: React.FC = () => {
           <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
           <progress value="0" className="progress-bar">Carregando...</progress>
         </form>
-      )}
-
-      {selectedPaymentMethod === "pix" && (
-        <div>
-          <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-          {pixQrCode && (
-            <div>
-              <h4>Escaneie o QR Code para pagamento via Pix</h4>
-              <img src={pixQrCode} alt="QR Code Pix" style={{ width: "200px", height: "200px" }} />
-            </div>
-          )}
-        </div>
       )}
     </div>
   );
