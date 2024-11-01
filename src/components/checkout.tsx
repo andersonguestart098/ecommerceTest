@@ -20,39 +20,55 @@ const Checkout: React.FC = () => {
   const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
+    // Verifica se o userId está presente no localStorage
     const storedUserId = localStorage.getItem("userId");
     console.log("User ID from localStorage:", storedUserId);
+
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
       navigate("/login");
       return;
     }
+
     setUserId(storedUserId);
 
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(
-          `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
-        );
-        console.log("Dados do usuário carregados:", response.data);
-        setCheckoutData({
-          firstName: response.data.name,
-          lastName: response.data.last_name,
-          email: response.data.email,
-          identificationType: response.data.identification?.type || "CPF",
-          identificationNumber:
-            response.data.identification?.number || "00000000000",
-          amount: response.data.totalPrice || 100.5,
-          shippingCost: response.data.shippingCost || 0,
-          userId: storedUserId,
-        });
-      } catch (error) {
-        console.error("Erro ao carregar dados do usuário:", error);
-        alert("Não foi possível carregar os dados do usuário.");
-      }
-    };
+    // Verifica se os dados de checkout estão salvos no localStorage
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      const parsedCheckoutData = JSON.parse(storedCheckoutData);
+      console.log(
+        "Dados de checkout carregados do localStorage:",
+        parsedCheckoutData
+      );
+      setCheckoutData(parsedCheckoutData);
+    } else {
+      // Caso os dados de checkout não estejam no localStorage, realiza a busca dos dados do usuário
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get(
+            `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`
+          );
+          console.log("Dados do usuário carregados:", response.data);
 
-    fetchUserData();
+          setCheckoutData({
+            firstName: response.data.name,
+            lastName: response.data.last_name,
+            email: response.data.email,
+            identificationType: response.data.identification?.type || "CPF",
+            identificationNumber:
+              response.data.identification?.number || "00000000000",
+            amount: response.data.totalPrice || 100.5,
+            shippingCost: response.data.shippingCost || 0,
+            userId: storedUserId,
+          });
+        } catch (error) {
+          console.error("Erro ao carregar dados do usuário:", error);
+          alert("Não foi possível carregar os dados do usuário.");
+        }
+      };
+
+      fetchUserData();
+    }
   }, [navigate]);
 
   useEffect(() => {
@@ -223,6 +239,11 @@ const Checkout: React.FC = () => {
   };
 
   const generatePixQrCode = async () => {
+    if (!checkoutData.amount) {
+      alert("Erro: o valor total do pedido não está definido.");
+      return;
+    }
+
     try {
       console.log("Gerando QR Code para Pix...");
 
@@ -233,7 +254,7 @@ const Checkout: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_method_id: "pix",
-            transaction_amount: Number(checkoutData.amount || 100.5),
+            transaction_amount: Number(checkoutData.amount),
             description: "Pagamento via Pix",
             payer: {
               email: checkoutData.email,
@@ -250,19 +271,30 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
-      console.log("Resposta do Mercado Pago:", result);
+      console.log("Resposta completa do Mercado Pago:", result);
 
-      if (
-        response.ok &&
-        result.point_of_interaction?.transaction_data?.qr_code_base64
-      ) {
-        setPixQrCode(
-          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
-        );
-        setIsPixModalOpen(true); // Abre o modal ao obter o QR Code
+      if (response.ok) {
+        if (result.point_of_interaction?.transaction_data?.qr_code_base64) {
+          console.log(
+            "QR Code base64 encontrado:",
+            result.point_of_interaction.transaction_data.qr_code_base64
+          );
+          setPixQrCode(
+            `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
+          );
+          setIsPixModalOpen(true);
+        } else {
+          console.warn(
+            "QR Code Pix não encontrado no formato base64. Estrutura de transaction_data:",
+            result.point_of_interaction?.transaction_data
+          );
+          alert("QR Code Pix não foi gerado. Tente novamente.");
+        }
       } else {
         console.warn(
-          "QR Code Pix não encontrado. Status do pagamento:",
+          "Erro ao gerar o pagamento via Pix. Status:",
+          response.status,
+          "Detalhes:",
           result.status_detail
         );
         alert("Erro ao gerar QR code Pix.");

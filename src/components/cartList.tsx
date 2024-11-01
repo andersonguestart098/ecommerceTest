@@ -41,8 +41,6 @@ const CartList: React.FC = () => {
       console.log("ID do usuário capturado:", parsedUser.id);
     }
   }, []);
-  
-  
 
   const totalProductAmount = cart
     .reduce((total, item) => total + item.price * item.quantity, 0)
@@ -97,6 +95,8 @@ const CartList: React.FC = () => {
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
 
+    console.log("Valor total do pedido (com frete):", totalPrice); // Log para verificar totalPrice
+
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -115,8 +115,20 @@ const CartList: React.FC = () => {
 
     localStorage.setItem(
       "checkoutData",
-      JSON.stringify({ amount: totalProductAmount, totalPrice, items, userId })
+      JSON.stringify({
+        amount: totalPrice, // usa o valor total com frete
+        totalPrice,
+        items,
+        userId,
+      })
     );
+
+    console.log("Dados salvos no localStorage (checkoutData):", {
+      amount: totalPrice,
+      totalPrice,
+      items,
+      userId,
+    }); // Log para verificar o que foi salvo no localStorage
 
     navigate("/checkout");
   };

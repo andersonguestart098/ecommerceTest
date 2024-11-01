@@ -36,13 +36,13 @@ const statusSteps = [
     icon: <PendingIcon />,
   },
   {
-    key: "PAYMENT_APPROVED",
+    key: "APPROVED",
     label: "Pagamento Aprovado",
     icon: <PaymentIcon />,
   },
   {
     key: "AWAITING_STOCK_CONFIRMATION",
-    label: "Aguardando Estoque",
+    label: "Aguardando Confirmação do Estoque",
     icon: <CheckCircleIcon />,
   },
   {
@@ -61,6 +61,17 @@ const statusSteps = [
     icon: <AssignmentTurnedInIcon />,
   },
 ];
+
+// Mapeamento dos status para nomes em português
+const statusLabels: { [key: string]: string } = {
+  PENDING: "Pendente",
+  APPROVED: "Pagamento Aprovado",
+  AWAITING_STOCK_CONFIRMATION: "Aguardando Confirmação do Estoque",
+  SEPARATED: "Separado",
+  DISPATCHED: "Despachado",
+  DELIVERED: "Entregue",
+  CANCELED: "Cancelado",
+};
 
 const OrderTrackingAdmin: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -105,7 +116,9 @@ const OrderTrackingAdmin: React.FC = () => {
         }
       );
       setSnackbarMessage(
-        `Status do pedido ${orderId} atualizado para ${newStatus}`
+        `Status do pedido ${orderId} atualizado para ${
+          statusLabels[newStatus] || newStatus
+        }`
       );
       setOpenSnackbar(true);
       fetchOrders();
@@ -119,7 +132,7 @@ const OrderTrackingAdmin: React.FC = () => {
     setOpenSnackbar(false);
   };
 
-  const renderProgressTracker = (currentStatus: string) => {
+  const renderProgressTracker = (currentStatus: any) => {
     const currentStepIndex = statusSteps.findIndex(
       (step) => step.key === currentStatus
     );
