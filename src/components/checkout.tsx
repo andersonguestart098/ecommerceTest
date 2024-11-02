@@ -7,6 +7,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
+  const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
@@ -62,6 +63,116 @@ const Checkout: React.FC = () => {
     }
   }, [publicKey]);
 
+  useEffect(() => {
+    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card" && !cardFormInstance) {
+      initializeCardForm();
+    }
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod, cardFormInstance]);
+
+  const initializeCardForm = () => {
+    if (mpInstance && formRef.current) {
+      const cardForm = mpInstance.cardForm({
+        amount: String(checkoutData.amount || 100.5),
+        iframe: true,
+        form: {
+          id: "form-checkout",
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/YY",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "Código de segurança",
+          },
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome do titular",
+          },
+          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
+          installments: {
+            id: "form-checkout__installments",
+            placeholder: "Número de parcelas",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de documento (ex: CPF)",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "Número do documento",
+          },
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail do titular",
+          },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) {
+              console.warn("Erro ao montar o formulário:", error);
+            }
+          },
+          onSubmit: handleCardSubmit,
+        },
+      });
+      setCardFormInstance(cardForm);
+    }
+  };
+
+  const handleCardSubmit = async (event: any) => {
+    event.preventDefault();
+    if (!cardFormInstance) return;
+
+    const formData = cardFormInstance.getCardFormData();
+    if (!formData.token) {
+      alert("Erro ao gerar token do cartão. Tente novamente.");
+      return;
+    }
+
+    const paymentData = {
+      token: formData.token,
+      issuer_id: formData.issuerId,
+      payment_method_id: formData.paymentMethodId,
+      transaction_amount: Number(checkoutData.amount || 100.5),
+      installments: Number(formData.installments || 1),
+      description: "Descrição do produto",
+      payer: {
+        email: formData.cardholderEmail,
+        first_name: formData.cardholderName ? formData.cardholderName.split(" ")[0] : "",
+        last_name: formData.cardholderName ? formData.cardholderName.split(" ").slice(1).join(" ") : "",
+        identification: {
+          type: formData.identificationType,
+          number: formData.identificationNumber,
+        },
+      },
+      userId: checkoutData.userId,
+    };
+
+    try {
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(paymentData),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok) {
+        navigate("/sucesso");
+      } else {
+        alert("Pagamento pendente ou falhou.");
+      }
+    } catch (error) {
+      alert("Erro ao finalizar o pagamento.");
+    }
+  };
+
   const generateBoleto = async () => {
     if (!checkoutData.amount) {
       alert("Erro: o valor total do pedido não está definido.");
@@ -111,8 +222,28 @@ const Checkout: React.FC = () => {
       <p>Total: R$ {checkoutData.amount}</p>
       <p>Frete: R$ {checkoutData.shippingCost}</p>
       <h3>Selecione a forma de pagamento</h3>
+      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
       <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
       <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
+
+      {selectedPaymentMethod === "card" && (
+        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+          <div id="form-checkout__cardNumber" className="container"></div>
+          <div id="form-checkout__expirationDate" className="container"></div>
+          <div id="form-checkout__securityCode" className="container"></div>
+          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+          <select id="form-checkout__issuer"></select>
+          <select id="form-checkout__installments"></select>
+          <select id="form-checkout__identificationType"></select>
+          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+          <button type="submit" id="form-checkout__submit">Pagar</button>
+        </form>
+      )}
+
+      {selectedPaymentMethod === "pix" && (
+        <button onClick={() => alert("Pagamento Pix não implementado aqui")}>Gerar QR Code Pix</button>
+      )}
 
       {selectedPaymentMethod === "boleto" && (
         <button onClick={generateBoleto}>Gerar Boleto Bancário</button>
