@@ -8,16 +8,12 @@ const Checkout: React.FC = () => {
   const [isMpReady, setIsMpReady] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
-  const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [pixQrCode, setPixQrCode] = useState<string | null>(null);
-  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const [isBoletoModalOpen, setIsBoletoModalOpen] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -88,7 +84,7 @@ const Checkout: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_method_id: "bolbradesco",
-            transaction_amount: Number(checkoutData.amount), // Definindo o valor correto
+            transaction_amount: Number(checkoutData.amount), 
             description: "Pagamento via Boleto Bancário",
             payer: {
               email: checkoutData.email,
@@ -105,8 +101,8 @@ const Checkout: React.FC = () => {
       );
   
       const result = await response.json();
-      if (response.ok && result.external_resource_url) {
-        setBoletoUrl(result.external_resource_url);
+      if (response.ok && result.boleto_url) {
+        setBoletoUrl(result.boleto_url);
         setIsBoletoModalOpen(true);
       } else {
         alert("Erro ao gerar boleto.");
@@ -115,7 +111,6 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
-  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
@@ -123,8 +118,6 @@ const Checkout: React.FC = () => {
       <p>Total: R$ {checkoutData.amount}</p>
       <p>Frete: R$ {checkoutData.shippingCost}</p>
       <h3>Selecione a forma de pagamento</h3>
-      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-      <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
       <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
 
       {selectedPaymentMethod === "boleto" && (
