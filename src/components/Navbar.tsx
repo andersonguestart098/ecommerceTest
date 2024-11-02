@@ -92,6 +92,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   };
 
   return (
+    
     <AppBar
       position="fixed"
       sx={{
