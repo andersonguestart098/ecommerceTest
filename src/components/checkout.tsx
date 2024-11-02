@@ -233,7 +233,7 @@ const Checkout: React.FC = () => {
       alert("Erro: o valor total do pedido não está definido ou é inválido.");
       return;
     }
-  
+
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -257,12 +257,12 @@ const Checkout: React.FC = () => {
           }),
         }
       );
-  
+
       const result = await response.json();
-      // Verifique se a resposta contém o link para o boleto
       if (response.ok && result.external_resource_url) {
+        console.log("Boleto URL:", result.external_resource_url);  // Log para depuração
         setBoletoUrl(result.external_resource_url);
-        setIsBoletoModalOpen(true);
+        setIsBoletoModalOpen(true); // Abre a modal com o link do boleto
       } else {
         alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
       }
@@ -271,7 +271,6 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
-  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
