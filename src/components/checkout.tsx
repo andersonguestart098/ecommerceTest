@@ -245,12 +245,12 @@ const Checkout: React.FC = () => {
             transaction_amount: Number(checkoutData.amount),
             description: "Pagamento via Boleto Bancário",
             payer: {
-              email: checkoutData.email,
-              first_name: checkoutData.firstName,
-              last_name: checkoutData.lastName,
+              email: checkoutData.email, // Certifique-se de que o e-mail está presente
+              first_name: checkoutData.firstName, // Nome do pagador
+              last_name: checkoutData.lastName, // Sobrenome do pagador
               identification: {
                 type: checkoutData.identificationType || "CPF",
-                number: checkoutData.identificationNumber || "00000000000", // Certifique-se de que esse valor está correto
+                number: checkoutData.identificationNumber || "00000000000", // Número de identificação (CPF)
               },
             },
             userId: checkoutData.userId,
@@ -260,8 +260,9 @@ const Checkout: React.FC = () => {
   
       const result = await response.json();
       if (response.ok && result.external_resource_url) {
+        console.log("Boleto URL:", result.external_resource_url); // Log para depuração
         setBoletoUrl(result.external_resource_url);
-        setIsBoletoModalOpen(true);
+        setIsBoletoModalOpen(true); // Abre a modal com o link do boleto
       } else {
         alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
       }
