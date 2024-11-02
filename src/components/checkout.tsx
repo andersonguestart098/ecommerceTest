@@ -229,11 +229,11 @@ const Checkout: React.FC = () => {
   };
 
   const generateBoleto = async () => {
-    if (!checkoutData.amount) {
-      alert("Erro: o valor total do pedido não está definido.");
+    if (!checkoutData.amount || checkoutData.amount <= 0) {
+      alert("Erro: o valor total do pedido não está definido ou é inválido.");
       return;
     }
-
+  
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -242,7 +242,7 @@ const Checkout: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_method_id: "bolbradesco",
-            transaction_amount: Number(checkoutData.amount),
+            transaction_amount: Number(checkoutData.amount), // Definindo o valor correto
             description: "Pagamento via Boleto Bancário",
             payer: {
               email: checkoutData.email,
@@ -257,7 +257,7 @@ const Checkout: React.FC = () => {
           }),
         }
       );
-
+  
       const result = await response.json();
       if (response.ok && result.external_resource_url) {
         setBoletoUrl(result.external_resource_url);
@@ -269,6 +269,7 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
+  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
