@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const [isMpReady, setIsMpReady] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
@@ -25,42 +26,52 @@ const Checkout: React.FC = () => {
       navigate("/login");
       return;
     }
+
     setUserId(storedUserId);
 
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`);
-        setCheckoutData({
-          firstName: response.data.name,
-          lastName: response.data.last_name,
-          email: response.data.email,
-          identificationType: response.data.identification?.type || "CPF",
-          identificationNumber: response.data.identification?.number || "00000000000",
-          amount: response.data.totalPrice || 100.5,
-          shippingCost: response.data.shippingCost || 0,
-          userId: storedUserId,
-        });
-      } catch (error) {
-        alert("Não foi possível carregar os dados do usuário.");
-      }
-    };
-    fetchUserData();
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      setCheckoutData(JSON.parse(storedCheckoutData));
+    } else {
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`);
+          setCheckoutData({
+            firstName: response.data.name,
+            lastName: response.data.last_name,
+            email: response.data.email,
+            identificationType: response.data.identification?.type || "CPF",
+            identificationNumber: response.data.identification?.number || "00000000000",
+            amount: response.data.totalPrice || 100.5,
+            shippingCost: response.data.shippingCost || 0,
+            userId: storedUserId,
+          });
+        } catch (error) {
+          alert("Não foi possível carregar os dados do usuário.");
+        }
+      };
+      fetchUserData();
+    }
   }, [navigate]);
 
   useEffect(() => {
-    if (!window.MercadoPago) {
-      const scriptSdk = document.createElement("script");
-      scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
-      scriptSdk.async = true;
-      scriptSdk.onload = () => {
+    const loadMercadoPagoSdk = async () => {
+      if (window.MercadoPago) {
         setSdkLoaded(true);
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-      };
-      document.body.appendChild(scriptSdk);
-    } else {
-      setSdkLoaded(true);
-      setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-    }
+      } else {
+        const scriptSdk = document.createElement("script");
+        scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
+        scriptSdk.async = true;
+        scriptSdk.onload = () => {
+          setSdkLoaded(true);
+          setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+        };
+        scriptSdk.onerror = () => console.error("Erro ao carregar o SDK.");
+        document.body.appendChild(scriptSdk);
+      }
+    };
+    loadMercadoPagoSdk();
   }, [publicKey]);
 
   useEffect(() => {
@@ -114,6 +125,8 @@ const Checkout: React.FC = () => {
           onFormMounted: (error: any) => {
             if (error) {
               console.warn("Erro ao montar o formulário:", error);
+            } else {
+              setIsMpReady(true);
             }
           },
           onSubmit: handleCardSubmit,
@@ -173,12 +186,54 @@ const Checkout: React.FC = () => {
     }
   };
 
-  const generateBoleto = async () => {
+  const generatePixQrCode = async () => {
     if (!checkoutData.amount) {
       alert("Erro: o valor total do pedido não está definido.");
       return;
     }
 
+    try {
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "pix",
+            transaction_amount: Number(checkoutData.amount),
+            description: "Pagamento via Pix",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
+            },
+            userId: checkoutData.userId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
+        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
+        setIsPixModalOpen(true);
+      } else {
+        alert("Erro ao gerar QR code Pix.");
+      }
+    } catch (error) {
+      alert("Erro ao processar pagamento com Pix.");
+    }
+  };
+
+  const generateBoleto = async () => {
+    if (!checkoutData.amount || checkoutData.amount <= 0) {
+      alert("Erro: o valor total do pedido não está definido ou é inválido.");
+      return;
+    }
+  
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -202,11 +257,12 @@ const Checkout: React.FC = () => {
           }),
         }
       );
-
+  
       const result = await response.json();
+      console.log("Resultado do boleto:", result); // Log para depuração
       if (response.ok && result.external_resource_url) {
         setBoletoUrl(result.external_resource_url);
-        setIsBoletoModalOpen(true);
+        setIsBoletoModalOpen(true); // Garantir que a modal é aberta
       } else {
         alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
       }
@@ -215,76 +271,119 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
+  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <h2>Resumo do Pedido</h2>
-      <p>Total: R$ {checkoutData.amount}</p>
-      <p>Frete: R$ {checkoutData.shippingCost}</p>
-      <h3>Selecione a forma de pagamento</h3>
-      <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-      <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-      <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
-
-      {selectedPaymentMethod === "card" && (
-        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber" className="container"></div>
-          <div id="form-checkout__expirationDate" className="container"></div>
-          <div id="form-checkout__securityCode" className="container"></div>
-          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
-          <select id="form-checkout__issuer"></select>
-          <select id="form-checkout__installments"></select>
-          <select id="form-checkout__identificationType"></select>
-          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
-          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
-          <button type="submit" id="form-checkout__submit">Pagar</button>
-        </form>
+    <h2>Resumo do Pedido</h2>
+    <p>Total: R$ {checkoutData.amount}</p>
+    <p>Frete: R$ {checkoutData.shippingCost}</p>
+    <h3>Selecione a forma de pagamento</h3>
+    <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
+    <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
+    <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
+  
+    {selectedPaymentMethod === "card" && (
+      <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+        <div id="form-checkout__cardNumber" className="container"></div>
+        <div id="form-checkout__expirationDate" className="container"></div>
+        <div id="form-checkout__securityCode" className="container"></div>
+        <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+        <select id="form-checkout__issuer"></select>
+        <select id="form-checkout__installments"></select>
+        <select id="form-checkout__identificationType"></select>
+        <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+        <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+        <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
+        <progress value="0" className="progress-bar">Carregando...</progress>
+      </form>
+    )}
+  
+    {selectedPaymentMethod === "pix" && (
+      <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
+    )}
+  
+    {selectedPaymentMethod === "boleto" && (
+      <button onClick={generateBoleto} disabled={!checkoutData.amount}>
+        Gerar Boleto Bancário
+      </button>
+    )}
+  
+    <Modal
+      isOpen={isPixModalOpen}
+      onRequestClose={() => setIsPixModalOpen(false)}
+      contentLabel="QR Code Pix"
+      style={{
+        content: {
+          maxWidth: "400px",
+          margin: "auto",
+          textAlign: "center",
+          padding: "20px",
+        },
+        overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+      }}
+    >
+      <h3>Pagamento via Pix</h3>
+      <p>Escaneie o QR Code abaixo para efetuar o pagamento:</p>
+      {pixQrCode ? (
+        <img src={pixQrCode} alt="QR Code Pix" style={{ width: "100%", maxWidth: "300px" }} />
+      ) : (
+        <p>Carregando QR Code...</p>
       )}
-
-      {selectedPaymentMethod === "pix" && (
-        <button onClick={() => alert("Pagamento Pix não implementado aqui")}>Gerar QR Code Pix</button>
-      )}
-
-      {selectedPaymentMethod === "boleto" && (
-        <button onClick={generateBoleto}>Gerar Boleto Bancário</button>
-      )}
-
-      <Modal
-        isOpen={isBoletoModalOpen}
-        onRequestClose={() => setIsBoletoModalOpen(false)}
-        contentLabel="Boleto Bancário"
+      <button
+        onClick={() => setIsPixModalOpen(false)}
         style={{
-          content: {
-            maxWidth: "400px",
-            margin: "auto",
-            textAlign: "center",
-            padding: "20px",
-          },
-          overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+          marginTop: "10px",
+          backgroundColor: "#d63031",
+          color: "#fff",
+          padding: "10px 20px",
+          border: "none",
+          cursor: "pointer",
         }}
       >
-        <h3>Pagamento via Boleto Bancário</h3>
-        <p>Utilize o link abaixo para acessar o boleto:</p>
-        {boletoUrl && (
-          <a href={boletoUrl} target="_blank" rel="noopener noreferrer">
-            Imprimir Boleto
-          </a>
-        )}
-        <button
-          onClick={() => setIsBoletoModalOpen(false)}
-          style={{
-            marginTop: "10px",
-            backgroundColor: "#d63031",
-            color: "#fff",
-            padding: "10px 20px",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          Fechar
-        </button>
-      </Modal>
-    </div>
+        Fechar
+      </button>
+    </Modal>
+  
+    <Modal
+      isOpen={isBoletoModalOpen}
+      onRequestClose={() => setIsBoletoModalOpen(false)}
+      contentLabel="Boleto Bancário"
+      style={{
+        content: {
+          maxWidth: "400px",
+          margin: "auto",
+          textAlign: "center",
+          padding: "20px",
+        },
+        overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+      }}
+    >
+      <h3>Pagamento via Boleto Bancário</h3>
+      <p>Utilize o link abaixo para acessar o boleto:</p>
+      {boletoUrl ? (
+        <a href={boletoUrl} target="_blank" rel="noopener noreferrer">
+          Visualizar Boleto
+        </a>
+      ) : (
+        <p>Carregando o link do boleto...</p>
+      )}
+      <button
+        onClick={() => setIsBoletoModalOpen(false)}
+        style={{
+          marginTop: "10px",
+          backgroundColor: "#d63031",
+          color: "#fff",
+          padding: "10px 20px",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        Fechar
+      </button>
+    </Modal>
+  </div>
+  
   );
 };
 
