@@ -74,6 +74,12 @@ const Checkout: React.FC = () => {
     loadMercadoPagoSdk();
   }, [publicKey]);
 
+  useEffect(() => {
+    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card" && !cardFormInstance) {
+      initializeCardForm();
+    }
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod, cardFormInstance]);
+
   const initializeCardForm = () => {
     if (mpInstance && formRef.current) {
       const cardForm = mpInstance.cardForm({
@@ -253,16 +259,19 @@ const Checkout: React.FC = () => {
       );
   
       const result = await response.json();
+      // Verifique se a resposta contém o link para o boleto
       if (response.ok && result.external_resource_url) {
         setBoletoUrl(result.external_resource_url);
         setIsBoletoModalOpen(true);
       } else {
-        alert("Erro ao gerar boleto.");
+        alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
       }
     } catch (error) {
+      console.error("Erro ao processar pagamento com boleto:", error);
       alert("Erro ao processar pagamento com boleto.");
     }
   };
+  
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
