@@ -264,9 +264,9 @@ const Checkout: React.FC = () => {
       const result = await response.json();
       console.log("Resposta completa da API:", result);
   
-      if (response.ok && result.external_resource_url) {
-        console.log("Boleto gerado com sucesso. URL do boleto:", result.external_resource_url);
-        setBoletoUrl(result.external_resource_url);
+      if (response.ok && result.boleto_url) {
+        console.log("Boleto gerado com sucesso. URL do boleto:", result.boleto_url);
+        setBoletoUrl(result.boleto_url);
         setIsBoletoModalOpen(true); // Abre o modal com o link do boleto
       } else {
         console.error("Erro ao gerar boleto: ", result.message || "Resposta inválida da API");
