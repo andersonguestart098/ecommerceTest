@@ -230,9 +230,12 @@ const Checkout: React.FC = () => {
 
   const generateBoleto = async () => {
     if (!checkoutData.amount || checkoutData.amount <= 0) {
+      console.error("Erro: o valor total do pedido não está definido ou é inválido.");
       alert("Erro: o valor total do pedido não está definido ou é inválido.");
       return;
     }
+  
+    console.log("Iniciando a geração do boleto com os dados:", checkoutData);
   
     try {
       const response = await fetch(
@@ -259,11 +262,14 @@ const Checkout: React.FC = () => {
       );
   
       const result = await response.json();
-      console.log("Resultado do boleto:", result); // Log para depuração
+      console.log("Resposta completa da API:", result);
+  
       if (response.ok && result.external_resource_url) {
+        console.log("Boleto gerado com sucesso. URL do boleto:", result.external_resource_url);
         setBoletoUrl(result.external_resource_url);
-        setIsBoletoModalOpen(true); // Garantir que a modal é aberta
+        setIsBoletoModalOpen(true); // Abre o modal com o link do boleto
       } else {
+        console.error("Erro ao gerar boleto: ", result.message || "Resposta inválida da API");
         alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
       }
     } catch (error) {
