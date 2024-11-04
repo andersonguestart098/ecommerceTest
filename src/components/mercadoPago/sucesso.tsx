@@ -1,10 +1,16 @@
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const SuccessPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Recebe a forma de pagamento, QR code do Pix e URL do boleto do estado
+  const paymentMethod = location.state?.paymentMethod || "Cartão de Crédito";
+  const pixQrCode = location.state?.pixQrCode;
+  const boletoUrl = location.state?.boletoUrl;
 
   const handleContinueShopping = () => {
     navigate("/");
@@ -22,10 +28,8 @@ const SuccessPage: React.FC = () => {
         minHeight: "100vh",
       }}
     >
-      {/* Ícone de sucesso */}
       <CheckCircleIcon sx={{ fontSize: 80, color: "#4caf50", mb: 2 }} />
 
-      {/* Mensagem de sucesso e agradecimento */}
       <Typography variant="h4" gutterBottom sx={{ color: "#4caf50", fontWeight: "bold" }}>
         Pagamento Realizado com Sucesso!
       </Typography>
@@ -33,7 +37,26 @@ const SuccessPage: React.FC = () => {
         Obrigado por confiar na <strong>Nato Pisos</strong>! Sua compra foi concluída com sucesso, e estamos animados para que você aproveite nossos produtos. Em breve, você receberá um e-mail com todos os detalhes do seu pedido.
       </Typography>
 
-      {/* Botão para continuar comprando */}
+      <Typography variant="h6" gutterBottom sx={{ color: "#555", marginTop: 2 }}>
+        Método de Pagamento: {paymentMethod === "pix" ? "Pix" : paymentMethod === "boleto" ? "Boleto Bancário" : "Cartão de Crédito"}
+      </Typography>
+
+      {paymentMethod === "pix" && pixQrCode && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6">QR Code para Pagamento via Pix</Typography>
+          <img src={pixQrCode} alt="QR Code Pix" style={{ marginTop: 10, width: 200, height: 200 }} />
+        </Box>
+      )}
+
+      {paymentMethod === "boleto" && boletoUrl && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6">Clique no link abaixo para acessar seu boleto:</Typography>
+          <a href={boletoUrl} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10, display: "block", color: "#007bff" }}>
+            Visualizar Boleto Bancário
+          </a>
+        </Box>
+      )}
+
       <Button
         variant="contained"
         onClick={handleContinueShopping}
@@ -49,7 +72,6 @@ const SuccessPage: React.FC = () => {
         Continuar Comprando
       </Button>
 
-      {/* Botão para retornar à página inicial */}
       <Button
         variant="outlined"
         onClick={handleContinueShopping}

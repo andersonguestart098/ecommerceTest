@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../contexts/CartContext"; // Importa o hook useCart
+
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +20,8 @@ const Checkout: React.FC = () => {
   const [checkoutData, setCheckoutData] = useState<any>({});
   const [userId, setUserId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const { clearCart } = useCart();
+
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -28,31 +32,39 @@ const Checkout: React.FC = () => {
     }
 
     setUserId(storedUserId);
+    console.log("User ID:", storedUserId);
 
     const storedCheckoutData = localStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      setCheckoutData(JSON.parse(storedCheckoutData));
+      console.log("Carregando dados do checkout do localStorage.");
+      const parsedData = JSON.parse(storedCheckoutData);
+      console.log("Dados carregados:", parsedData);
+      setCheckoutData(parsedData);
     } else {
-      const fetchUserData = async () => {
-        try {
-          const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${storedUserId}`);
-          setCheckoutData({
-            firstName: response.data.name,
-            lastName: response.data.last_name,
-            email: response.data.email,
-            identificationType: response.data.identification?.type || "CPF",
-            identificationNumber: response.data.identification?.number || "00000000000",
-            amount: response.data.totalPrice || 100.5,
-            shippingCost: response.data.shippingCost || 0,
-            userId: storedUserId,
-          });
-        } catch (error) {
-          alert("Não foi possível carregar os dados do usuário.");
-        }
-      };
-      fetchUserData();
+      fetchUserDataFromAPI(storedUserId);
     }
   }, [navigate]);
+
+  const fetchUserDataFromAPI = async (userId: string) => {
+    try {
+      const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`);
+      const userData = {
+        firstName: response.data.name,
+        lastName: response.data.last_name,
+        email: response.data.email,
+        identificationType: response.data.identification?.type || "CPF",
+        identificationNumber: response.data.identification?.number || "00000000000",
+        amount: response.data.totalPrice || 100.5,
+        shippingCost: response.data.shippingCost || 0,
+        userId: userId,
+      };
+      setCheckoutData(userData);
+      localStorage.setItem("checkoutData", JSON.stringify(userData));
+    } catch (error) {
+      console.error("Erro ao carregar os dados do usuário:", error);
+      alert("Não foi possível carregar os dados do usuário.");
+    }
+  };
 
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
@@ -87,48 +99,18 @@ const Checkout: React.FC = () => {
         iframe: true,
         form: {
           id: "form-checkout",
-          cardNumber: {
-            id: "form-checkout__cardNumber",
-            placeholder: "Número do cartão",
-          },
-          expirationDate: {
-            id: "form-checkout__expirationDate",
-            placeholder: "MM/YY",
-          },
-          securityCode: {
-            id: "form-checkout__securityCode",
-            placeholder: "Código de segurança",
-          },
-          cardholderName: {
-            id: "form-checkout__cardholderName",
-            placeholder: "Nome do titular",
-          },
+          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
+          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/YY" },
+          securityCode: { id: "form-checkout__securityCode", placeholder: "Código de segurança" },
+          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
           issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
-          installments: {
-            id: "form-checkout__installments",
-            placeholder: "Número de parcelas",
-          },
-          identificationType: {
-            id: "form-checkout__identificationType",
-            placeholder: "Tipo de documento (ex: CPF)",
-          },
-          identificationNumber: {
-            id: "form-checkout__identificationNumber",
-            placeholder: "Número do documento",
-          },
-          cardholderEmail: {
-            id: "form-checkout__cardholderEmail",
-            placeholder: "E-mail do titular",
-          },
+          installments: { id: "form-checkout__installments", placeholder: "Número de parcelas" },
+          identificationType: { id: "form-checkout__identificationType", placeholder: "Tipo de documento" },
+          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail do titular" },
         },
         callbacks: {
-          onFormMounted: (error: any) => {
-            if (error) {
-              console.warn("Erro ao montar o formulário:", error);
-            } else {
-              setIsMpReady(true);
-            }
-          },
+          onFormMounted: (error: any) => error ? console.warn("Erro ao montar o formulário:", error) : setIsMpReady(true),
           onSubmit: handleCardSubmit,
         },
       });
@@ -157,10 +139,7 @@ const Checkout: React.FC = () => {
         email: formData.cardholderEmail,
         first_name: formData.cardholderName ? formData.cardholderName.split(" ")[0] : "",
         last_name: formData.cardholderName ? formData.cardholderName.split(" ").slice(1).join(" ") : "",
-        identification: {
-          type: formData.identificationType,
-          number: formData.identificationNumber,
-        },
+        identification: { type: formData.identificationType, number: formData.identificationNumber },
       },
       userId: checkoutData.userId,
     };
@@ -187,209 +166,208 @@ const Checkout: React.FC = () => {
   };
 
   const generatePixQrCode = async () => {
-    if (!checkoutData.amount) {
-      alert("Erro: o valor total do pedido não está definido.");
-      return;
-    }
-
     try {
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method_id: "pix",
-            transaction_amount: Number(checkoutData.amount),
-            description: "Pagamento via Pix",
-            payer: {
-              email: checkoutData.email,
-              first_name: checkoutData.firstName,
-              last_name: checkoutData.lastName,
-              identification: {
-                type: checkoutData.identificationType,
-                number: checkoutData.identificationNumber,
-              },
+      const response = await fetch("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_method_id: "pix",
+          transaction_amount: Number(checkoutData.amount),
+          description: "Pagamento via Pix",
+          payer: {
+            email: checkoutData.email,
+            first_name: checkoutData.firstName,
+            last_name: checkoutData.lastName,
+            identification: {
+              type: checkoutData.identificationType,
+              number: checkoutData.identificationNumber,
             },
-            userId: checkoutData.userId,
-          }),
-        }
-      );
-
+          },
+          userId: checkoutData.userId,
+        }),
+      });
+  
       const result = await response.json();
       if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
-        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
-        setIsPixModalOpen(true);
+        return `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`;
       } else {
         alert("Erro ao gerar QR code Pix.");
       }
     } catch (error) {
       alert("Erro ao processar pagamento com Pix.");
     }
+    return null;
   };
-
+  
   const generateBoleto = async () => {
-    if (!checkoutData.amount || checkoutData.amount <= 0) {
-      console.error("Erro: o valor total do pedido não está definido ou é inválido.");
-      alert("Erro: o valor total do pedido não está definido ou é inválido.");
-      return;
-    }
-  
-    console.log("Iniciando a geração do boleto com os dados:", checkoutData);
-  
     try {
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method_id: "bolbradesco",
-            transaction_amount: Number(checkoutData.amount),
-            description: "Pagamento via Boleto Bancário",
-            payer: {
-              email: checkoutData.email,
-              first_name: checkoutData.firstName,
-              last_name: checkoutData.lastName,
-              identification: {
-                type: checkoutData.identificationType || "CPF",
-                number: checkoutData.identificationNumber || "00000000000",
-              },
+      const response = await fetch("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_method_id: "bolbradesco",
+          transaction_amount: Number(checkoutData.amount),
+          description: "Pagamento via Boleto Bancário",
+          payer: {
+            email: checkoutData.email,
+            first_name: checkoutData.firstName,
+            last_name: checkoutData.lastName,
+            identification: {
+              type: checkoutData.identificationType,
+              number: checkoutData.identificationNumber,
             },
-            userId: checkoutData.userId,
-          }),
-        }
-      );
+          },
+          userId: checkoutData.userId,
+        }),
+      });
   
       const result = await response.json();
-      console.log("Resposta completa da API:", result);
-  
       if (response.ok && result.boleto_url) {
-        console.log("Boleto gerado com sucesso. URL do boleto:", result.boleto_url);
-        setBoletoUrl(result.boleto_url);
-        setIsBoletoModalOpen(true); // Abre o modal com o link do boleto
+        return result.boleto_url;
       } else {
-        console.error("Erro ao gerar boleto: ", result.message || "Resposta inválida da API");
-        alert("Erro ao gerar boleto. Verifique os dados e tente novamente.");
+        alert("Erro ao gerar boleto.");
       }
     } catch (error) {
-      console.error("Erro ao processar pagamento com boleto:", error);
       alert("Erro ao processar pagamento com boleto.");
     }
+    return null;
   };
   
+  
+  const handleContinue = async () => {
+    let pixQrCode = null;
+    let boletoUrl = null;
+  
+    if (selectedPaymentMethod === "pix") {
+      pixQrCode = await generatePixQrCode();
+    } else if (selectedPaymentMethod === "boleto") {
+      boletoUrl = await generateBoleto();
+    }
+  
+    clearCart(); // Limpa o carrinho após o pagamento ser concluído
+  
+    navigate("/sucesso", { 
+      state: { 
+        paymentMethod: selectedPaymentMethod,
+        pixQrCode,
+        boletoUrl
+      } 
+    });
+  };
+  
+  
+
+  const containerStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "20px",
+  };
+
+  const paymentMethodsStyle = {
+    flex: 1,
+    marginRight: "20px",
+    padding: "20px",
+    border: "1px solid #e0e0e0",
+    borderRadius: "8px",
+  };
+
+  const summaryStyle: React.CSSProperties = {
+    width: "300px",
+    padding: "20px",
+    border: "1px solid #e0e0e0",
+    borderRadius: "8px",
+    textAlign: "center" as "center",
+  };
+
+  const buttonStyle = {
+    display: "block",
+    width: "100%",
+    marginTop: "10px",
+    padding: "12px",
+    backgroundColor: "#FF6F00",
+    color: "#FFF",
+    border: "none",
+    borderRadius: "4px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  };
+
+  const paymentButtonStyle = (isSelected: boolean) => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    padding: "15px",
+    marginBottom: "10px",
+    border: isSelected ? "2px solid #FF6F00" : "1px solid #e0e0e0",
+    borderRadius: "8px",
+    cursor: "pointer",
+    backgroundColor: isSelected ? "#FFF6E0" : "#FFF",
+  });
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-    <h2>Resumo do Pedido</h2>
-    <p>Total: R$ {checkoutData.amount}</p>
-    <p>Frete: R$ {checkoutData.shippingCost}</p>
-    <h3>Selecione a forma de pagamento</h3>
-    <button onClick={() => setSelectedPaymentMethod("card")}>Cartão</button>
-    <button onClick={() => setSelectedPaymentMethod("pix")}>Pix</button>
-    <button onClick={() => setSelectedPaymentMethod("boleto")}>Boleto Bancário</button>
-  
-    {selectedPaymentMethod === "card" && (
-      <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-        <div id="form-checkout__cardNumber" className="container"></div>
-        <div id="form-checkout__expirationDate" className="container"></div>
-        <div id="form-checkout__securityCode" className="container"></div>
-        <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
-        <select id="form-checkout__issuer"></select>
-        <select id="form-checkout__installments"></select>
-        <select id="form-checkout__identificationType"></select>
-        <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
-        <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
-        <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
-        <progress value="0" className="progress-bar">Carregando...</progress>
-      </form>
-    )}
-  
-    {selectedPaymentMethod === "pix" && (
-      <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-    )}
-  
-    {selectedPaymentMethod === "boleto" && (
-      <button onClick={generateBoleto} disabled={!checkoutData.amount}>
-        Gerar Boleto Bancário
-      </button>
-    )}
-  
-    <Modal
-      isOpen={isPixModalOpen}
-      onRequestClose={() => setIsPixModalOpen(false)}
-      contentLabel="QR Code Pix"
-      style={{
-        content: {
-          maxWidth: "400px",
-          margin: "auto",
-          textAlign: "center",
-          padding: "20px",
-        },
-        overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
-      }}
-    >
-      <h3>Pagamento via Pix</h3>
-      <p>Escaneie o QR Code abaixo para efetuar o pagamento:</p>
-      {pixQrCode ? (
-        <img src={pixQrCode} alt="QR Code Pix" style={{ width: "100%", maxWidth: "300px" }} />
-      ) : (
-        <p>Carregando QR Code...</p>
+    <div style={containerStyle}>
+    <div style={paymentMethodsStyle}>
+      <h2>Forma de Pagamento</h2>
+      
+      {/* Seleção de método de pagamento */}
+      <div style={paymentButtonStyle(selectedPaymentMethod === "pix")} onClick={() => setSelectedPaymentMethod("pix")}>
+        <span>Pix</span>
+      </div>
+      <div style={paymentButtonStyle(selectedPaymentMethod === "boleto")} onClick={() => setSelectedPaymentMethod("boleto")}>
+        <span>Boleto Bancário</span>
+        {selectedPaymentMethod === "boleto" && (
+          <p style={{ fontSize: "12px", color: "#555" }}>
+            Até 5% de desconto. Você poderá visualizar ou imprimir o boleto após a finalização do pedido.
+          </p>
+        )}
+      </div>
+      <div style={paymentButtonStyle(selectedPaymentMethod === "card")} onClick={() => setSelectedPaymentMethod("card")}>
+        <span>Cartão de Crédito</span>
+      </div>
+
+      {/* Formulário de cartão */}
+      {selectedPaymentMethod === "card" && (
+        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+          <div id="form-checkout__cardNumber" className="container"></div>
+          <div id="form-checkout__expirationDate" className="container"></div>
+          <div id="form-checkout__securityCode" className="container"></div>
+          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+          <select id="form-checkout__issuer"></select>
+          <select id="form-checkout__installments"></select>
+          <select id="form-checkout__identificationType"></select>
+          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+          <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
+          <progress value="0" className="progress-bar">Carregando...</progress>
+        </form>
       )}
-      <button
-        onClick={() => setIsPixModalOpen(false)}
-        style={{
-          marginTop: "10px",
-          backgroundColor: "#d63031",
-          color: "#fff",
-          padding: "10px 20px",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        Fechar
+    </div>
+
+    <div style={summaryStyle}>
+      <h2>Resumo</h2>
+      <p>Valor dos Produtos: R$ {checkoutData.amount}</p>
+      <p>Descontos: R$ {checkoutData.discount || "0,00"}</p>
+      <p>Frete: R$ {checkoutData.shippingCost}</p>
+      <p>
+        <strong>Total: R$ {checkoutData.amount - (checkoutData.discount || 0)}</strong>
+      </p>
+      
+      {/* Botão Continuar com a nova função */}
+      <button style={buttonStyle} onClick={handleContinue}>
+        Continuar
       </button>
-    </Modal>
-  
-    <Modal
-      isOpen={isBoletoModalOpen}
-      onRequestClose={() => setIsBoletoModalOpen(false)}
-      contentLabel="Boleto Bancário"
-      style={{
-        content: {
-          maxWidth: "400px",
-          margin: "auto",
-          textAlign: "center",
-          padding: "20px",
-        },
-        overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
-      }}
-    >
-      <h3>Pagamento via Boleto Bancário</h3>
-      <p>Utilize o link abaixo para acessar o boleto:</p>
-      {boletoUrl ? (
-        <a href={boletoUrl} target="_blank" rel="noopener noreferrer">
-          Visualizar Boleto
-        </a>
-      ) : (
-        <p>Carregando o link do boleto...</p>
-      )}
+      
       <button
-        onClick={() => setIsBoletoModalOpen(false)}
-        style={{
-          marginTop: "10px",
-          backgroundColor: "#d63031",
-          color: "#fff",
-          padding: "10px 20px",
-          border: "none",
-          cursor: "pointer",
-        }}
+        style={{ ...buttonStyle, backgroundColor: "#ddd", color: "#333", marginTop: "10px" }}
+        onClick={() => navigate("/cart")}
       >
-        Fechar
+        Voltar
       </button>
-    </Modal>
+    </div>
   </div>
-  
   );
 };
 
