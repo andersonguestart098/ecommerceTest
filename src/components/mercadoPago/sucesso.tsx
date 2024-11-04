@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -6,11 +6,20 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 const SuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Recebe a forma de pagamento, QR code do Pix e URL do boleto do estado
+
+  // Extrai os dados passados no `state`
   const paymentMethod = location.state?.paymentMethod || "Cartão de Crédito";
   const pixQrCode = location.state?.pixQrCode;
   const boletoUrl = location.state?.boletoUrl;
+
+  // Verifica o que foi passado via state
+  useEffect(() => {
+    console.log("Dados recebidos no SuccessPage:", {
+      paymentMethod,
+      pixQrCode,
+      boletoUrl,
+    });
+  }, [paymentMethod, pixQrCode, boletoUrl]);
 
   const handleContinueShopping = () => {
     navigate("/");
@@ -34,7 +43,8 @@ const SuccessPage: React.FC = () => {
         Pagamento Realizado com Sucesso!
       </Typography>
       <Typography variant="body1" gutterBottom sx={{ maxWidth: 600 }}>
-        Obrigado por confiar na <strong>Nato Pisos</strong>! Sua compra foi concluída com sucesso, e estamos animados para que você aproveite nossos produtos. Em breve, você receberá um e-mail com todos os detalhes do seu pedido.
+        Obrigado por confiar na <strong>Nato Pisos</strong>! Sua compra foi concluída com sucesso, e estamos animados
+        para que você aproveite nossos produtos. Em breve, você receberá um e-mail com todos os detalhes do seu pedido.
       </Typography>
 
       <Typography variant="h6" gutterBottom sx={{ color: "#555", marginTop: 2 }}>
@@ -42,7 +52,7 @@ const SuccessPage: React.FC = () => {
       </Typography>
 
       {paymentMethod === "pix" && pixQrCode && (
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: 3, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Typography variant="h6">QR Code para Pagamento via Pix</Typography>
           <img src={pixQrCode} alt="QR Code Pix" style={{ marginTop: 10, width: 200, height: 200 }} />
         </Box>

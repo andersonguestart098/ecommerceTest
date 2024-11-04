@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../contexts/CartContext"; // Importa o hook useCart
-
+import { useCart } from "../contexts/CartContext";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -13,15 +11,11 @@ const Checkout: React.FC = () => {
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
-  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
-  const [isBoletoModalOpen, setIsBoletoModalOpen] = useState(false);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
-  const [userId, setUserId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const { clearCart } = useCart();
-
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -31,15 +25,9 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    setUserId(storedUserId);
-    console.log("User ID:", storedUserId);
-
     const storedCheckoutData = localStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      console.log("Carregando dados do checkout do localStorage.");
-      const parsedData = JSON.parse(storedCheckoutData);
-      console.log("Dados carregados:", parsedData);
-      setCheckoutData(parsedData);
+      setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
       fetchUserDataFromAPI(storedUserId);
     }
@@ -61,7 +49,6 @@ const Checkout: React.FC = () => {
       setCheckoutData(userData);
       localStorage.setItem("checkoutData", JSON.stringify(userData));
     } catch (error) {
-      console.error("Erro ao carregar os dados do usuário:", error);
       alert("Não foi possível carregar os dados do usuário.");
     }
   };
@@ -79,12 +66,12 @@ const Checkout: React.FC = () => {
           setSdkLoaded(true);
           setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
         };
-        scriptSdk.onerror = () => console.error("Erro ao carregar o SDK.");
         document.body.appendChild(scriptSdk);
       }
     };
     loadMercadoPagoSdk();
   }, [publicKey]);
+
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card" && !cardFormInstance) {
@@ -154,7 +141,6 @@ const Checkout: React.FC = () => {
         }
       );
 
-      const result = await response.json();
       if (response.ok) {
         navigate("/sucesso");
       } else {
@@ -186,7 +172,7 @@ const Checkout: React.FC = () => {
           userId: checkoutData.userId,
         }),
       });
-  
+
       const result = await response.json();
       if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
         return `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`;
@@ -198,7 +184,7 @@ const Checkout: React.FC = () => {
     }
     return null;
   };
-  
+
   const generateBoleto = async () => {
     try {
       const response = await fetch("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", {
@@ -220,7 +206,7 @@ const Checkout: React.FC = () => {
           userId: checkoutData.userId,
         }),
       });
-  
+
       const result = await response.json();
       if (response.ok && result.boleto_url) {
         return result.boleto_url;
@@ -232,32 +218,33 @@ const Checkout: React.FC = () => {
     }
     return null;
   };
-  
-  
+
   const handleContinue = async () => {
-    let pixQrCode = null;
-    let boletoUrl = null;
-  
+    let pixQrCodeData = null;
+    let boletoUrlData = null;
+
     if (selectedPaymentMethod === "pix") {
-      pixQrCode = await generatePixQrCode();
+      pixQrCodeData = await generatePixQrCode();
+      setPixQrCode(pixQrCodeData);
     } else if (selectedPaymentMethod === "boleto") {
-      boletoUrl = await generateBoleto();
+      boletoUrlData = await generateBoleto();
+      setBoletoUrl(boletoUrlData);
     }
-  
-    clearCart(); // Limpa o carrinho após o pagamento ser concluído
-  
-    navigate("/sucesso", { 
-      state: { 
+
+    clearCart();
+
+    // Navegação para a página de sucesso com os dados de pagamento
+    navigate("/sucesso", {
+      state: {
         paymentMethod: selectedPaymentMethod,
-        pixQrCode,
-        boletoUrl
-      } 
+        pixQrCode: pixQrCodeData,
+        boletoUrl: boletoUrlData,
+      },
     });
   };
-  
-  
 
-  const containerStyle = {
+  // Estilos
+  const containerStyle: React.CSSProperties = {
     display: "flex",
     justifyContent: "space-between",
     maxWidth: "1200px",
@@ -265,28 +252,30 @@ const Checkout: React.FC = () => {
     padding: "20px",
   };
 
-  const paymentMethodsStyle = {
+  const paymentMethodsStyle: React.CSSProperties = {
     flex: 1,
     marginRight: "20px",
     padding: "20px",
-    border: "1px solid #e0e0e0",
+    border: "1px solid #E6E3DB",
     borderRadius: "8px",
+    backgroundColor: "#F9F9F7",
   };
 
   const summaryStyle: React.CSSProperties = {
     width: "300px",
     padding: "20px",
-    border: "1px solid #e0e0e0",
+    border: "1px solid #E6E3DB",
     borderRadius: "8px",
-    textAlign: "center" as "center",
+    textAlign: "center" as React.CSSProperties["textAlign"],
+    backgroundColor: "#F9F9F7",
   };
 
-  const buttonStyle = {
+  const buttonStyle: React.CSSProperties = {
     display: "block",
     width: "100%",
     marginTop: "10px",
     padding: "12px",
-    backgroundColor: "#FF6F00",
+    backgroundColor: "#313926",
     color: "#FFF",
     border: "none",
     borderRadius: "4px",
@@ -294,80 +283,78 @@ const Checkout: React.FC = () => {
     cursor: "pointer",
   };
 
-  const paymentButtonStyle = (isSelected: boolean) => ({
+  const paymentButtonStyle = (isSelected: boolean): React.CSSProperties => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
     padding: "15px",
     marginBottom: "10px",
-    border: isSelected ? "2px solid #FF6F00" : "1px solid #e0e0e0",
+    border: isSelected ? "2px solid #313926" : "1px solid #E6E3DB",
     borderRadius: "8px",
     cursor: "pointer",
-    backgroundColor: isSelected ? "#FFF6E0" : "#FFF",
+    backgroundColor: isSelected ? "#E6E3DB" : "#FFF",
   });
 
   return (
     <div style={containerStyle}>
-    <div style={paymentMethodsStyle}>
-      <h2>Forma de Pagamento</h2>
-      
-      {/* Seleção de método de pagamento */}
-      <div style={paymentButtonStyle(selectedPaymentMethod === "pix")} onClick={() => setSelectedPaymentMethod("pix")}>
-        <span>Pix</span>
-      </div>
-      <div style={paymentButtonStyle(selectedPaymentMethod === "boleto")} onClick={() => setSelectedPaymentMethod("boleto")}>
-        <span>Boleto Bancário</span>
-        {selectedPaymentMethod === "boleto" && (
-          <p style={{ fontSize: "12px", color: "#555" }}>
-            Até 5% de desconto. Você poderá visualizar ou imprimir o boleto após a finalização do pedido.
-          </p>
+      <div style={paymentMethodsStyle}>
+        <h2>Forma de Pagamento</h2>
+
+        <div style={paymentButtonStyle(selectedPaymentMethod === "pix")} onClick={() => setSelectedPaymentMethod("pix")}>
+          <span>Pix</span>
+        </div>
+        <div style={paymentButtonStyle(selectedPaymentMethod === "boleto")} onClick={() => setSelectedPaymentMethod("boleto")}>
+          <span>Boleto Bancário</span>
+          {selectedPaymentMethod === "boleto" && (
+            <p style={{ fontSize: "12px", color: "#555" }}>
+              Até 5% de desconto. Você poderá visualizar ou imprimir o boleto após a finalização do pedido.
+            </p>
+          )}
+        </div>
+        <div style={paymentButtonStyle(selectedPaymentMethod === "card")} onClick={() => setSelectedPaymentMethod("card")}>
+          <span>Cartão de Crédito</span>
+        </div>
+
+        {selectedPaymentMethod === "card" && (
+          <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+            <div id="form-checkout__cardNumber" className="container"></div>
+            <div id="form-checkout__expirationDate" className="container"></div>
+            <div id="form-checkout__securityCode" className="container"></div>
+            <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
+            <select id="form-checkout__issuer"></select>
+            <select id="form-checkout__installments"></select>
+            <select id="form-checkout__identificationType"></select>
+            <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
+            <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
+            <button type="submit" style={{ ...buttonStyle, marginTop: "20px" }} disabled={!isMpReady}>
+              Pagar
+            </button>
+          </form>
         )}
       </div>
-      <div style={paymentButtonStyle(selectedPaymentMethod === "card")} onClick={() => setSelectedPaymentMethod("card")}>
-        <span>Cartão de Crédito</span>
+
+      <div style={summaryStyle}>
+        <h2>Resumo</h2>
+        <p>Valor dos Produtos: R$ {checkoutData.amount}</p>
+        <p>Descontos: R$ {checkoutData.discount || "0,00"}</p>
+        <p>Frete: R$ {checkoutData.shippingCost}</p>
+        <p>
+          <strong>Total: R$ {checkoutData.amount - (checkoutData.discount || 0)}</strong>
+        </p>
+
+        <button style={buttonStyle} onClick={handleContinue}>
+          Continuar
+        </button>
+
+        <button
+          style={{ ...buttonStyle, backgroundColor: "#E6E3DB", color: "#333", marginTop: "10px" }}
+          onClick={() => navigate("/cart")}
+        >
+          Voltar
+        </button>
       </div>
-
-      {/* Formulário de cartão */}
-      {selectedPaymentMethod === "card" && (
-        <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-          <div id="form-checkout__cardNumber" className="container"></div>
-          <div id="form-checkout__expirationDate" className="container"></div>
-          <div id="form-checkout__securityCode" className="container"></div>
-          <input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" />
-          <select id="form-checkout__issuer"></select>
-          <select id="form-checkout__installments"></select>
-          <select id="form-checkout__identificationType"></select>
-          <input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" />
-          <input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail do titular" />
-          <button type="submit" id="form-checkout__submit" disabled={!isMpReady}>Pagar</button>
-          <progress value="0" className="progress-bar">Carregando...</progress>
-        </form>
-      )}
     </div>
-
-    <div style={summaryStyle}>
-      <h2>Resumo</h2>
-      <p>Valor dos Produtos: R$ {checkoutData.amount}</p>
-      <p>Descontos: R$ {checkoutData.discount || "0,00"}</p>
-      <p>Frete: R$ {checkoutData.shippingCost}</p>
-      <p>
-        <strong>Total: R$ {checkoutData.amount - (checkoutData.discount || 0)}</strong>
-      </p>
-      
-      {/* Botão Continuar com a nova função */}
-      <button style={buttonStyle} onClick={handleContinue}>
-        Continuar
-      </button>
-      
-      <button
-        style={{ ...buttonStyle, backgroundColor: "#ddd", color: "#333", marginTop: "10px" }}
-        onClick={() => navigate("/cart")}
-      >
-        Voltar
-      </button>
-    </div>
-  </div>
   );
 };
 
