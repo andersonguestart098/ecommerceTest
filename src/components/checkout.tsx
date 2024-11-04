@@ -406,7 +406,7 @@ const Checkout: React.FC = () => {
       }
     } catch (error) {
       console.error("Erro ao processar pagamento com boleto:", error);
-      alert("Erro ao processar pagamento com boleto.");
+      alert("Erro ao Processar pagamento com boleto.");
     }
   };
 
