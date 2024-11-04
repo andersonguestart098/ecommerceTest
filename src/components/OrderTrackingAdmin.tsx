@@ -34,44 +34,57 @@ const statusSteps = [
     key: "PENDING",
     label: "Pendente",
     icon: <PendingIcon />,
+    visualValue: "Pendente"
   },
   {
-    key: "APPROVED",
+    key: "APPROVED", // Corrigido para `APPROVED`
     label: "Pagamento Aprovado",
     icon: <PaymentIcon />,
+    visualValue: "Aprovado"
   },
   {
     key: "AWAITING_STOCK_CONFIRMATION",
     label: "Aguardando Confirmação do Estoque",
     icon: <CheckCircleIcon />,
+    visualValue: "Estoque Confirmando"
   },
   {
     key: "SEPARATED",
     label: "Separado",
     icon: <AssignmentTurnedInIcon />,
+    visualValue: "Separado"
   },
   {
     key: "DISPATCHED",
     label: "Despachado",
     icon: <LocalShippingIcon />,
+    visualValue: "Despachado"
   },
   {
     key: "DELIVERED",
     label: "Entregue",
     icon: <AssignmentTurnedInIcon />,
+    visualValue: "Entregue"
+  },
+  {
+    key: "CANCELED",
+    label: "Cancelado",
+    icon: <AssignmentTurnedInIcon />,
+    visualValue: "Cancelado"
   },
 ];
 
-// Mapeamento dos status para nomes em português
 const statusLabels: { [key: string]: string } = {
   PENDING: "Pendente",
-  APPROVED: "Pagamento Aprovado",
+  APPROVED: "Pagamento Aprovado", // Use `APPROVED` aqui também
   AWAITING_STOCK_CONFIRMATION: "Aguardando Confirmação do Estoque",
   SEPARATED: "Separado",
   DISPATCHED: "Despachado",
   DELIVERED: "Entregue",
   CANCELED: "Cancelado",
 };
+
+
 
 const OrderTrackingAdmin: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -116,9 +129,7 @@ const OrderTrackingAdmin: React.FC = () => {
         }
       );
       setSnackbarMessage(
-        `Status do pedido ${orderId} atualizado para ${
-          statusLabels[newStatus] || newStatus
-        }`
+        `Status do pedido ${orderId} atualizado para ${statusLabels[newStatus] || newStatus}`
       );
       setOpenSnackbar(true);
       fetchOrders();
@@ -183,7 +194,7 @@ const OrderTrackingAdmin: React.FC = () => {
                   color: index <= currentStepIndex ? "#313926" : "#E6E3DB",
                 }}
               >
-                {step.label}
+                {step.visualValue}
               </Typography>
               {index < statusSteps.length - 1 && (
                 <Box
@@ -255,7 +266,7 @@ const OrderTrackingAdmin: React.FC = () => {
                       Pedido ID: {order.id}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Total: R$ {order.totalPrice.toFixed(2)}
+                      Total: R$ {order.totalPrice.toFixed(2).replace(".", ",")}
                     </Typography>
                   </Box>
                   <Box sx={{ width: "100%" }}>
