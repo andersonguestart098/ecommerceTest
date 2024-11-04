@@ -29,7 +29,6 @@ const Checkout: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
-  const [isOrderCompleted, setIsOrderCompleted] = useState(false);
 
   const [cardPreview, setCardPreview] = useState({
     cardNumber: "•••• •••• •••• ••••",
@@ -42,6 +41,25 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
+    // Verifique se o pedido já está marcado como concluído
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      const parsedCheckoutData = JSON.parse(storedCheckoutData);
+      if (parsedCheckoutData.isCompleted) {
+        // Remove `isCompleted` para iniciar uma nova compra
+        delete parsedCheckoutData.isCompleted;
+        localStorage.setItem(
+          "checkoutData",
+          JSON.stringify(parsedCheckoutData)
+        );
+      }
+      setCheckoutData(parsedCheckoutData);
+    } else {
+      navigate("/cart"); // Redireciona se não houver dados
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
@@ -49,20 +67,32 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const storedOrderStatus = localStorage.getItem("orderCompleted");
-    if (storedOrderStatus === "true") {
-      setIsOrderCompleted(true);
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
-      const storedCheckoutData = localStorage.getItem("checkoutData");
-      if (storedCheckoutData) {
-        console.log("Checkout data retrieved:", storedCheckoutData);
-        setCheckoutData(JSON.parse(storedCheckoutData));
-      } else {
-        fetchUserDataFromAPI(storedUserId);
-      }
+      fetchUserDataFromAPI(storedUserId);
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      alert("Erro: Usuário não autenticado. Faça login para continuar.");
+      navigate("/login");
+      return;
+    }
+
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      console.log("Checkout data retrieved:", storedCheckoutData);
+      setCheckoutData(JSON.parse(storedCheckoutData));
+    } else {
+      fetchUserDataFromAPI(storedUserId);
+    }
+  }, [navigate]);
+
+  // Função para carregar dados do usuário, caso necessário
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
       const response = await axios.get(
@@ -78,8 +108,8 @@ const Checkout: React.FC = () => {
         amount: response.data.totalPrice || 100.5,
         shippingCost: response.data.shippingCost || 0,
         userId: userId,
+        isCompleted: false, // Novo campo para controlar a finalização
       };
-      console.log("User data fetched:", userData);
       setCheckoutData(userData);
       localStorage.setItem("checkoutData", JSON.stringify(userData));
     } catch (error) {
@@ -114,6 +144,38 @@ const Checkout: React.FC = () => {
 
     loadMercadoPagoSdk();
   }, [publicKey]);
+
+  const handlePaymentSuccess = (
+    method: string,
+    qrCodeData: string | null = null,
+    boletoUrlData: string | null = null
+  ) => {
+    // Atualiza o estado com o QR Code ou Boleto se estiver disponível
+    if (method === "pix" && qrCodeData) {
+      setPixQrCode(qrCodeData);
+    } else if (method === "boleto" && boletoUrlData) {
+      setBoletoUrl(boletoUrlData);
+    }
+
+    const updatedCheckoutData = { ...checkoutData, isCompleted: true };
+    localStorage.setItem("checkoutData", JSON.stringify(updatedCheckoutData));
+
+    // Limpa o carrinho e marca o pedido como concluído
+    setCheckoutData({});
+    clearCart();
+
+    // Navega para a página de sucesso após uma pequena pausa para garantir que o estado foi atualizado
+    setTimeout(() => {
+      navigate("/sucesso", {
+        state: {
+          paymentMethod: method,
+          pixQrCode: qrCodeData,
+          boletoUrl: boletoUrlData,
+        },
+      });
+      localStorage.removeItem("checkoutData");
+    }, 100);
+  };
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
@@ -211,8 +273,6 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
-    console.log("Payment data being sent:", paymentData);
-
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -224,8 +284,8 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
-        clearCart();
-        navigate("/sucesso", { state: { paymentMethod: "card" } });
+        // Marca o pedido como concluído e navega para a página de sucesso
+        handlePaymentSuccess("card");
       } else {
         alert("Pagamento pendente ou falhou.");
       }
@@ -237,9 +297,12 @@ const Checkout: React.FC = () => {
 
   const calculateTransactionAmount = () => {
     // Garantindo que o transaction_amount é um número, incluindo frete
-    const amount = parseFloat(checkoutData.amount.replace(",", ".")) || 0;
+    const amount =
+      parseFloat(checkoutData.amount.toString().replace(",", ".")) || 0;
+
     const shippingCost =
-      parseFloat(checkoutData.shippingCost.replace(",", ".")) || 0;
+      parseFloat(checkoutData.shippingCost.toString().replace(",", ".")) || 0;
+
     const transactionAmount = amount + shippingCost;
 
     if (isNaN(transactionAmount) || transactionAmount <= 0) {
@@ -248,33 +311,17 @@ const Checkout: React.FC = () => {
       return null; // Retorna null para indicar erro
     }
 
-    return transactionAmount; // Retorna o valor válido
-  };
-
-  const markOrderAsCompleted = () => {
-    localStorage.setItem("orderCompleted", "true");
-    setIsOrderCompleted(true);
-  };
-
-  const clearCheckoutData = () => {
-    setCheckoutData({
-      amount: 0,
-      shippingCost: 0,
-      email: "",
-      firstName: "",
-      lastName: "",
-      identificationType: "",
-      identificationNumber: "",
-      userId: null,
-    });
-    localStorage.removeItem("checkoutData");
+    return parseFloat(transactionAmount.toFixed(2)); // Retorna o valor com duas casas decimais
   };
 
   const generatePixQrCode = async () => {
-    const transactionAmount = calculateTransactionAmount();
-    if (transactionAmount === null) {
+    if (checkoutData.isCompleted) {
+      alert("Este pedido já foi pago.");
       return;
     }
+
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) return;
 
     try {
       const response = await fetch(
@@ -305,15 +352,8 @@ const Checkout: React.FC = () => {
         response.ok &&
         result.point_of_interaction?.transaction_data?.qr_code_base64
       ) {
-        setPixQrCode(
-          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
-        );
-        clearCart();
-        clearCheckoutData();
-        markOrderAsCompleted();
-        navigate("/sucesso", {
-          state: { paymentMethod: "pix" },
-        });
+        const qrCodeData = `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`;
+        handlePaymentSuccess("pix", qrCodeData);
       } else {
         alert("Erro ao gerar QR code Pix: " + result.error);
       }
@@ -324,10 +364,13 @@ const Checkout: React.FC = () => {
   };
 
   const generateBoleto = async () => {
-    const transactionAmount = calculateTransactionAmount();
-    if (transactionAmount === null) {
+    if (checkoutData.isCompleted) {
+      alert("Este pedido já foi pago.");
       return;
     }
+
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) return;
 
     try {
       const response = await fetch(
@@ -355,13 +398,7 @@ const Checkout: React.FC = () => {
 
       const result = await response.json();
       if (response.ok && result.boleto_url) {
-        setBoletoUrl(result.boleto_url);
-        clearCart();
-        clearCheckoutData();
-        markOrderAsCompleted();
-        navigate("/sucesso", {
-          state: { paymentMethod: "boleto" },
-        });
+        handlePaymentSuccess("boleto", null, result.boleto_url);
       } else {
         alert(
           "Erro ao gerar boleto: " + (result.message || "Erro desconhecido")
@@ -372,27 +409,6 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
-
-  const handleReturnToHome = () => {
-    navigate("/");
-  };
-
-  if (isOrderCompleted) {
-    return (
-      <Box sx={{ textAlign: "center", padding: "20px" }}>
-        <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
-          Compra já realizada com sucesso!
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={handleReturnToHome}
-          sx={{ backgroundColor: "#313926", color: "#fff" }}
-        >
-          Voltar para a Página Inicial
-        </Button>
-      </Box>
-    );
-  }
 
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
