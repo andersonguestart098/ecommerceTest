@@ -1,10 +1,23 @@
-import React, { useState } from "react";
-import { Box, TextField, Button, IconButton, Collapse, useMediaQuery, InputAdornment } from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  IconButton,
+  Collapse,
+  useMediaQuery,
+  InputAdornment,
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useTheme } from "@mui/material/styles";
 
 interface SearchBarProps {
-  onSearch: (searchTerm: string, color: string, minPrice: number | "", maxPrice: number | "") => void;
+  onSearch: (
+    searchTerm: string,
+    color: string,
+    minPrice: number | "",
+    maxPrice: number | ""
+  ) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
@@ -16,7 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-
+  const filterRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearch = () => {
     onSearch(searchTerm, color, minPrice, maxPrice);
@@ -24,14 +37,44 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
 
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
-};
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setShowFilters(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", position: "relative", width: "100%" }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        position: "relative",
+        width: "100%",
+      }}
+    >
       <TextField
         placeholder="Buscar produtos..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        onKeyDown={handleKeyDown}
         size="small"
         variant="outlined"
         sx={{
@@ -71,6 +114,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
       {!isMobile && (
         <Collapse in={showFilters} timeout="auto" unmountOnExit>
           <Box
+            ref={filterRef}
             sx={{
               position: "absolute",
               top: "100%",
@@ -87,25 +131,28 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             }}
           >
             <TextField
-              placeholder="Cor (ex: azul)"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-            />
-            <TextField
               placeholder="Preço mínimo"
               type="number"
               value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : "")}
+              onChange={(e) =>
+                setMinPrice(e.target.value ? parseFloat(e.target.value) : "")
+              }
               size="small"
             />
             <TextField
               placeholder="Preço máximo"
               type="number"
               value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : "")}
+              onChange={(e) =>
+                setMaxPrice(e.target.value ? parseFloat(e.target.value) : "")
+              }
               size="small"
             />
-            <Button variant="contained" onClick={handleSearch} sx={{ backgroundColor: "#313926" }}>
+            <Button
+              variant="contained"
+              onClick={handleSearch}
+              sx={{ backgroundColor: "#313926" }}
+            >
               Buscar
             </Button>
           </Box>

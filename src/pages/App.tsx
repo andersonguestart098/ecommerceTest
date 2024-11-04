@@ -90,10 +90,10 @@ const App: React.FC = () => {
         >
           <Router>
             <CartProvider>
-              <Navbar 
-                onSearch={handleSearch} 
-                showSearch={showSearch} 
-                toggleSearch={toggleSearch} 
+              <Navbar
+                onSearch={handleSearch}
+                showSearch={showSearch}
+                toggleSearch={toggleSearch}
               />
               <Box sx={{ marginTop: "0px", position: "relative", zIndex: 5 }}>
                 {/* Define zIndex menor para o conteúdo abaixo */}

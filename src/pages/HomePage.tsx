@@ -1,10 +1,10 @@
-import React from 'react';
-import { Container } from '@mui/material';
-import Banner from '../components/Banner';
-import InfoSection from '../components/InfoSection';
-import BrandsSection from '../components/BrandsSection';
-import ProductList from '../components/ProductList';
-import Footer from '../components/Footer'; // Corrigido para corresponder à capitalização
+import React from "react";
+import { Container } from "@mui/material";
+import Banner from "../components/Banner";
+import InfoSection from "../components/InfoSection";
+import BrandsSection from "../components/BrandsSection";
+import ProductList from "../components/ProductList";
+import Footer from "../components/Footer"; // Corrigido para corresponder à capitalização
 
 // Definindo o tipo para as props
 interface HomePageProps {
@@ -22,11 +22,7 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ images, filters }) => {
   return (
     <div className="home-page">
-      {images.length > 0 ? (
-        <Banner images={images} />
-      ) : (
-        <div></div>
-      )}
+      {images.length > 0 ? <Banner images={images} /> : <div></div>}
       <InfoSection />
       <BrandsSection />
       <Container maxWidth="lg" sx={{ mt: 4 }}>

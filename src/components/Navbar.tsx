@@ -18,11 +18,8 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
-import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
-import { useUser } from "../contexts/UserContext";
 import SearchBar from "./SearchBar";
 import { useSocket } from "../contexts/SocketContext";
 
@@ -47,47 +44,44 @@ const Navbar: React.FC<NavbarProps> = ({
   const theme = useTheme();
   const socket = useSocket();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { user, logout } = useUser();
+  const [userName, setUserName] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  // Carregar o tipo de usuário do localStorage diretamente no estado inicial
-  const [userType, setUserType] = useState<string | null>(
-    () =>
-      JSON.parse(localStorage.getItem("user") || "null")?.tipoUsuario ||
-      "cliente"
-  );
-
   useEffect(() => {
-    console.log(
-      "Tipo de usuário no Navbar (extraído do localStorage):",
-      userType
-    );
+    const user = localStorage.getItem("user");
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      setUserName(parsedUser.name);
+    }
 
     socket?.on("welcomeMessage", (msg: string) => {
       setSnackbarMessage(msg);
       setOpenSnackbar(true);
       const userNameFromMessage = msg.split(",")[1]?.trim();
-      if (userNameFromMessage) {
-        console.log("Mensagem de boas-vindas recebida:", msg);
-      }
+      if (userNameFromMessage) setUserName(userNameFromMessage);
     });
 
     return () => {
       socket?.off("welcomeMessage");
     };
-  }, [socket, userType]);
+  }, [socket]);
 
-  const handleCloseSnackbar = () => setOpenSnackbar(false);
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   const handleCartClick = () => navigate("/cart");
 
   const handleLogout = () => {
-    logout(); // Mantém apenas o logout do contexto do usuário
-    setUserType(null); // Redefine o tipo de usuário para evitar o ícone após o logout
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUserName(null);
     navigate("/");
   };
+
+  const handleLoginClick = () => navigate("/login");
 
   const handleUserClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -168,8 +162,9 @@ const Navbar: React.FC<NavbarProps> = ({
           )}
         </Box>
 
+        {/* Saudação, Login, Logout e Carrinho */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          {user ? (
+          {userName ? (
             <>
               <Typography
                 sx={{
@@ -180,56 +175,20 @@ const Navbar: React.FC<NavbarProps> = ({
                 }}
                 onClick={handleUserClick}
               >
-                Olá, {user.name}
+                Olá, {userName}
               </Typography>
-              <IconButton
-                onClick={handleUserClick} // Abre o menu dropdown para todos os usuários
-                sx={{
-                  padding: "6px",
-                  marginRight: isMobile ? "5px" : "10px",
-                }}
-              >
-                {userType === "admin" ? (
-                  <SettingsSuggestIcon
-                    sx={{ color: "#313926", fontSize: "1.5rem" }}
-                  />
-                ) : (
-                  <MenuOpenIcon sx={{ color: "#313926", fontSize: "1.5rem" }} />
-                )}
-              </IconButton>
-
-              {/* Menu dropdown */}
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleCloseMenu}
               >
-                {userType === "admin" && (
-                  <MenuItem onClick={() => handleNavigate("/admin")}>
-                    <IconButton>
-                      <SettingsSuggestIcon />
-                    </IconButton>
-                    Gerenciador
-                  </MenuItem>
-                )}
-                {userType === "cliente" && (
-                  <>
-                    <MenuItem onClick={() => handleNavigate("/my-orders")}>
-                      <IconButton>
-                        <MenuOpenIcon />
-                      </IconButton>
-                      Meus Pedidos
-                    </MenuItem>
-                    <MenuItem onClick={() => handleNavigate("/meus-dados")}>
-                      <IconButton>
-                        <MenuOpenIcon />
-                      </IconButton>
-                      Meus Dados
-                    </MenuItem>
-                  </>
-                )}
+                <MenuItem onClick={() => handleNavigate("/my-orders")}>
+                  Meus Pedidos
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+                  Meus Dados
+                </MenuItem>
               </Menu>
-
               <IconButton
                 onClick={handleLogout}
                 sx={{ padding: "6px", marginRight: isMobile ? "5px" : "10px" }}
@@ -239,7 +198,7 @@ const Navbar: React.FC<NavbarProps> = ({
             </>
           ) : (
             <Button
-              onClick={() => navigate("/login")}
+              onClick={handleLoginClick}
               sx={{ color: "#313926", fontSize: "0.9rem", marginRight: "5px" }}
             >
               Entrar
