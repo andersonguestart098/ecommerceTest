@@ -13,6 +13,7 @@ import {
   Button,
   Snackbar,
   SnackbarContent,
+  Collapse,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -29,9 +30,11 @@ interface NavbarProps {
     minPrice: number | "",
     maxPrice: number | ""
   ) => void;
+  showSearch: boolean;
+  toggleSearch: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
+const Navbar: React.FC<NavbarProps> = ({ onSearch, showSearch, toggleSearch }) => {
   const navigate = useNavigate();
   const { cart } = useCart();
   const theme = useTheme();
@@ -43,19 +46,15 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
-    // Carrega o nome do usuário do localStorage
     const user = localStorage.getItem("user");
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserName(parsedUser.name);
     }
 
-    // Escuta o evento de boas-vindas e atualiza o nome do usuário
     socket?.on("welcomeMessage", (msg: string) => {
       setSnackbarMessage(msg);
       setOpenSnackbar(true);
-      
-      // Extrair o nome do usuário da mensagem de boas-vindas e atualizar
       const userNameFromMessage = msg.split(",")[1]?.trim();
       if (userNameFromMessage) setUserName(userNameFromMessage);
     });
@@ -92,15 +91,14 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   };
 
   return (
-    
     <AppBar
       position="fixed"
       sx={{
         backgroundColor: "#fff",
         color: "#000",
         boxShadow: "none",
-        padding: "0 20px",
-        height: "94px",
+        padding: "0 10px",
+        height: isMobile ? "70px" : "94px",
         zIndex: 1300,
         borderBottom: "2px solid #E6E3DB",
       }}
@@ -111,7 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           justifyContent: "space-between",
           alignItems: "center",
           height: "100%",
-          padding: isMobile ? "0 10px" : "0 20px",
+          padding: isMobile ? "0 5px" : "0 20px",
         }}
       >
         {/* Logo */}
@@ -126,7 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             src="/icones/logo.png"
             alt="Logo"
             style={{
-              width: isMobile ? "120px" : "200px",
+              width: isMobile ? "100px" : "180px",
               cursor: "pointer",
               paddingBottom: 5,
             }}
@@ -138,18 +136,25 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         <Box
           sx={{
             flexGrow: 1,
-            marginLeft: "20px",
-            maxWidth: isMobile ? "80%" : "40%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            maxWidth: isMobile ? "60%" : "40%",
           }}
         >
-          {!isMobile ? (
-            <SearchBar onSearch={onSearch} />
+          {isMobile ? (
+            <>
+              <Collapse in={showSearch} orientation="horizontal" timeout="auto">
+                <SearchBar onSearch={onSearch} />
+              </Collapse>
+              {!showSearch && (
+                <IconButton onClick={toggleSearch} sx={{ padding: 0 }}>
+                  <SearchIcon sx={{ color: "#313926", fontSize: "1.5rem" }} />
+                </IconButton>
+              )}
+            </>
           ) : (
-            <IconButton
-              onClick={() => console.log("Abrir modal ou dropdown de busca")}
-            >
-              <SearchIcon />
-            </IconButton>
+            <SearchBar onSearch={onSearch} />
           )}
         </Box>
 
@@ -160,8 +165,8 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
               <Typography
                 sx={{
                   color: "#313926",
-                  fontSize: "1rem",
-                  marginRight: "10px",
+                  fontSize: "0.9rem",
+                  marginRight: isMobile ? "5px" : "10px",
                   cursor: "pointer",
                 }}
                 onClick={handleUserClick}
@@ -182,15 +187,15 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
               </Menu>
               <IconButton
                 onClick={handleLogout}
-                sx={{ padding: "8px", marginRight: "10px" }}
+                sx={{ padding: "6px", marginRight: isMobile ? "5px" : "10px" }}
               >
-                <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+                <LogoutIcon sx={{ color: "#313926", fontSize: "1.5rem" }} />
               </IconButton>
             </>
           ) : (
             <Button
               onClick={handleLoginClick}
-              sx={{ color: "#313926", fontSize: "1rem", marginRight: "10px" }}
+              sx={{ color: "#313926", fontSize: "0.9rem", marginRight: "5px" }}
             >
               Entrar
             </Button>
@@ -200,10 +205,10 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           <IconButton
             onClick={handleCartClick}
             className="cart-icon"
-            sx={{ padding: "8px" }}
+            sx={{ padding: "6px" }}
           >
             <Badge badgeContent={cart.length} color="primary">
-              <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+              <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.5rem" }} />
             </Badge>
           </IconButton>
         </Box>

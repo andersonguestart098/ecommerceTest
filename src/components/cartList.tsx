@@ -23,8 +23,7 @@ import { useCart } from "../contexts/CartContext";
 import axios from "axios";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
-    useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
   const navigate = useNavigate();
   const [cepDestino, setCepDestino] = useState<string>("");
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
@@ -37,8 +36,7 @@ const CartList: React.FC = () => {
     if (user) {
       const parsedUser = JSON.parse(user);
       setUserId(parsedUser.id);
-      localStorage.setItem("userId", parsedUser.id); // Armazena o userId no localStorage
-      console.log("ID do usuário capturado:", parsedUser.id);
+      localStorage.setItem("userId", parsedUser.id);
     }
   }, []);
 
@@ -55,7 +53,7 @@ const CartList: React.FC = () => {
       const token = tokenResponse.data.token;
 
       const requestData = {
-        cepOrigem: "01002001", // CEP de origem fixo
+        cepOrigem: "01002001",
         cepDestino,
         height: 4,
         width: 12,
@@ -75,7 +73,6 @@ const CartList: React.FC = () => {
       );
 
       setFreightOptions(response.data);
-      console.log("Opções de frete recebidas:", response.data);
     } catch (error) {
       console.error("Erro ao calcular frete:", error);
       alert("Erro ao calcular frete. Verifique o console para mais detalhes.");
@@ -95,8 +92,6 @@ const CartList: React.FC = () => {
       Number(totalProductAmount) + Number(freightPrice)
     ).toFixed(2);
 
-    console.log("Valor total do pedido (com frete):", totalPrice); // Log para verificar totalPrice
-
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -106,29 +101,15 @@ const CartList: React.FC = () => {
       category_id: item.category_id || "default",
     }));
 
-    if (
-      items.some((item) => item.productId === "undefined" || item.quantity <= 0)
-    ) {
-      alert("Erro ao processar itens: verifique o carrinho e tente novamente.");
-      return;
-    }
-
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
-        amount: totalPrice, // usa o valor total com frete
+        amount: totalPrice,
         totalPrice,
         items,
         userId,
       })
     );
-
-    console.log("Dados salvos no localStorage (checkoutData):", {
-      amount: totalPrice,
-      totalPrice,
-      items,
-      userId,
-    }); // Log para verificar o que foi salvo no localStorage
 
     navigate("/checkout");
   };
@@ -137,14 +118,22 @@ const CartList: React.FC = () => {
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <IconButton
         onClick={() => navigate("/")}
-        sx={{ color: "#313926", marginBottom: "16px" }}
+        sx={{
+          color: "#313926",
+          marginBottom: "16px",
+          "&:hover": { backgroundColor: "#e0e0e0" },
+        }}
       >
         <ArrowBackIcon />
       </IconButton>
       <Typography
         variant="h4"
         gutterBottom
-        sx={{ fontWeight: "bold", textAlign: "center" }}
+        sx={{
+          fontWeight: "bold",
+          textAlign: "center",
+          color: "#313926",
+        }}
       >
         <ShoppingCartIcon
           sx={{ fontSize: "2rem", verticalAlign: "middle", marginRight: 1 }}
@@ -162,7 +151,14 @@ const CartList: React.FC = () => {
       ) : (
         <Paper
           elevation={3}
-          sx={{ padding: 2, maxWidth: 800, margin: "0 auto", mt: 3 }}
+          sx={{
+            padding: 2,
+            maxWidth: 800,
+            margin: "0 auto",
+            mt: 3,
+            borderRadius: "10px",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          }}
         >
           <List>
             {cart.map((item) => (
@@ -179,15 +175,22 @@ const CartList: React.FC = () => {
                       variant="square"
                       src={item.image}
                       alt={item.name}
-                      sx={{ width: 60, height: 60, marginRight: 2 }}
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        marginRight: 2,
+                        borderRadius: "8px",
+                      }}
                     />
                     <ListItemText
                       primary={item.name}
                       secondary={`Quantidade: ${item.quantity}`}
+                      primaryTypographyProps={{ fontWeight: "bold", color: "#313926" }}
+                      secondaryTypographyProps={{ color: "#777" }}
                     />
                   </Box>
                   <Box>
-                    <Typography variant="body2">
+                    <Typography variant="body2" sx={{ color: "#313926" }}>
                       R$ {(item.price * item.quantity).toFixed(2)}
                     </Typography>
                     <IconButton onClick={() => increaseQuantity(item.id)}>
@@ -205,27 +208,39 @@ const CartList: React.FC = () => {
               </div>
             ))}
           </List>
-          <Box sx={{ padding: 2, backgroundColor: "#f9f9f9", mt: 2 }}>
+          <Box sx={{ padding: 2, backgroundColor: "#fafafa", mt: 2, borderRadius: "10px" }}>
             <TextField
               label="Insira seu CEP"
               value={cepDestino}
               onChange={(e) => setCepDestino(e.target.value)}
               variant="outlined"
               fullWidth
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, backgroundColor: "#fff" }}
             />
             <Button
               variant="contained"
-              color="primary"
               onClick={handleCalculateFreight}
               fullWidth
+              sx={{
+                backgroundColor: "#313926",
+                "&:hover": { backgroundColor: "#282a2a" },
+              }}
               disabled={loadingFreight}
             >
               {loadingFreight ? "Calculando..." : "Calcular Frete"}
             </Button>
             {freightOptions.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+              <Box
+                sx={{
+                  mt: 2,
+                  maxHeight: 150,
+                  overflowY: "auto",
+                  borderRadius: "8px",
+                  padding: 1,
+                  backgroundColor: "#f1f1f1",
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, color: "#313926" }}>
                   Opções de Frete Disponíveis:
                 </Typography>
                 <List>
@@ -234,6 +249,15 @@ const CartList: React.FC = () => {
                       <ListItemButton
                         onClick={() => setSelectedFreightOption(option)}
                         selected={selectedFreightOption?.id === option.id}
+                        sx={{
+                          borderRadius: "8px",
+                          "&.Mui-selected": {
+                            backgroundColor: "#313926",
+                            color: "#fff",
+                            "& .MuiListItemText-primary": { color: "#fff" },
+                            "& .MuiListItemText-secondary": { color: "#fff" },
+                          },
+                        }}
                       >
                         <ListItemText
                           primary={`${option.name} - R$ ${option.price}`}
@@ -247,20 +271,25 @@ const CartList: React.FC = () => {
             )}
             <Typography
               variant="h6"
-              sx={{ fontWeight: "bold", mt: 2, textAlign: "right" }}
+              sx={{
+                fontWeight: "bold",
+                mt: 2,
+                textAlign: "right",
+                color: "#313926",
+              }}
             >
               Valor Total do Pedido: R${" "}
-              {(
-                Number(totalProductAmount) +
-                Number(selectedFreightOption?.price || 0)
-              ).toFixed(2)}
+              {(Number(totalProductAmount) + Number(selectedFreightOption?.price || 0)).toFixed(2)}
             </Typography>
             <Button
               variant="contained"
-              color="secondary"
               onClick={handleCheckout}
               fullWidth
-              sx={{ mt: 2 }}
+              sx={{
+                mt: 2,
+                backgroundColor: "#00b300",
+                "&:hover": { backgroundColor: "#009900" },
+              }}
             >
               Finalizar Compra
             </Button>
