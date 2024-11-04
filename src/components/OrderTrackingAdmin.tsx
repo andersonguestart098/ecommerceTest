@@ -12,6 +12,7 @@ import {
   List,
   ListItem,
   Chip,
+  Button,
 } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -34,57 +35,45 @@ const statusSteps = [
     key: "PENDING",
     label: "Pendente",
     icon: <PendingIcon />,
-    visualValue: "Pendente"
+    visualValue: "Pendente",
   },
   {
-    key: "APPROVED", // Corrigido para `APPROVED`
+    key: "APPROVED",
     label: "Pagamento Aprovado",
     icon: <PaymentIcon />,
-    visualValue: "Aprovado"
+    visualValue: "Aprovado",
   },
   {
     key: "AWAITING_STOCK_CONFIRMATION",
     label: "Aguardando Confirmação do Estoque",
     icon: <CheckCircleIcon />,
-    visualValue: "Estoque Confirmando"
+    visualValue: "Estoque Confirmando",
   },
   {
     key: "SEPARATED",
     label: "Separado",
     icon: <AssignmentTurnedInIcon />,
-    visualValue: "Separado"
+    visualValue: "Separado",
   },
   {
     key: "DISPATCHED",
     label: "Despachado",
     icon: <LocalShippingIcon />,
-    visualValue: "Despachado"
+    visualValue: "Despachado",
   },
   {
     key: "DELIVERED",
     label: "Entregue",
     icon: <AssignmentTurnedInIcon />,
-    visualValue: "Entregue"
+    visualValue: "Entregue",
   },
   {
     key: "CANCELED",
     label: "Cancelado",
     icon: <AssignmentTurnedInIcon />,
-    visualValue: "Cancelado"
+    visualValue: "Cancelado",
   },
 ];
-
-const statusLabels: { [key: string]: string } = {
-  PENDING: "Pendente",
-  APPROVED: "Pagamento Aprovado", // Use `APPROVED` aqui também
-  AWAITING_STOCK_CONFIRMATION: "Aguardando Confirmação do Estoque",
-  SEPARATED: "Separado",
-  DISPATCHED: "Despachado",
-  DELIVERED: "Entregue",
-  CANCELED: "Cancelado",
-};
-
-
 
 const OrderTrackingAdmin: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -92,6 +81,8 @@ const OrderTrackingAdmin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10; // Número de pedidos exibidos por página
   const navigate = useNavigate();
 
   const fetchOrders = async () => {
@@ -101,9 +92,7 @@ const OrderTrackingAdmin: React.FC = () => {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders",
-        {
-          headers: { "x-auth-token": token },
-        }
+        { headers: { "x-auth-token": token } }
       );
       setOrders(response.data);
     } catch (err) {
@@ -124,12 +113,10 @@ const OrderTrackingAdmin: React.FC = () => {
       await axios.put(
         `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/orders/update-status/${orderId}`,
         { status: newStatus },
-        {
-          headers: { "x-auth-token": token },
-        }
+        { headers: { "x-auth-token": token } }
       );
       setSnackbarMessage(
-        `Status do pedido ${orderId} atualizado para ${statusLabels[newStatus] || newStatus}`
+        `Status do pedido ${orderId} atualizado para ${newStatus}`
       );
       setOpenSnackbar(true);
       fetchOrders();
@@ -143,7 +130,7 @@ const OrderTrackingAdmin: React.FC = () => {
     setOpenSnackbar(false);
   };
 
-  const renderProgressTracker = (currentStatus: any) => {
+  const renderProgressTracker = (currentStatus: string) => {
     const currentStepIndex = statusSteps.findIndex(
       (step) => step.key === currentStatus
     );
@@ -153,11 +140,11 @@ const OrderTrackingAdmin: React.FC = () => {
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
         {statusSteps.map((step, index) => {
-          let backgroundColor = "#E6E3DB"; // Default color for future steps
+          let backgroundColor = "#E6E3DB";
           if (index < currentStepIndex) {
-            backgroundColor = "#4CAF50"; // Completed step
+            backgroundColor = "#4CAF50";
           } else if (index === currentStepIndex) {
-            backgroundColor = "#313926"; // Current step
+            backgroundColor = "#313926";
           }
 
           return (
@@ -213,6 +200,16 @@ const OrderTrackingAdmin: React.FC = () => {
     );
   };
 
+  // Pagination logic
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Box
@@ -250,7 +247,7 @@ const OrderTrackingAdmin: React.FC = () => {
           sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "10px" }}
         >
           <List>
-            {orders.map((order, index) => (
+            {currentOrders.map((order, index) => (
               <div key={index}>
                 <ListItem
                   sx={{
@@ -293,6 +290,27 @@ const OrderTrackingAdmin: React.FC = () => {
               </div>
             ))}
           </List>
+
+          {/* Pagination Controls */}
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              sx={{ mr: 1 }}
+            >
+              Anterior
+            </Button>
+            <Typography sx={{ alignSelf: "center" }}>
+              Página {currentPage} de {totalPages}
+            </Typography>
+            <Button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              sx={{ ml: 1 }}
+            >
+              Próxima
+            </Button>
+          </Box>
         </Paper>
       )}
 

@@ -2,30 +2,56 @@ import React, { useState } from "react";
 import { Box, Button, Typography, Paper } from "@mui/material";
 import ProductForm from "../components/ProductForm";
 import BannerUpload from "../components/BannerUpload";
+import { useNavigate } from "react-router-dom";
 
 const Management: React.FC = () => {
-  const [selectedComponent, setSelectedComponent] = useState<"product" | "banner" | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<
+    "product" | "banner" | "orders" | null
+  >(null);
+  const navigate = useNavigate();
 
-  const handleSelectComponent = (component: "product" | "banner") => {
+  const handleSelectComponent = (
+    component: "product" | "banner" | "orders"
+  ) => {
     setSelectedComponent(component);
+    if (component === "orders") {
+      navigate("/orders"); // Navega para a página de pedidos
+    }
   };
 
   return (
-    <Box sx={{ padding: 4, textAlign: "center", backgroundColor: "#f0f0f0", minHeight: "100vh" }}>
-      <Typography variant="h4" gutterBottom sx={{ color: "#333", fontWeight: "bold" }}>
+    <Box
+      sx={{
+        padding: 4,
+        textAlign: "center",
+        backgroundColor: "#f0f0f0",
+        minHeight: "100vh",
+      }}
+    >
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ color: "#333", fontWeight: "bold" }}
+      >
         Painel de Gerenciamento
       </Typography>
-      
-      <Box sx={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 2 }}>
+
+      <Box
+        sx={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 2 }}
+      >
         <Button
           variant="contained"
           onClick={() => handleSelectComponent("product")}
           sx={{
-            backgroundColor: selectedComponent === "product" ? "#313926" : "#E6E3DB",
+            backgroundColor:
+              selectedComponent === "product" ? "#313926" : "#E6E3DB",
             color: "#fff",
             fontWeight: "bold",
             transition: "background-color 0.3s ease",
-            "&:hover": { backgroundColor: selectedComponent === "product" ? "#313926" : "#E6E3DB" },
+            "&:hover": {
+              backgroundColor:
+                selectedComponent === "product" ? "#313926" : "#E6E3DB",
+            },
           }}
         >
           Gerenciar Produtos
@@ -34,14 +60,35 @@ const Management: React.FC = () => {
           variant="contained"
           onClick={() => handleSelectComponent("banner")}
           sx={{
-            backgroundColor: selectedComponent === "banner" ? "#313926" : "#E6E3DB",
+            backgroundColor:
+              selectedComponent === "banner" ? "#313926" : "#E6E3DB",
             color: "#fff",
             fontWeight: "bold",
             transition: "background-color 0.3s ease",
-            "&:hover": { backgroundColor: selectedComponent === "banner" ? "#313926" : "#E6E3DB" },
+            "&:hover": {
+              backgroundColor:
+                selectedComponent === "banner" ? "#313926" : "#E6E3DB",
+            },
           }}
         >
           Gerenciar Banners
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => handleSelectComponent("orders")}
+          sx={{
+            backgroundColor:
+              selectedComponent === "orders" ? "#313926" : "#E6E3DB",
+            color: "#fff",
+            fontWeight: "bold",
+            transition: "background-color 0.3s ease",
+            "&:hover": {
+              backgroundColor:
+                selectedComponent === "orders" ? "#313926" : "#E6E3DB",
+            },
+          }}
+        >
+          Pedidos
         </Button>
       </Box>
 
@@ -59,7 +106,11 @@ const Management: React.FC = () => {
       >
         {selectedComponent === "product" && (
           <Box>
-            <Typography variant="h5" gutterBottom sx={{ color: "#333", fontWeight: "bold", marginBottom: 2 }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ color: "#333", fontWeight: "bold", marginBottom: 2 }}
+            >
               Cadastro de Produtos
             </Typography>
             <ProductForm />
@@ -67,7 +118,11 @@ const Management: React.FC = () => {
         )}
         {selectedComponent === "banner" && (
           <Box>
-            <Typography variant="h5" gutterBottom sx={{ color: "#333", fontWeight: "bold", marginBottom: 2 }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ color: "#333", fontWeight: "bold", marginBottom: 2 }}
+            >
               Upload de Banner
             </Typography>
             <BannerUpload />

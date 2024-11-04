@@ -1,5 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Card, CardMedia, CardContent, Typography, Button, Box, TextField, Avatar } from "@mui/material";
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Button,
+  Box,
+  TextField,
+  Avatar,
+} from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { motion } from "framer-motion";
 
@@ -20,7 +29,7 @@ interface ProductCardProps {
   addToCart: (product: CartItem) => void;
 }
 
-interface CartItem extends Omit<Product, 'image'> {
+interface CartItem extends Omit<Product, "image"> {
   image: string;
   quantity: number;
 }
@@ -35,7 +44,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageArray, setImageArray] = useState<string[]>([]);
   const [showClone, setShowClone] = useState<boolean>(false);
-  const [cloneStyles, setCloneStyles] = useState<{ top: number; left: number; width: number; height: number }>({ top: 0, left: 0, width: 0, height: 0 });
+  const [cloneStyles, setCloneStyles] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  }>({ top: 0, left: 0, width: 0, height: 0 });
 
   useEffect(() => {
     const iconRef = document.querySelector(".cart-icon");
@@ -45,7 +59,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   }, []);
 
   useEffect(() => {
-    if (typeof product.image === 'string') {
+    if (typeof product.image === "string") {
       try {
         const parsedImages = JSON.parse(product.image);
         if (Array.isArray(parsedImages)) {
@@ -63,13 +77,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   const handleAddToCart = () => {
     const quantityToAdd = boxesNeeded > 0 ? boxesNeeded : 1;
+    const selectedColor = product.colors[currentImageIndex];
 
+    // Armazena a cor selecionada no localStorage
+    console.log("Salvando cor selecionada:", selectedColor);
+    localStorage.setItem(
+      `selectedColor_${product.id}`,
+      JSON.stringify(selectedColor)
+    );
+
+    // Adiciona ao carrinho com a imagem e cor selecionadas
     addToCart({
       ...product,
-      image: imageArray[0],
+      image: selectedColor.image, // Usa a imagem da cor selecionada
       quantity: quantityToAdd,
     });
-
     if (cardRef.current && cartIconRef) {
       const cardRect = cardRef.current.getBoundingClientRect();
 
@@ -119,16 +141,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   return (
     <>
-      <Card ref={cardRef} sx={{ padding: "16px", backgroundColor: "#f9f9f9", border: "1px solid #E6E3DB", borderRadius: "8px" }}>
+      <Card
+        ref={cardRef}
+        sx={{
+          padding: "16px",
+          backgroundColor: "#f9f9f9",
+          border: "1px solid #E6E3DB",
+          borderRadius: "8px",
+        }}
+      >
         <CardMedia
           component="img"
           height="275"
-          image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
+          image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
           alt={product.name}
           onMouseEnter={handleMouseEnter}
           sx={{
             transition: "0.3s ease-in-out",
-            objectFit: "cover"
+            objectFit: "cover",
           }}
         />
         <CardContent>
@@ -139,11 +169,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
             {product.description}
           </Typography>
           <Typography variant="h6" color="#313926">
-            R$ {product.price.toFixed(2).replace('.', ',')} m<sup>2</sup>
+            R$ {product.price.toFixed(2).replace(".", ",")} m<sup>2</sup>
           </Typography>
 
           {/* Seção de cores */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
+          <Box
+            sx={{ display: "flex", justifyContent: "center", gap: 1, mt: 2 }}
+          >
             {product.colors.map((color, index) => (
               <motion.div
                 key={index}
@@ -156,7 +188,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
                   sx={{
                     width: 55,
                     height: 55,
-                    border: currentImageIndex === index ? "2px solid #E6E3DB" : "1px solid #E6E3DB",
+                    border:
+                      currentImageIndex === index
+                        ? "2px solid #E6E3DB"
+                        : "1px solid #E6E3DB",
                     cursor: "pointer",
                     transition: "border-color 0.3s",
                   }}
@@ -167,11 +202,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           </Box>
 
           {/* Inputs de Comprimento e Largura */}
-          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+          <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
             <TextField
               label="Comprimento (m)"
               type="number"
-              value={length || ''}
+              value={length || ""}
               onChange={(e) => setLength(parseFloat(e.target.value))}
               size="small"
               sx={{ width: "100%" }}
@@ -179,7 +214,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
             <TextField
               label="Largura (m)"
               type="number"
-              value={width || ''}
+              value={width || ""}
               onChange={(e) => setWidth(parseFloat(e.target.value))}
               size="small"
               sx={{ width: "100%" }}
@@ -187,11 +222,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           </Box>
 
           {/* Botões lado a lado */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
-            <Button 
-              variant="outlined" 
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "16px",
+            }}
+          >
+            <Button
+              variant="outlined"
               onClick={handleCalculateArea}
-              sx={{ width: '48%', borderColor: "#313926", color: "#313926" }}
+              sx={{ width: "48%", borderColor: "#313926", color: "#313926" }}
             >
               Calcular
             </Button>
@@ -211,7 +252,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           </Box>
 
           {/* Resultado do Cálculo */}
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 2, textAlign: "center" }}
+          >
             Área Total: {area.toFixed(2)} m² - Caixas Necessárias: {boxesNeeded}
           </Typography>
         </CardContent>
@@ -243,7 +288,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           <CardMedia
             component="img"
             height="275"
-            image={imageArray[currentImageIndex] || '/path/to/default-image.png'}
+            image={
+              imageArray[currentImageIndex] || "/path/to/default-image.png"
+            }
             alt={product.name}
           />
         </motion.div>

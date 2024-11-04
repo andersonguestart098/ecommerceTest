@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import {
   Box,
@@ -9,6 +9,7 @@ import {
   TextField,
   useMediaQuery,
   useTheme,
+  Divider,
 } from "@mui/material";
 
 const Checkout: React.FC = () => {
@@ -17,7 +18,9 @@ const Checkout: React.FC = () => {
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [mpInstance, setMpInstance] = useState<any>(null);
   const [cardFormInstance, setCardFormInstance] = useState<any>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
+    string | null
+  >(null);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const [checkoutData, setCheckoutData] = useState<any>({});
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -26,6 +29,7 @@ const Checkout: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
+  const [isOrderCompleted, setIsOrderCompleted] = useState(false);
 
   const [cardPreview, setCardPreview] = useState({
     cardNumber: "•••• •••• •••• ••••",
@@ -45,27 +49,37 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      setCheckoutData(JSON.parse(storedCheckoutData));
+    const storedOrderStatus = localStorage.getItem("orderCompleted");
+    if (storedOrderStatus === "true") {
+      setIsOrderCompleted(true);
     } else {
-      fetchUserDataFromAPI(storedUserId);
+      const storedCheckoutData = localStorage.getItem("checkoutData");
+      if (storedCheckoutData) {
+        console.log("Checkout data retrieved:", storedCheckoutData);
+        setCheckoutData(JSON.parse(storedCheckoutData));
+      } else {
+        fetchUserDataFromAPI(storedUserId);
+      }
     }
   }, [navigate]);
 
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
-      const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`);
+      const response = await axios.get(
+        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
+      );
       const userData = {
         firstName: response.data.name,
         lastName: response.data.last_name,
         email: response.data.email,
         identificationType: response.data.identification?.type || "CPF",
-        identificationNumber: response.data.identification?.number || "00000000000",
+        identificationNumber:
+          response.data.identification?.number || "00000000000",
         amount: response.data.totalPrice || 100.5,
         shippingCost: response.data.shippingCost || 0,
         userId: userId,
       };
+      console.log("User data fetched:", userData);
       setCheckoutData(userData);
       localStorage.setItem("checkoutData", JSON.stringify(userData));
     } catch (error) {
@@ -118,18 +132,45 @@ const Checkout: React.FC = () => {
         iframe: true,
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
-          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/YY" },
-          securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
-          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/YY",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "CVC",
+          },
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome do titular",
+          },
           issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
-          installments: { id: "form-checkout__installments", placeholder: "Número de parcelas" },
-          identificationType: { id: "form-checkout__identificationType", placeholder: "Tipo de documento" },
-          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+          installments: {
+            id: "form-checkout__installments",
+            placeholder: "Número de parcelas",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de documento",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "Número do documento",
+          },
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail",
+          },
         },
         callbacks: {
-          onFormMounted: (error: any) => error ? console.warn("Erro ao montar formulário:", error) : setIsMpReady(true),
+          onFormMounted: (error: any) =>
+            error
+              ? console.warn("Erro ao montar formulário:", error)
+              : setIsMpReady(true),
           onSubmit: handleCardSubmit,
         },
       });
@@ -156,12 +197,21 @@ const Checkout: React.FC = () => {
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName ? formData.cardholderName.split(" ")[0] : "",
-        last_name: formData.cardholderName ? formData.cardholderName.split(" ").slice(1).join(" ") : "",
-        identification: { type: formData.identificationType, number: formData.identificationNumber },
+        first_name: formData.cardholderName
+          ? formData.cardholderName.split(" ")[0]
+          : "",
+        last_name: formData.cardholderName
+          ? formData.cardholderName.split(" ").slice(1).join(" ")
+          : "",
+        identification: {
+          type: formData.identificationType,
+          number: formData.identificationNumber,
+        },
       },
       userId: checkoutData.userId,
     };
+
+    console.log("Payment data being sent:", paymentData);
 
     try {
       const response = await fetch(
@@ -185,79 +235,164 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const calculateTransactionAmount = () => {
+    // Garantindo que o transaction_amount é um número, incluindo frete
+    const amount = parseFloat(checkoutData.amount.replace(",", ".")) || 0;
+    const shippingCost =
+      parseFloat(checkoutData.shippingCost.replace(",", ".")) || 0;
+    const transactionAmount = amount + shippingCost;
+
+    if (isNaN(transactionAmount) || transactionAmount <= 0) {
+      console.error("Valor de transaction_amount inválido:", transactionAmount);
+      alert("Erro: valor de transação inválido.");
+      return null; // Retorna null para indicar erro
+    }
+
+    return transactionAmount; // Retorna o valor válido
+  };
+
+  const markOrderAsCompleted = () => {
+    localStorage.setItem("orderCompleted", "true");
+    setIsOrderCompleted(true);
+  };
+
+  const clearCheckoutData = () => {
+    setCheckoutData({
+      amount: 0,
+      shippingCost: 0,
+      email: "",
+      firstName: "",
+      lastName: "",
+      identificationType: "",
+      identificationNumber: "",
+      userId: null,
+    });
+    localStorage.removeItem("checkoutData");
+  };
+
   const generatePixQrCode = async () => {
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) {
+      return;
+    }
+
     try {
-      const response = await fetch("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_method_id: "pix",
-          transaction_amount: Number(checkoutData.amount),
-          description: "Pagamento via Pix",
-          payer: {
-            email: checkoutData.email,
-            first_name: checkoutData.firstName,
-            last_name: checkoutData.lastName,
-            identification: {
-              type: checkoutData.identificationType,
-              number: checkoutData.identificationNumber,
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "pix",
+            transaction_amount: transactionAmount,
+            description: "Pagamento via Pix",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
             },
-          },
-          userId: checkoutData.userId,
-        }),
-      });
+            userId: checkoutData.userId,
+          }),
+        }
+      );
 
       const result = await response.json();
-      if (response.ok && result.point_of_interaction?.transaction_data?.qr_code_base64) {
-        setPixQrCode(`data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`);
+      if (
+        response.ok &&
+        result.point_of_interaction?.transaction_data?.qr_code_base64
+      ) {
+        setPixQrCode(
+          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
+        );
         clearCart();
+        clearCheckoutData();
+        markOrderAsCompleted();
         navigate("/sucesso", {
-          state: { paymentMethod: "pix", pixQrCode: `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}` },
+          state: { paymentMethod: "pix" },
         });
       } else {
-        alert("Erro ao gerar QR code Pix.");
+        alert("Erro ao gerar QR code Pix: " + result.error);
       }
     } catch (error) {
+      console.error("Erro ao processar pagamento com Pix:", error);
       alert("Erro ao processar pagamento com Pix.");
     }
   };
 
   const generateBoleto = async () => {
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) {
+      return;
+    }
+
     try {
-      const response = await fetch("https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_method_id: "bolbradesco",
-          transaction_amount: Number(checkoutData.amount),
-          description: "Pagamento via Boleto Bancário",
-          payer: {
-            email: checkoutData.email,
-            first_name: checkoutData.firstName,
-            last_name: checkoutData.lastName,
-            identification: {
-              type: checkoutData.identificationType,
-              number: checkoutData.identificationNumber,
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method_id: "bolbradesco",
+            transaction_amount: transactionAmount,
+            description: "Pagamento via Boleto Bancário",
+            payer: {
+              email: checkoutData.email,
+              first_name: checkoutData.firstName,
+              last_name: checkoutData.lastName,
+              identification: {
+                type: checkoutData.identificationType,
+                number: checkoutData.identificationNumber,
+              },
             },
-          },
-          userId: checkoutData.userId,
-        }),
-      });
+            userId: checkoutData.userId,
+          }),
+        }
+      );
 
       const result = await response.json();
       if (response.ok && result.boleto_url) {
         setBoletoUrl(result.boleto_url);
         clearCart();
+        clearCheckoutData();
+        markOrderAsCompleted();
         navigate("/sucesso", {
-          state: { paymentMethod: "boleto", boletoUrl: result.boleto_url },
+          state: { paymentMethod: "boleto" },
         });
       } else {
-        alert("Erro ao gerar boleto.");
+        alert(
+          "Erro ao gerar boleto: " + (result.message || "Erro desconhecido")
+        );
       }
     } catch (error) {
+      console.error("Erro ao processar pagamento com boleto:", error);
       alert("Erro ao processar pagamento com boleto.");
     }
   };
+
+  const handleReturnToHome = () => {
+    navigate("/");
+  };
+
+  if (isOrderCompleted) {
+    return (
+      <Box sx={{ textAlign: "center", padding: "20px" }}>
+        <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
+          Compra já realizada com sucesso!
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={handleReturnToHome}
+          sx={{ backgroundColor: "#313926", color: "#fff" }}
+        >
+          Voltar para a Página Inicial
+        </Button>
+      </Box>
+    );
+  }
 
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
@@ -280,59 +415,183 @@ const Checkout: React.FC = () => {
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", maxWidth: "1000px", margin: "0 auto", padding: "20px", gap: "20px" }}>
-      <Box sx={{ flex: 1, padding: "20px", border: "1px solid #E6E3DB", borderRadius: "8px", backgroundColor: "#F9F9F7" }}>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#313926" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        maxWidth: "1000px",
+        margin: "0 auto",
+        padding: "20px",
+        gap: "20px",
+      }}
+    >
+      <Box
+        sx={{
+          flex: 1,
+          padding: "20px",
+          border: "1px solid #E6E3DB",
+          borderRadius: "8px",
+          backgroundColor: "#F9F9F7",
+        }}
+      >
+        <Typography
+          variant="h5"
+          gutterBottom
+          sx={{ fontWeight: "bold", color: "#313926" }}
+        >
           Forma de Pagamento
         </Typography>
 
         {selectedPaymentMethod === "card" && (
-          <Box sx={{ backgroundColor: "#313926", color: "#FFF", borderRadius: "10px", padding: "15px", textAlign: "center", marginBottom: "20px" }}>
+          <Box
+            sx={{
+              backgroundColor: "#313926",
+              color: "#FFF",
+              borderRadius: "10px",
+              padding: "15px",
+              textAlign: "center",
+              marginBottom: "20px",
+            }}
+          >
             <Typography variant="body2">{cardPreview.cardNumber}</Typography>
             <Typography variant="body2">{cardPreview.cardHolder}</Typography>
             <Typography variant="body2">{cardPreview.expiration}</Typography>
           </Box>
         )}
 
-        <Box onClick={() => setSelectedPaymentMethod("pix")} sx={paymentButtonStyle(selectedPaymentMethod === "pix")}>
+        <Box
+          onClick={() => setSelectedPaymentMethod("pix")}
+          sx={paymentButtonStyle(selectedPaymentMethod === "pix")}
+        >
           <span>Pix</span>
         </Box>
-        <Box onClick={() => setSelectedPaymentMethod("boleto")} sx={paymentButtonStyle(selectedPaymentMethod === "boleto")}>
+        <Box
+          onClick={() => setSelectedPaymentMethod("boleto")}
+          sx={paymentButtonStyle(selectedPaymentMethod === "boleto")}
+        >
           <span>Boleto Bancário</span>
         </Box>
-        <Box onClick={() => setSelectedPaymentMethod("card")} sx={paymentButtonStyle(selectedPaymentMethod === "card")}>
+        <Box
+          onClick={() => setSelectedPaymentMethod("card")}
+          sx={paymentButtonStyle(selectedPaymentMethod === "card")}
+        >
           <span>Cartão de Crédito</span>
         </Box>
 
         {selectedPaymentMethod === "card" && (
           <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-            <TextField fullWidth id="form-checkout__cardNumber" placeholder="Número do cartão" onChange={(e) => updateCardPreview("cardNumber", e.target.value)} sx={{ mb: 2 }} />
-            <TextField fullWidth id="form-checkout__expirationDate" placeholder="MM/YY" onChange={(e) => updateCardPreview("expiration", e.target.value)} sx={{ mb: 2 }} />
-            <TextField fullWidth id="form-checkout__securityCode" placeholder="CVC" sx={{ mb: 2 }} />
-            <TextField fullWidth id="form-checkout__cardholderName" placeholder="Nome do Titular" onChange={(e) => updateCardPreview("cardHolder", e.target.value)} sx={{ mb: 2 }} />
-            <TextField fullWidth id="form-checkout__cardholderEmail" placeholder="E-mail do Titular" sx={{ mb: 2 }} />
-            <Button type="submit" fullWidth sx={{ backgroundColor: "#313926", color: "#FFF", mt: 2, "&:hover": { backgroundColor: "#2a2e24" } }} disabled={!isMpReady}>
+            <TextField
+              fullWidth
+              id="form-checkout__cardNumber"
+              placeholder="Número do cartão"
+              onChange={(e) => updateCardPreview("cardNumber", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__expirationDate"
+              placeholder="MM/YY"
+              onChange={(e) => updateCardPreview("expiration", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__securityCode"
+              placeholder="CVC"
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__cardholderName"
+              placeholder="Nome do Titular"
+              onChange={(e) => updateCardPreview("cardHolder", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__cardholderEmail"
+              placeholder="E-mail do Titular"
+              sx={{ mb: 2 }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              sx={{
+                backgroundColor: "#313926",
+                color: "#FFF",
+                mt: 2,
+                "&:hover": { backgroundColor: "#2a2e24" },
+              }}
+              disabled={!isMpReady}
+            >
               Pagar
             </Button>
           </form>
         )}
 
         {selectedPaymentMethod !== "card" && (
-          <Button onClick={handleContinue} sx={{ backgroundColor: "#313926", color: "#FFF", width: "100%", mt: 2, "&:hover": { backgroundColor: "#2a2e24" } }}>
+          <Button
+            onClick={handleContinue}
+            sx={{
+              backgroundColor: "#313926",
+              color: "#FFF",
+              width: "100%",
+              mt: 2,
+              "&:hover": { backgroundColor: "#2a2e24" },
+            }}
+          >
             Continuar
           </Button>
         )}
       </Box>
 
-      <Box sx={{ width: isMobile ? "100%" : "300px", padding: "20px", border: "1px solid #E6E3DB", borderRadius: "8px", backgroundColor: "#F9F9F7", textAlign: "center" }}>
-        <Typography variant="h5" sx={{ fontWeight: "bold", color: "#313926", mb: 2 }}>
+      <Box
+        sx={{
+          width: isMobile ? "100%" : "300px",
+          padding: "20px",
+          border: "1px solid #E6E3DB",
+          borderRadius: "8px",
+          backgroundColor: "#F9F9F7",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: "bold", color: "#313926", mb: 2 }}
+        >
           Resumo
         </Typography>
-        <Typography>Valor dos Produtos: R$ {checkoutData.amount}</Typography>
-        <Typography>Descontos: R$ {checkoutData.discount || "0,00"}</Typography>
-        <Typography>Frete: R$ {checkoutData.shippingCost}</Typography>
+
+        {/* Alinhamento à esquerda e linha sutil */}
+        {/* Alinhamento à esquerda e linha sutil */}
+        <Box sx={{ textAlign: "left", mb: 1 }}>
+          <Typography>
+            Valor dos Produtos: R$ {checkoutData.amount || "0,00"}
+          </Typography>
+          <Divider sx={{ borderColor: "#E6E3DB", my: 1 }} />
+          <Typography>
+            Descontos: R$ {checkoutData.discount || "0,00"}
+          </Typography>
+          <Divider sx={{ borderColor: "#E6E3DB", my: 1 }} />
+          <Typography>
+            Frete: R$ {checkoutData.shippingCost || "0,00"}
+          </Typography>
+        </Box>
+
+        {/* Cálculo do total com conversão de string para número */}
         <Typography sx={{ fontWeight: "bold", mt: 1 }}>
-          Total: R$ {checkoutData.amount - (checkoutData.discount || 0)}
+          Total: R${" "}
+          {(
+            (parseFloat((checkoutData.amount || "0,00").replace(",", ".")) ||
+              0) -
+            (parseFloat((checkoutData.discount || "0,00").replace(",", ".")) ||
+              0) +
+            (parseFloat(
+              (checkoutData.shippingCost || "0,00").replace(",", ".")
+            ) || 0)
+          )
+            .toFixed(2)
+            .replace(".", ",")}
         </Typography>
       </Box>
     </Box>

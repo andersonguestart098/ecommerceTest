@@ -20,7 +20,7 @@ interface Product {
   boxDimensions?: string;
   materialType?: string;
   freightClass?: number;
-  category_id?: string; // Adiciona o campo category_id opcional
+  category_id?: string;
 }
 
 interface CartItem extends Product {
@@ -30,13 +30,14 @@ interface CartItem extends Product {
   boxDimensions: string;
   materialType: string;
   freightClass: number;
+  selectedColorImage: string;
 }
 
 interface CartContextType {
   cart: CartItem[];
   cepDestino: string | null;
   setCepDestino: (cep: string) => void;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, colorImage?: string) => void;
   removeFromCart: (id: string) => void;
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
@@ -49,7 +50,7 @@ interface CartProviderProps {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const convertToCartItem = (product: Product): CartItem => ({
+const convertToCartItem = (product: Product, colorImage: string): CartItem => ({
   ...product,
   metersPerBox: product.metersPerBox || 0,
   weightPerBox: product.weightPerBox || 0,
@@ -57,7 +58,8 @@ const convertToCartItem = (product: Product): CartItem => ({
   materialType: product.materialType || "Desconhecido",
   freightClass: product.freightClass || 0,
   quantity: 1,
-  category_id: product.category_id || "default", // Valor padrão para category_id
+  category_id: product.category_id || "default",
+  selectedColorImage: colorImage,
 });
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
@@ -78,8 +80,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   }, [cart, cepDestino]);
 
-  const addToCart = (product: Product) => {
-    const cartItem = convertToCartItem(product);
+  const addToCart = (product: Product, colorImage?: string) => {
+    const cartItem = convertToCartItem(product, colorImage || product.image);
 
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === cartItem.id);

@@ -23,7 +23,8 @@ import { useCart } from "../contexts/CartContext";
 import axios from "axios";
 
 const CartList: React.FC = () => {
-  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } = useCart();
+  const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
+    useCart();
   const navigate = useNavigate();
   const [cepDestino, setCepDestino] = useState<string>("");
   const [freightOptions, setFreightOptions] = useState<any[]>([]);
@@ -37,20 +38,37 @@ const CartList: React.FC = () => {
       const parsedUser = JSON.parse(user);
       setUserId(parsedUser.id);
       localStorage.setItem("userId", parsedUser.id);
+      console.log("User ID set:", parsedUser.id);
     }
   }, []);
 
-  const totalProductAmount = cart
-    .reduce((total, item) => total + item.price * item.quantity, 0)
-    .toFixed(2);
+  // Calcula o total de produtos no carrinho
+  const totalProductAmount = cart.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  console.log("Total product amount:", totalProductAmount);
+
+  // Converte o preço do frete, se existir, para um número
+  const freightPrice = selectedFreightOption?.price
+    ? parseFloat(selectedFreightOption.price.replace(",", "."))
+    : 0;
+
+  // Calcula o preço total somando o total dos produtos e o frete
+  const totalPrice = (totalProductAmount + freightPrice).toFixed(2);
+  console.log("Freight price:", freightPrice);
+  console.log("Total price:", totalPrice);
 
   const handleCalculateFreight = async () => {
     setLoadingFreight(true);
     try {
+      console.log("Calculating freight...");
       const tokenResponse = await axios.get(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
       );
       const token = tokenResponse.data.token;
+      console.log("Token received:", token);
 
       const requestData = {
         cepOrigem: "01002001",
@@ -60,6 +78,8 @@ const CartList: React.FC = () => {
         length: 17,
         weight: 0.3,
       };
+
+      console.log("Requesting freight calculation with data:", requestData);
 
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
@@ -72,7 +92,12 @@ const CartList: React.FC = () => {
         }
       );
 
-      setFreightOptions(response.data);
+      const jadlogOptions = response.data.filter(
+        (option: any) => option.company.name === "Jadlog"
+      );
+
+      console.log("Freight options received:", jadlogOptions);
+      setFreightOptions(jadlogOptions);
     } catch (error) {
       console.error("Erro ao calcular frete:", error);
       alert("Erro ao calcular frete. Verifique o console para mais detalhes.");
@@ -87,10 +112,12 @@ const CartList: React.FC = () => {
       return;
     }
 
-    const freightPrice = Number(selectedFreightOption?.price || 0).toFixed(2);
-    const totalPrice = (
-      Number(totalProductAmount) + Number(freightPrice)
-    ).toFixed(2);
+    const formattedFreightPrice = freightPrice.toFixed(2).replace(".", ",");
+    const formattedTotalPrice = totalPrice.replace(".", ",");
+
+    console.log("Freight selected:", selectedFreightOption);
+    console.log("Formatted freight price:", formattedFreightPrice);
+    console.log("Formatted total price:", formattedTotalPrice);
 
     const items = cart.map((item) => ({
       productId: String(item.id),
@@ -101,15 +128,26 @@ const CartList: React.FC = () => {
       category_id: item.category_id || "default",
     }));
 
+    console.log("Items to be checked out:", items);
+
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
-        amount: totalPrice,
-        totalPrice,
+        amount: totalProductAmount.toFixed(2).replace(".", ","), // Armazenando o total não formatado
+        shippingCost: formattedFreightPrice, // Armazena o frete formatado
+        totalPrice: formattedTotalPrice,
         items,
         userId,
       })
     );
+
+    console.log("Checkout data stored in localStorage:", {
+      amount: totalProductAmount.toFixed(2).replace(".", ","),
+      shippingCost: formattedFreightPrice,
+      totalPrice: formattedTotalPrice,
+      items,
+      userId,
+    });
 
     navigate("/checkout");
   };
@@ -161,54 +199,88 @@ const CartList: React.FC = () => {
           }}
         >
           <List>
-            {cart.map((item) => (
-              <div key={item.id}>
-                <ListItem
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Avatar
-                      variant="square"
-                      src={item.image}
-                      alt={item.name}
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        marginRight: 2,
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`Quantidade: ${item.quantity}`}
-                      primaryTypographyProps={{ fontWeight: "bold", color: "#313926" }}
-                      secondaryTypographyProps={{ color: "#777" }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" sx={{ color: "#313926" }}>
-                      R$ {(item.price * item.quantity).toFixed(2)}
-                    </Typography>
-                    <IconButton onClick={() => increaseQuantity(item.id)}>
-                      <AddIcon />
-                    </IconButton>
-                    <IconButton onClick={() => decreaseQuantity(item.id)}>
-                      <RemoveIcon />
-                    </IconButton>
-                    <IconButton onClick={() => removeFromCart(item.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </ListItem>
-                <Divider />
-              </div>
-            ))}
+            {cart.map((item) => {
+              const selectedColor = JSON.parse(
+                localStorage.getItem(`selectedColor_${item.id}`) || "{}"
+              );
+              return (
+                <div key={item.id}>
+                  <ListItem
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Avatar
+                        variant="square"
+                        src={selectedColor.image || item.image}
+                        alt={item.name}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          marginRight: 2,
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <ListItemText
+                        primary={`${item.name} - Cor: ${
+                          selectedColor.name || "Padrão"
+                        }`}
+                        secondary={
+                          <>
+                            <Typography variant="body2" component="span">
+                              Quantidade: {item.quantity}
+                            </Typography>
+                            <br />
+                            <Typography
+                              variant="body2"
+                              color="textSecondary"
+                              component="span"
+                            >
+                              {item.description}
+                            </Typography>
+                          </>
+                        }
+                        primaryTypographyProps={{
+                          fontWeight: "bold",
+                          color: "#313926",
+                        }}
+                        secondaryTypographyProps={{ color: "#777" }}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ color: "#313926" }}>
+                        R${" "}
+                        {(item.price * item.quantity)
+                          .toFixed(2)
+                          .replace(".", ",")}
+                      </Typography>
+                      <IconButton onClick={() => increaseQuantity(item.id)}>
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton onClick={() => decreaseQuantity(item.id)}>
+                        <RemoveIcon />
+                      </IconButton>
+                      <IconButton onClick={() => removeFromCart(item.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </ListItem>
+                  <Divider />
+                </div>
+              );
+            })}
           </List>
-          <Box sx={{ padding: 2, backgroundColor: "#fafafa", mt: 2, borderRadius: "10px" }}>
+          <Box
+            sx={{
+              padding: 2,
+              backgroundColor: "#fafafa",
+              mt: 2,
+              borderRadius: "10px",
+            }}
+          >
             <TextField
               label="Insira seu CEP"
               value={cepDestino}
@@ -240,9 +312,19 @@ const CartList: React.FC = () => {
                   backgroundColor: "#f1f1f1",
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, color: "#313926" }}>
-                  Opções de Frete Disponíveis:
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <img
+                    src="/icones/logoJadlog.png"
+                    alt="Jadlog Logo"
+                    style={{ width: 110, height: 110, marginRight: "8px" }}
+                  />
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: "bold", color: "#313926" }}
+                  >
+                    Escolha a melhor opção de envio:
+                  </Typography>
+                </Box>
                 <List>
                   {freightOptions.map((option) => (
                     <ListItem key={option.id}>
@@ -260,7 +342,10 @@ const CartList: React.FC = () => {
                         }}
                       >
                         <ListItemText
-                          primary={`${option.name} - R$ ${option.price}`}
+                          primary={`${option.name} - R$ ${option.price.replace(
+                            ".",
+                            ","
+                          )}`}
                           secondary={`Prazo: ${option.delivery_time} dias úteis`}
                         />
                       </ListItemButton>
@@ -278,17 +363,21 @@ const CartList: React.FC = () => {
                 color: "#313926",
               }}
             >
-              Valor Total do Pedido: R${" "}
-              {(Number(totalProductAmount) + Number(selectedFreightOption?.price || 0)).toFixed(2)}
+              Valor Total do Pedido: R$ {totalPrice.replace(".", ",")}
             </Typography>
             <Button
-              variant="contained"
+              variant="outlined"
               onClick={handleCheckout}
               fullWidth
               sx={{
                 mt: 2,
-                backgroundColor: "#00b300",
-                "&:hover": { backgroundColor: "#009900" },
+                color: "#313926",
+                borderColor: "#313926",
+                "&:hover": {
+                  backgroundColor: "#00b300",
+                  borderColor: "#00b300",
+                  color: "#fff",
+                },
               }}
             >
               Finalizar Compra

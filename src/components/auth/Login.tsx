@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../../contexts/SocketContext";
+import { useUser } from "../../contexts/UserContext";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +20,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const socket = useSocket();
+  const { setUser } = useUser();
 
   const handleLogin = async () => {
     setError("");
@@ -34,12 +36,14 @@ const Login: React.FC = () => {
       );
 
       const { token, user } = response.data;
+
+      // Guarda o token no localStorage e atualiza o contexto do usuário
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      setUser(user);
 
       // Emitir o evento de login via WebSocket
       if (socket) {
-        socket.emit("userLoggedIn", user.name); // Emitindo o evento com o nome do usuário
+        socket.emit("userLoggedIn", user.name);
       }
 
       navigate("/");
