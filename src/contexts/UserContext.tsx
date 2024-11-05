@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 export interface User {
   name: string;
@@ -16,28 +16,41 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Carrega o usuário inicial do localStorage (persistência entre atualizações)
   const [user, setUserState] = useState<User | null>(() => {
     const storedUser = localStorage.getItem("user");
+    console.log("Loaded user from localStorage:", storedUser); // Log para verificar o valor carregado do localStorage
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // Atualiza o estado e armazena o usuário no localStorage sempre que `setUser` for chamado
   const setUser = (newUser: User | null) => {
     if (newUser) {
       localStorage.setItem("user", JSON.stringify(newUser));
+      console.log("Saved user to localStorage:", newUser); // Log para verificar o salvamento do usuário
     } else {
       localStorage.removeItem("user");
+      console.log("Removed user from localStorage"); // Log para remoção
     }
     setUserState(newUser);
   };
 
-  // Função para logout, que limpa o estado e o localStorage
   const logout = () => {
-    setUser(null); // Limpa o estado do usuário
-    localStorage.removeItem("user"); // Remove o usuário do localStorage
-    localStorage.removeItem("token"); // Remove o token do localStorage
+    setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const updatedUser = localStorage.getItem("user");
+      console.log("Storage changed, updated user:", updatedUser); // Log para verificar mudanças no localStorage
+      setUserState(updatedUser ? JSON.parse(updatedUser) : null);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser, logout }}>

@@ -11,8 +11,6 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <UserProvider>
-      {" "}
-      {/* Envolvendo o App com o UserProvider */}
       <App />
     </UserProvider>
   </React.StrictMode>
