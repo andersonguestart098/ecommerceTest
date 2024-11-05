@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   TextField,
-  Button,
   IconButton,
   Collapse,
   useMediaQuery,
   InputAdornment,
+  Button,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { useTheme } from "@mui/material/styles";
 
 interface SearchBarProps {
@@ -28,21 +29,25 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [showFilters, setShowFilters] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const filterRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearch = () => {
     onSearch(searchTerm, color, minPrice, maxPrice);
-  };
-
-  const toggleSearch = () => {
-    setIsSearchVisible(!isSearchVisible);
+    window.scrollTo({
+      top: 500, // Ajuste este valor conforme necessário para controlar o scroll
+      behavior: "smooth",
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleSearch();
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    onSearch("", "", "", ""); // Reseta a busca
   };
 
   useEffect(() => {
@@ -86,31 +91,22 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
           },
         }}
         InputProps={{
-          endAdornment: isMobile ? (
+          endAdornment: (
             <InputAdornment position="end">
-              <IconButton onClick={handleSearch}>
+              {searchTerm && (
+                <IconButton onClick={handleClearSearch} size="small">
+                  <ClearIcon sx={{ color: "#313926", fontSize: "1rem" }} />
+                </IconButton>
+              )}
+              <IconButton onClick={handleSearch} size="small">
                 <SearchIcon sx={{ color: "#313926" }} />
               </IconButton>
             </InputAdornment>
-          ) : null,
+          ),
         }}
       />
 
-      {/* Show filters button only on larger screens */}
-      {!isMobile && (
-        <IconButton
-          onClick={() => setShowFilters((prev) => !prev)}
-          aria-label="search"
-          sx={{
-            color: "#313926",
-            transition: "transform 0.3s ease",
-            "&:hover": { transform: "scale(1.1)" },
-          }}
-        >
-          <SearchIcon />
-        </IconButton>
-      )}
-
+      {/* Exibir botão de filtros apenas no desktop */}
       {!isMobile && (
         <Collapse in={showFilters} timeout="auto" unmountOnExit>
           <Box
@@ -130,6 +126,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
               width: "100%",
             }}
           >
+            {/* Filtros de preço mínimo e máximo */}
             <TextField
               placeholder="Preço mínimo"
               type="number"

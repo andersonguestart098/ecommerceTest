@@ -16,41 +16,41 @@ const Footer: React.FC = () => {
         color: "#E6E3DB",
         padding: "40px 20px",
         mt: 5,
+        textAlign: "center",
       }}
     >
-      <Grid container spacing={5} justifyContent="center" alignItems="center">
+      <Grid container spacing={3} justifyContent="center">
+        {/* Logo Section */}
         <Grid item xs={12} md={4}>
-          <Box display="flex" alignItems="center" justifyContent="center">
+          <Box display="flex" justifyContent="center">
             <motion.div
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.3 }}
-              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
               <img
                 src="/icones/logo.png"
                 alt="Nato Pisos Logo"
-                style={{ width: "200px", filter: "brightness(0) invert(1)" }}
+                style={{ width: "150px", filter: "brightness(0) invert(1)" }}
               />
-              <Typography variant="h5" fontWeight="bold" color="#E6E3DB"></Typography>
             </motion.div>
           </Box>
         </Grid>
-        
+        {/* Contact Information */}
         <Grid item xs={12} md={4}>
-          <Box textAlign="center">
+          <Box>
             <Typography variant="body1" sx={{ mb: 1 }}>
-              <MailOutlineIcon sx={{ mr: 1 }} />
+              <MailOutlineIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               contato@natopisos.com.br
             </Typography>
             <Typography variant="body1">
-              <PhoneIcon sx={{ mr: 1 }} />
+              <PhoneIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               +55 11 91234-6687
             </Typography>
           </Box>
         </Grid>
-        
+        {/* Social Media Icons */}
         <Grid item xs={12} md={4}>
-          <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+          <Box display="flex" justifyContent="center" gap={1}>
             <IconButton
               aria-label="Instagram"
               sx={{ color: "#E6E3DB" }}
@@ -81,16 +81,16 @@ const Footer: React.FC = () => {
             </IconButton>
           </Box>
         </Grid>
+        s
       </Grid>
 
       <Divider sx={{ my: 3, backgroundColor: "#E6E3DB" }} />
 
-      <Box textAlign="center" my={2}>
+      <Box>
         <Typography variant="body2" color="#E6E3DB">
           © {new Date().getFullYear()} Nato Pisos - Todos os direitos reservados
         </Typography>
       </Box>
-
     </Box>
   );
 };

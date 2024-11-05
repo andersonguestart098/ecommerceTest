@@ -13,9 +13,7 @@ import {
   Button,
   Snackbar,
   SnackbarContent,
-  Collapse,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
@@ -51,11 +49,11 @@ const Navbar: React.FC<NavbarProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [showSearchIcon, setShowSearchIcon] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Verificar o tipo de usuário diretamente no localStorage
-  const userType = user?.type || JSON.parse(localStorage.getItem("user") || "{}")?.tipoUsuario;
+  const userType =
+    user?.type || JSON.parse(localStorage.getItem("user") || "{}")?.tipoUsuario;
 
   useEffect(() => {
     socket?.on("welcomeMessage", (msg: string) => {
@@ -86,17 +84,18 @@ const Navbar: React.FC<NavbarProps> = ({
     handleCloseMenu();
   };
 
-  const handleSearchIconClick = () => {
-    toggleSearch();
-    setShowSearchIcon(false);
-  };
-
   const handleClearSearch = () => {
     setSearchTerm("");
   };
 
-  // Log para verificar o tipo de usuário
-  console.log("User type:", userType);
+  // Função para iniciar a busca e dar o scroll para baixo
+  const initiateSearch = (term: string) => {
+    onSearch(term, "", "", ""); // Chama a função de busca
+    window.scrollTo({
+      top: 500, // Ajuste esse valor para controlar o quão para baixo será o scroll
+      behavior: "smooth",
+    });
+  };
 
   return (
     <AppBar
@@ -132,15 +131,18 @@ const Navbar: React.FC<NavbarProps> = ({
             src="/icones/logo.png"
             alt="Logo"
             style={{
-              width: isMobile ? "120px" : "180px",
+              width: isMobile ? "146px" : "180px",
               cursor: "pointer",
               paddingBottom: 5,
             }}
-            onClick={() => navigate("/")}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" }); // Volta ao topo ao clicar
+              navigate("/");
+            }}
           />
         </Box>
 
-        {/* SearchBar para desktop e mobile */}
+        {/* SearchBar fixa no mobile */}
         <Box
           sx={{
             flexGrow: 1,
@@ -151,50 +153,12 @@ const Navbar: React.FC<NavbarProps> = ({
             position: "relative",
           }}
         >
-          {isMobile ? (
-            <Collapse in={showSearch} orientation="horizontal" timeout="auto">
-              <SearchBar
-                onSearch={(term) => {
-                  onSearch(term, "", "", "");
-                  setSearchTerm(term);
-                }}
-              />
-            </Collapse>
-          ) : (
-            <SearchBar
-              onSearch={(term) => {
-                onSearch(term, "", "", "");
-                setSearchTerm(term);
-              }}
-            />
-          )}
-          {showSearch && searchTerm && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: "100%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                marginTop: "5px",
-              }}
-            >
-              <IconButton
-                onClick={handleClearSearch}
-                sx={{
-                  padding: "3px",
-                  fontSize: "0.8rem",
-                  color: "#313926",
-                  backgroundColor: "#f0f0f0",
-                  borderRadius: "5px",
-                  "&:hover": {
-                    backgroundColor: "#e0e0e0",
-                  },
-                }}
-              >
-                Limpar Filtros
-              </IconButton>
-            </Box>
-          )}
+          <SearchBar
+            onSearch={(term) => {
+              setSearchTerm(term);
+              initiateSearch(term);
+            }}
+          />
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -212,12 +176,6 @@ const Navbar: React.FC<NavbarProps> = ({
                 Olá, {user.name}
               </Typography>
 
-              {isMobile && showSearchIcon && (
-                <IconButton onClick={handleSearchIconClick} sx={{ padding: 0 }}>
-                  <SearchIcon sx={{ color: "#313926", fontSize: "2rem" }} />
-                </IconButton>
-              )}
-
               <IconButton
                 onClick={handleUserClick}
                 sx={{
@@ -225,13 +183,23 @@ const Navbar: React.FC<NavbarProps> = ({
                   marginRight: isMobile ? "5px" : "10px",
                 }}
               >
-                {userType === "admin" ? (
-                  <SettingsSuggestIcon
-                    sx={{ color: "#313926", fontSize: isMobile ? "2rem" : "1.8rem" }}
-                  />
-                ) : (
-                  <MenuOpenIcon sx={{ color: "#313926", fontSize: isMobile ? "2rem" : "1.8rem" }} />
-                )}
+                <Badge badgeContent={cart.length} color="primary">
+                  {userType === "admin" ? (
+                    <SettingsSuggestIcon
+                      sx={{
+                        color: "#313926",
+                        fontSize: isMobile ? "2rem" : "1.8rem",
+                      }}
+                    />
+                  ) : (
+                    <MenuOpenIcon
+                      sx={{
+                        color: "#313926",
+                        fontSize: isMobile ? "2rem" : "1.8rem",
+                      }}
+                    />
+                  )}
+                </Badge>
               </IconButton>
 
               {/* Menu dropdown com opções baseadas no tipo de usuário */}
@@ -263,28 +231,45 @@ const Navbar: React.FC<NavbarProps> = ({
                     </MenuItem>
                   </>
                 )}
+                {/* Carrinho de compras no dropdown para mobile */}
+                {isMobile && (
+                  <MenuItem onClick={() => handleNavigate("/cart")}>
+                    <IconButton>
+                      <Badge badgeContent={cart.length} color="primary">
+                        <ShoppingCartIcon />
+                      </Badge>
+                    </IconButton>
+                    Carrinho
+                  </MenuItem>
+                )}
+                <MenuItem onClick={handleLogout}>
+                  <IconButton>
+                    <LogoutIcon />
+                  </IconButton>
+                  Logout
+                </MenuItem>
               </Menu>
-
-              {!isMobile && (
-                <>
-                  <IconButton onClick={() => navigate("/cart")} sx={{ marginRight: "10px" }}>
-                    <Badge badgeContent={cart.length} color="primary">
-                      <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
-                    </Badge>
-                  </IconButton>
-                  <IconButton onClick={handleLogout} sx={{ marginRight: "10px" }}>
-                    <LogoutIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
-                  </IconButton>
-                </>
-              )}
             </>
           ) : (
-            <Button
-              onClick={() => navigate("/login")}
-              sx={{ color: "#313926", fontSize: isMobile ? "0.9rem" : "1.1rem", marginRight: "5px" }}
-            >
-              Entrar
-            </Button>
+            <>
+              <Button
+                onClick={() => navigate("/login")}
+                sx={{
+                  color: "#313926",
+                  fontSize: isMobile ? "0.9rem" : "1.1rem",
+                  marginRight: "5px",
+                }}
+              >
+                Entrar
+              </Button>
+              <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
+                <Badge badgeContent={cart.length} color="primary">
+                  <ShoppingCartIcon
+                    sx={{ color: "#313926", fontSize: "1.8rem" }}
+                  />
+                </Badge>
+              </IconButton>
+            </>
           )}
         </Box>
       </Toolbar>
