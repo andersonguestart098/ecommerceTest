@@ -13,6 +13,7 @@ import {
   ListItem,
   Chip,
   Button,
+  useTheme,
 } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -84,6 +85,7 @@ const OrderTrackingAdmin: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10; // Número de pedidos exibidos por página
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -137,7 +139,12 @@ const OrderTrackingAdmin: React.FC = () => {
 
     return (
       <Box
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
       >
         {statusSteps.map((step, index) => {
           let backgroundColor = "#E6E3DB";
@@ -157,6 +164,7 @@ const OrderTrackingAdmin: React.FC = () => {
                 alignItems: "center",
                 flexDirection: "column",
                 padding: "8px",
+                minWidth: "70px",
               }}
             >
               <Avatar
@@ -179,6 +187,7 @@ const OrderTrackingAdmin: React.FC = () => {
                 variant="caption"
                 sx={{
                   color: index <= currentStepIndex ? "#313926" : "#E6E3DB",
+                  fontSize: "0.75rem",
                 }}
               >
                 {step.visualValue}
@@ -200,7 +209,6 @@ const OrderTrackingAdmin: React.FC = () => {
     );
   };
 
-  // Pagination logic
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
@@ -211,13 +219,14 @@ const OrderTrackingAdmin: React.FC = () => {
   };
 
   return (
-    <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ padding: 2, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 3,
+          mb: 2,
+          flexWrap: "wrap",
         }}
       >
         <IconButton
@@ -230,7 +239,19 @@ const OrderTrackingAdmin: React.FC = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold" }}>
+        <Typography
+          variant="h5"
+          gutterBottom
+          sx={{
+            fontWeight: "bold",
+            textAlign: "center",
+            width: "100%",
+            [theme.breakpoints.up("sm")]: {
+              width: "auto",
+              textAlign: "left",
+            },
+          }}
+        >
           Pedidos (Admin)
         </Typography>
       </Box>
@@ -244,7 +265,12 @@ const OrderTrackingAdmin: React.FC = () => {
       ) : (
         <Paper
           elevation={3}
-          sx={{ padding: 2, border: "1px solid #E6E3DB", borderRadius: "10px" }}
+          sx={{
+            padding: 2,
+            border: "1px solid #E6E3DB",
+            borderRadius: "10px",
+            maxWidth: "100%",
+          }}
         >
           <List>
             {currentOrders.map((order, index) => (
@@ -269,7 +295,14 @@ const OrderTrackingAdmin: React.FC = () => {
                   <Box sx={{ width: "100%" }}>
                     {renderProgressTracker(order.status)}
                   </Box>
-                  <Box sx={{ display: "flex", gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      justifyContent: "center",
+                    }}
+                  >
                     {statusSteps.map((step) => (
                       <Chip
                         key={step.key}
@@ -281,6 +314,7 @@ const OrderTrackingAdmin: React.FC = () => {
                             order.status === step.key ? "#313926" : "#E6E3DB",
                           color: "#fff",
                           "&:hover": { backgroundColor: "#4CAF50" },
+                          fontSize: "0.8rem",
                         }}
                       />
                     ))}
@@ -291,7 +325,6 @@ const OrderTrackingAdmin: React.FC = () => {
             ))}
           </List>
 
-          {/* Pagination Controls */}
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Button
               onClick={() => handlePageChange(currentPage - 1)}

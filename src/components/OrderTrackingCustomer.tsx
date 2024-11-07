@@ -20,6 +20,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import CancelIcon from "@mui/icons-material/Cancel";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { motion } from "framer-motion";
@@ -70,6 +71,13 @@ const statusSteps = [
     icon: <AssignmentTurnedInIcon />,
     defaultColor: "#E6E3DB",
   },
+  {
+    key: "CANCELED",
+    label: "Cancelado",
+    icon: <CancelIcon />,
+    defaultColor: "#E6E3DB",
+    highlightColor: "#FF0000", // Vermelho para etapas canceladas
+  },
 ];
 
 const OrderTracking: React.FC = () => {
@@ -80,6 +88,7 @@ const OrderTracking: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const socket = useSocket();
+  const [loading, setLoading] = useState(false); // Adicione este estado
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,6 +96,7 @@ const OrderTracking: React.FC = () => {
 
   useEffect(() => {
     const fetchOrders = async () => {
+      setLoading(true); // Inicia o carregamento
       try {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -105,6 +115,8 @@ const OrderTracking: React.FC = () => {
           alert("Por favor, faça login novamente.");
           navigate("/login");
         }
+      } finally {
+        setLoading(false); // Finaliza o carregamento
       }
     };
 
@@ -144,78 +156,69 @@ const OrderTracking: React.FC = () => {
   };
 
   const renderProgressTracker = (currentStatus: string) => {
-    const currentStepIndex = statusSteps.findIndex(
-      (step) => step.key === currentStatus
-    );
-    const groupedSteps = [statusSteps.slice(0, 3), statusSteps.slice(3, 6)];
+    const isCanceled = currentStatus === "CANCELED";
 
     return (
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
+          display: isMobile ? "flex" : "inline-flex",
+          flexDirection: isMobile ? "column" : "row",
           alignItems: "center",
+          justifyContent: "center",
           gap: 2,
+          flexWrap: "wrap",
         }}
       >
-        {groupedSteps.map((group, rowIndex) => (
-          <Box
-            key={rowIndex}
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 2,
-              width: "100%",
-            }}
-          >
-            {group.map((step) => {
-              const isActive = statusSteps.indexOf(step) <= currentStepIndex;
-              return (
-                <motion.div
-                  key={step.key}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    width: "80px",
-                    padding: "8px",
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      backgroundColor: isActive ? "#4CAF50" : step.defaultColor,
-                      color: "#fff",
-                      width: 50,
-                      height: 50,
-                      boxShadow: isActive ? "0px 0px 10px rgba(0,0,0,0.2)" : "",
-                      transition: "all 0.3s ease-in-out",
-                    }}
-                  >
-                    {step.icon}
-                  </Avatar>
-                  <Typography
-                    variant="caption"
-                    align="center"
-                    sx={{
-                      color: isActive ? "#313926" : step.defaultColor,
-                      mt: 1,
-                      fontSize: "0.65rem",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {step.label}
-                  </Typography>
-                </motion.div>
-              );
-            })}
-          </Box>
-        ))}
+        {statusSteps.map((step, index) => {
+          const isActive =
+            index <= statusSteps.findIndex((s) => s.key === currentStatus);
+          const stepColor = isCanceled
+            ? step.highlightColor
+            : isActive
+            ? "#4CAF50"
+            : step.defaultColor;
+
+          return (
+            <motion.div
+              key={step.key}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                margin: "5px",
+              }}
+            >
+              <Avatar
+                sx={{
+                  backgroundColor: stepColor,
+                  color: "#fff",
+                  width: 50,
+                  height: 50,
+                  boxShadow: isActive ? "0px 0px 10px rgba(0,0,0,0.2)" : "",
+                  transition: "all 0.3s ease-in-out",
+                }}
+              >
+                {step.icon}
+              </Avatar>
+              <Typography
+                variant="caption"
+                align="center"
+                sx={{
+                  color: isActive || isCanceled ? "#313926" : step.defaultColor,
+                  mt: 1,
+                  fontSize: "0.75rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {step.label}
+              </Typography>
+            </motion.div>
+          );
+        })}
       </Box>
     );
   };
 
-  // Pagination logic
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
@@ -289,9 +292,6 @@ const OrderTracking: React.FC = () => {
                     mb: 2,
                     backgroundColor: "#00E676",
                     "&:hover": { backgroundColor: "#00C853" },
-                    fontWeight: "bold",
-                    fontSize: isMobile ? "0.75rem" : "1rem",
-                    padding: isMobile ? "6px 12px" : "8px 16px",
                   }}
                 >
                   Contatar Vendedor
@@ -301,12 +301,10 @@ const OrderTracking: React.FC = () => {
             ))}
           </List>
 
-          {/* Pagination Controls */}
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              sx={{ mr: 1 }}
             >
               Anterior
             </Button>
@@ -316,7 +314,6 @@ const OrderTracking: React.FC = () => {
             <Button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              sx={{ ml: 1 }}
             >
               Próxima
             </Button>

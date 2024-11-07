@@ -11,6 +11,7 @@ import {
   useTheme,
   Divider,
 } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material"; // Adicione essas importações
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ const Checkout: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [cardPreview, setCardPreview] = useState({
     cardNumber: "•••• •••• •••• ••••",
@@ -41,23 +44,28 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
-    // Verifique se o pedido já está marcado como concluído
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      setSnackbarMessage(
+        "Erro: Usuário não autenticado. Faça login para continuar."
+      );
+      setSnackbarOpen(true);
+      navigate("/login", { state: { from: "/checkout" } }); // Redireciona com a rota de origem
+      return;
+    }
+
     const storedCheckoutData = localStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      const parsedCheckoutData = JSON.parse(storedCheckoutData);
-      if (parsedCheckoutData.isCompleted) {
-        // Remove `isCompleted` para iniciar uma nova compra
-        delete parsedCheckoutData.isCompleted;
-        localStorage.setItem(
-          "checkoutData",
-          JSON.stringify(parsedCheckoutData)
-        );
-      }
-      setCheckoutData(parsedCheckoutData);
+      setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
-      navigate("/cart"); // Redireciona se não houver dados
+      fetchUserDataFromAPI(storedUserId);
     }
   }, [navigate]);
+
+  // Snackbar handler
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
@@ -441,6 +449,20 @@ const Checkout: React.FC = () => {
         gap: "20px",
       }}
     >
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
       <Box
         sx={{
           flex: 1,

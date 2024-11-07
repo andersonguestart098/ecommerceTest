@@ -9,7 +9,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSocket } from "../../contexts/SocketContext";
 import { useUser } from "../../contexts/UserContext";
 
@@ -21,6 +21,8 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const socket = useSocket();
   const { setUser } = useUser();
+
+  const location = useLocation();
 
   const handleLogin = async () => {
     setError("");
@@ -37,16 +39,16 @@ const Login: React.FC = () => {
 
       const { token, user } = response.data;
 
-      // Guarda o token no localStorage e atualiza o contexto do usuário
       localStorage.setItem("token", token);
       setUser(user);
 
-      // Emitir o evento de login via WebSocket
       if (socket) {
         socket.emit("userLoggedIn", user.name);
       }
 
-      navigate("/");
+      // Se há uma rota de origem, redirecione para ela
+      const redirectPath = location.state?.from || "/";
+      navigate(redirectPath);
     } catch (err: any) {
       setError("Credenciais inválidas.");
       console.error(

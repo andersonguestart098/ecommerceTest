@@ -1,6 +1,5 @@
-// Código de envio no formulário de produto
 import React, { useState } from "react";
-import { TextField, Button, Box, Typography } from "@mui/material";
+import { TextField, Button, Box, Typography, Avatar } from "@mui/material";
 import axios from "axios";
 
 const ProductForm: React.FC = () => {
@@ -10,8 +9,13 @@ const ProductForm: React.FC = () => {
   const [discount, setDiscount] = useState<number | string>("");
   const [paymentOptions, setPaymentOptions] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [colorFiles, setColorFiles] = useState<File[]>([]);
-  const [colorNames, setColorNames] = useState<string[]>([]);
+  const [colorData, setColorData] = useState<
+    {
+      colorName: string;
+      colorFile: File | null;
+      imageRefIndex: number | null;
+    }[]
+  >([]);
   const [metersPerBox, setMetersPerBox] = useState<number | string>("");
   const [weightPerBox, setWeightPerBox] = useState<number | string>("");
   const [boxDimensions, setBoxDimensions] = useState("");
@@ -22,12 +26,13 @@ const ProductForm: React.FC = () => {
     e.preventDefault();
 
     if (
-      colorFiles.length === 0 ||
-      colorNames.length === 0 ||
-      colorFiles.length !== colorNames.length
+      colorData.some(
+        (color) =>
+          !color.colorFile || !color.colorName || color.imageRefIndex === null
+      )
     ) {
       alert(
-        "O número de imagens de cores e nomes deve ser igual e não pode ser vazio."
+        "Todos os campos de nome, imagem das cores e referência da imagem principal devem ser preenchidos."
       );
       return;
     }
@@ -49,13 +54,13 @@ const ProductForm: React.FC = () => {
       formData.append("images", file);
     });
 
-    // Adicionando imagens de cores e nomes
-    colorFiles.forEach((file) => {
-      formData.append("colors", file);
-    });
-
-    colorNames.forEach((name) => {
-      formData.append("colorNames", name);
+    // Adicionando imagens de cores e seus respectivos nomes e referências
+    colorData.forEach(({ colorName, colorFile, imageRefIndex }) => {
+      formData.append("colorNames", colorName);
+      formData.append("imageRefIndexes", String(imageRefIndex));
+      if (colorFile) {
+        formData.append("colors", colorFile);
+      }
     });
 
     try {
@@ -78,8 +83,7 @@ const ProductForm: React.FC = () => {
       setDiscount("");
       setPaymentOptions("");
       setImageFiles([]);
-      setColorFiles([]);
-      setColorNames([]);
+      setColorData([]);
       setMetersPerBox("");
       setWeightPerBox("");
       setBoxDimensions("");
@@ -96,16 +100,29 @@ const ProductForm: React.FC = () => {
     }
   };
 
-  const handleColorImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setColorFiles(Array.from(e.target.files));
-    }
+  const handleAddColor = () => {
+    setColorData([
+      ...colorData,
+      { colorName: "", colorFile: null, imageRefIndex: null },
+    ]);
   };
 
-  const handleColorNamesChange = (index: number, value: string) => {
-    const updatedNames = [...colorNames];
-    updatedNames[index] = value;
-    setColorNames(updatedNames);
+  const handleColorNameChange = (index: number, value: string) => {
+    const updatedColors = [...colorData];
+    updatedColors[index].colorName = value;
+    setColorData(updatedColors);
+  };
+
+  const handleColorFileChange = (index: number, file: File | null) => {
+    const updatedColors = [...colorData];
+    updatedColors[index].colorFile = file;
+    setColorData(updatedColors);
+  };
+
+  const handleImageRefChange = (index: number, value: string) => {
+    const updatedColors = [...colorData];
+    updatedColors[index].imageRefIndex = parseInt(value, 10);
+    setColorData(updatedColors);
   };
 
   return (
@@ -116,7 +133,7 @@ const ProductForm: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         gap: 2,
-        maxWidth: 400,
+        maxWidth: 600,
         margin: "auto",
         mt: 5,
       }}
@@ -198,26 +215,75 @@ const ProductForm: React.FC = () => {
         name="images"
         required
       />
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleColorImagesChange}
-        name="colors"
-        required
-      />
-
-      {colorFiles.map((file, index) => (
-        <TextField
-          key={index}
-          label={`Nome da Cor ${index + 1}`}
-          value={colorNames[index] || ""}
-          onChange={(e) => handleColorNamesChange(index, e.target.value)}
-          required
-        />
+      <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        Imagens principais ({imageFiles.length})
+      </Typography>
+      {imageFiles.map((file, index) => (
+        <Box key={index} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar
+            src={URL.createObjectURL(file)}
+            alt={`Imagem ${index + 1}`}
+            sx={{ width: 80, height: 80 }}
+          />
+          <Typography>{file.name}</Typography>
+        </Box>
       ))}
 
-      <Button type="submit" variant="contained" color="primary">
+      <Button
+        variant="outlined"
+        color="primary"
+        onClick={handleAddColor}
+        sx={{ mt: 2 }}
+      >
+        Adicionar Cor
+      </Button>
+
+      {colorData.map((color, index) => (
+        <Box
+          key={index}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+            mt: 2,
+          }}
+        >
+          <TextField
+            label={`Nome da Cor ${index + 1}`}
+            value={color.colorName}
+            onChange={(e) => handleColorNameChange(index, e.target.value)}
+            required
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) =>
+              handleColorFileChange(
+                index,
+                e.target.files ? e.target.files[0] : null
+              )
+            }
+            required
+          />
+          <TextField
+            select
+            label="Imagem Principal Referente"
+            value={color.imageRefIndex ?? ""}
+            onChange={(e) => handleImageRefChange(index, e.target.value)}
+            SelectProps={{ native: true }}
+            required
+          >
+            <option value="">Selecione uma imagem</option>
+            {imageFiles.map((_, imgIndex) => (
+              <option key={imgIndex} value={imgIndex}>
+                Imagem {imgIndex + 1}
+              </option>
+            ))}
+          </TextField>
+        </Box>
+      ))}
+
+      <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
         Criar Produto
       </Button>
     </Box>

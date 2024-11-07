@@ -17,17 +17,16 @@ import { Box } from "@mui/material";
 import OrderTrackingAdmin from "../components/OrderTrackingAdmin";
 import OrderTrackingCustomer from "../components/OrderTrackingCustomer";
 import ProductList from "../components/ProductList";
-
-// Importando os novos componentes de resultado de pagamento
 import SuccessPage from "../components/mercadoPago/sucesso";
 import FailurePage from "../components/mercadoPago/falha";
 import PendingPage from "../components/mercadoPago/pendente";
 import Management from "../components/gerenciador";
+import MeusDados from "../components/MeusDados"; // Novo componente de perfil do usuário
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [showSearch, setShowSearch] = useState(false); // Estado para mostrar/ocultar o campo de busca
+  const [showSearch, setShowSearch] = useState(false);
 
   const [filters, setFilters] = useState({
     searchTerm: "",
@@ -84,8 +83,8 @@ const App: React.FC = () => {
             backgroundColor: "#f5f5f5",
             minHeight: "100vh",
             paddingTop: "94px",
-            position: "relative", // Mantém a posição relativa para z-index
-            zIndex: 10, // Garante que o Navbar esteja acima dos componentes abaixo
+            position: "relative",
+            zIndex: 10,
           }}
         >
           <Router>
@@ -96,7 +95,6 @@ const App: React.FC = () => {
                 toggleSearch={toggleSearch}
               />
               <Box sx={{ marginTop: "0px", position: "relative", zIndex: 5 }}>
-                {/* Define zIndex menor para o conteúdo abaixo */}
                 <Routes>
                   <Route
                     path="/"
@@ -116,6 +114,9 @@ const App: React.FC = () => {
                     path="/product-list"
                     element={<ProductList {...filters} />}
                   />
+                  {/* Novo componente de perfil de usuário */}
+                  <Route path="/meus-dados" element={<MeusDados />} />
+
                   {/* Rotas para status de pagamento */}
                   <Route path="/sucesso" element={<SuccessPage />} />
                   <Route path="/falha" element={<FailurePage />} />

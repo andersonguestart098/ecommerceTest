@@ -29,6 +29,18 @@ const SuccessPage: React.FC = () => {
     navigate("/my-orders");
   };
 
+  const getPaymentMessage = () => {
+    switch (paymentMethod) {
+      case "pix":
+        return "Por favor, realize o pagamento via Pix dentro do prazo de 30 minutos. O QR Code está disponível abaixo para concluir a transação.";
+      case "boleto":
+        return "Seu boleto bancário foi gerado. O pagamento deve ser efetuado até a data de vencimento indicada.";
+      case "cartao":
+      default:
+        return "O pagamento foi confirmado e não é necessário nenhuma ação adicional. Aguarde a confirmação do envio do seu pedido.";
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -67,6 +79,14 @@ const SuccessPage: React.FC = () => {
           : paymentMethod === "boleto"
           ? "Boleto Bancário"
           : "Cartão de Crédito"}
+      </Typography>
+
+      <Typography
+        variant="body2"
+        gutterBottom
+        sx={{ maxWidth: 600, color: "#333", marginTop: 2 }}
+      >
+        {getPaymentMessage()}
       </Typography>
 
       {paymentMethod === "pix" && pixQrCode && (
@@ -108,8 +128,8 @@ const SuccessPage: React.FC = () => {
         onClick={handleContinueShopping}
         sx={{
           mt: 3,
-          width: "100%", // Define a largura fixa para todos os botões
-          maxWidth: "300px", // Define um limite de largura máxima
+          width: "100%",
+          maxWidth: "300px",
           backgroundColor: "#313926",
           color: "#fff",
           "&:hover": { backgroundColor: "#313926" },
