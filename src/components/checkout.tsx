@@ -211,35 +211,40 @@ const Checkout: React.FC = () => {
     console.log("Form Data Recebido do MercadoPago:", formData);
 
     // Validação de campos obrigatórios antes do envio
-    if (!formData.token) {
-      console.error("Erro: Token não foi gerado.");
-      const missingFields = [];
+    const missingFields: string[] = [];
 
-      if (!formData.cardNumber) missingFields.push("Número do cartão");
-      if (!formData.expirationDate) missingFields.push("Data de expiração");
-      if (!formData.securityCode) missingFields.push("Código de segurança");
-      if (!formData.cardholderName) missingFields.push("Nome do titular");
-      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
-      if (!formData.identificationNumber)
-        missingFields.push("Número do documento");
+    if (!formData.cardNumber) missingFields.push("Número do cartão");
+    if (!formData.expirationDate) missingFields.push("Data de expiração");
+    if (!formData.securityCode) missingFields.push("Código de segurança");
+    if (!formData.cardholderName) missingFields.push("Nome do titular");
+    if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
+    if (!formData.identificationNumber)
+      missingFields.push("Número do documento");
 
+    if (missingFields.length > 0) {
       alert(
-        `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
+        `Erro ao gerar token do cartão. Os seguintes campos estão ausentes ou inválidos: ${missingFields.join(
           ", "
         )}.`
       );
       return;
     }
 
+    if (!formData.token) {
+      console.error("Erro: Token não foi gerado.");
+      alert("Erro ao gerar token do cartão. Tente novamente.");
+      return;
+    }
+
+    // Processamento do pagamento após validação bem-sucedida
     const cardholderName = formData.cardholderName || "";
     const [firstName, ...lastNameParts] = cardholderName.split(" ");
     const lastName = lastNameParts.join(" ") || "Sobrenome";
 
-    const transactionAmount = parseFloat(
-      checkoutData.totalPrice.replace(",", ".")
-    );
+    const transactionAmount = parseFloat(formData.amount || "0");
 
     if (!transactionAmount || isNaN(transactionAmount)) {
+      console.error("Erro: Valor da transação inválido.");
       alert("Erro: Valor da transação inválido.");
       return;
     }
@@ -260,8 +265,10 @@ const Checkout: React.FC = () => {
           number: formData.identificationNumber,
         },
       },
-      userId: checkoutData.userId,
+      userId: formData.userId,
     };
+
+    console.log("Dados de pagamento prontos para envio:", paymentData);
 
     try {
       const response = await fetch(
@@ -274,13 +281,18 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
+        console.log("Pagamento processado com sucesso.");
         clearCart();
         navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        alert(`Pagamento falhou: ${errorResponse.message}`);
+        console.error("Erro no pagamento (Backend):", errorResponse);
+        alert(
+          `Pagamento falhou: ${errorResponse.message || "Erro desconhecido."}`
+        );
       }
     } catch (error) {
+      console.error("Erro ao processar pagamento (Fetch):", error);
       alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
