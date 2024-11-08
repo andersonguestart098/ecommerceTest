@@ -100,6 +100,7 @@ const Checkout: React.FC = () => {
       }
 
       if (window.MercadoPago) {
+        console.log("MercadoPago SDK já carregado.");
         setSdkLoaded(true);
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
       } else {
@@ -107,6 +108,7 @@ const Checkout: React.FC = () => {
         scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
         scriptSdk.async = true;
         scriptSdk.onload = () => {
+          console.log("MercadoPago SDK carregado com sucesso.");
           setSdkLoaded(true);
           setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
         };
@@ -141,7 +143,7 @@ const Checkout: React.FC = () => {
         amount: sanitizedAmount,
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" }, // Certifique-se que esses IDs existem
+          cardNumber: { id: "form-checkout__cardNumber" },
           expirationDate: { id: "form-checkout__expirationDate" },
           securityCode: { id: "form-checkout__securityCode" },
           cardholderName: { id: "form-checkout__cardholderName" },
@@ -157,10 +159,10 @@ const Checkout: React.FC = () => {
               console.error("Erro ao montar formulário:", error);
             } else {
               console.log("Formulário montado com sucesso.");
-              setIsMpReady(true); // Apenas permita submissão após sucesso
+              setIsMpReady(true);
             }
           },
-          onSubmit: handleCardSubmit, // Submissão do formulário
+          onSubmit: handleCardSubmit,
           onInstallmentsReceived: (error: any, installments: any) => {
             if (error) {
               console.warn("Erro ao obter parcelas:", error);
@@ -171,7 +173,7 @@ const Checkout: React.FC = () => {
         },
       });
 
-      setCardFormInstance(cardForm); // Garanta que o form esteja inicializado
+      setCardFormInstance(cardForm);
     }
   };
 
@@ -210,9 +212,8 @@ const Checkout: React.FC = () => {
     const formData = cardFormInstance.getCardFormData();
     console.log("Form Data Recebido do MercadoPago:", formData);
 
-    // Validação de campos obrigatórios antes do envio
+    // Validação de campos obrigatórios
     const missingFields: string[] = [];
-
     if (!formData.cardNumber) missingFields.push("Número do cartão");
     if (!formData.expirationDate) missingFields.push("Data de expiração");
     if (!formData.securityCode) missingFields.push("Código de segurança");
@@ -223,7 +224,7 @@ const Checkout: React.FC = () => {
 
     if (missingFields.length > 0) {
       alert(
-        `Erro ao gerar token do cartão. Os seguintes campos estão ausentes ou inválidos: ${missingFields.join(
+        `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
           ", "
         )}.`
       );
@@ -236,13 +237,8 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    // Processamento do pagamento após validação bem-sucedida
-    const cardholderName = formData.cardholderName || "";
-    const [firstName, ...lastNameParts] = cardholderName.split(" ");
-    const lastName = lastNameParts.join(" ") || "Sobrenome";
-
+    // Preparação dos dados de pagamento
     const transactionAmount = parseFloat(formData.amount || "0");
-
     if (!transactionAmount || isNaN(transactionAmount)) {
       console.error("Erro: Valor da transação inválido.");
       alert("Erro: Valor da transação inválido.");
@@ -258,14 +254,14 @@ const Checkout: React.FC = () => {
       description: "Compra via Cartão de Crédito",
       payer: {
         email: formData.cardholderEmail,
-        first_name: firstName || "Nome",
-        last_name: lastName,
+        first_name: formData.cardholderName.split(" ")[0],
+        last_name: formData.cardholderName.split(" ").slice(1).join(" "),
         identification: {
           type: formData.identificationType || "CPF",
           number: formData.identificationNumber,
         },
       },
-      userId: formData.userId,
+      userId: checkoutData.userId,
     };
 
     console.log("Dados de pagamento prontos para envio:", paymentData);
@@ -296,6 +292,14 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
+
+  useEffect(() => {
+    if (!isMpReady) {
+      console.log("Aguardando a inicialização do MercadoPago...");
+    } else {
+      console.log("MercadoPago pronto para uso.");
+    }
+  }, [isMpReady]);
 
   const calculateTransactionAmount = () => {
     try {
