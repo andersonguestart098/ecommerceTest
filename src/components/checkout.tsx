@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 
 const Checkout: React.FC = () => {
+  const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
   const navigate = useNavigate();
   const [isMpReady, setIsMpReady] = useState(false);
   const [sdkLoaded, setSdkLoaded] = useState(false);
@@ -21,7 +22,7 @@ const Checkout: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
   >(null);
-  const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
+
   const [checkoutData, setCheckoutData] = useState<any>({});
   const formRef = useRef<HTMLFormElement | null>(null);
   const { clearCart } = useCart();
@@ -134,13 +135,13 @@ const Checkout: React.FC = () => {
     if (mpInstance && formRef.current) {
       const sanitizedAmount = String(
         parseFloat((checkoutData.totalPrice || "0").replace(",", "."))
-      ); // Corrige o formato para ponto decimal
+      );
 
       const cardForm = mpInstance.cardForm({
         amount: sanitizedAmount,
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" },
+          cardNumber: { id: "form-checkout__cardNumber" }, // Certifique-se que esses IDs existem
           expirationDate: { id: "form-checkout__expirationDate" },
           securityCode: { id: "form-checkout__securityCode" },
           cardholderName: { id: "form-checkout__cardholderName" },
@@ -156,12 +157,21 @@ const Checkout: React.FC = () => {
               console.error("Erro ao montar formulário:", error);
             } else {
               console.log("Formulário montado com sucesso.");
+              setIsMpReady(true); // Apenas permita submissão após sucesso
+            }
+          },
+          onSubmit: handleCardSubmit, // Submissão do formulário
+          onInstallmentsReceived: (error: any, installments: any) => {
+            if (error) {
+              console.warn("Erro ao obter parcelas:", error);
+            } else {
+              console.log("Parcelas recebidas:", installments);
             }
           },
         },
       });
 
-      setCardFormInstance(cardForm);
+      setCardFormInstance(cardForm); // Garanta que o form esteja inicializado
     }
   };
 
@@ -189,7 +199,6 @@ const Checkout: React.FC = () => {
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
-
     console.log("Iniciando submissão do formulário...");
 
     if (!cardFormInstance) {
@@ -199,7 +208,6 @@ const Checkout: React.FC = () => {
     }
 
     const formData = cardFormInstance.getCardFormData();
-
     console.log("Form Data Recebido do MercadoPago:", formData);
 
     if (!formData.token) {
@@ -587,34 +595,42 @@ const Checkout: React.FC = () => {
               type="text"
               id="form-checkout__cardNumber"
               placeholder="Número do cartão"
+              disabled={!isMpReady}
             />
             <input
               type="text"
               id="form-checkout__expirationDate"
               placeholder="MM/YY"
+              disabled={!isMpReady}
             />
             <input
               type="text"
               id="form-checkout__securityCode"
               placeholder="CVC"
+              disabled={!isMpReady}
             />
             <input
               type="text"
               id="form-checkout__cardholderName"
               placeholder="Nome do titular"
+              disabled={!isMpReady}
             />
             <input
               type="email"
               id="form-checkout__cardholderEmail"
               placeholder="E-mail"
+              disabled={!isMpReady}
             />
-            <select id="form-checkout__issuer">
+            <select id="form-checkout__issuer" disabled={!isMpReady}>
               <option value="">Selecione o banco emissor</option>
             </select>
-            <select id="form-checkout__installments">
+            <select id="form-checkout__installments" disabled={!isMpReady}>
               <option value="">Número de parcelas</option>
             </select>
-            <select id="form-checkout__identificationType">
+            <select
+              id="form-checkout__identificationType"
+              disabled={!isMpReady}
+            >
               <option value="CPF">CPF</option>
               <option value="CNPJ">CNPJ</option>
             </select>
@@ -622,9 +638,10 @@ const Checkout: React.FC = () => {
               type="text"
               id="form-checkout__identificationNumber"
               placeholder="Número do documento"
+              disabled={!isMpReady}
             />
-            <Button type="submit" fullWidth>
-              Pagar
+            <Button type="submit" fullWidth disabled={!isMpReady}>
+              {isMpReady ? "Pagar" : "Carregando..."}
             </Button>
           </form>
         )}
