@@ -153,18 +153,9 @@ const Checkout: React.FC = () => {
         callbacks: {
           onFormMounted: (error: any) => {
             if (error) {
-              console.warn("Erro ao montar formulário:", error);
+              console.error("Erro ao montar formulário:", error);
             } else {
               console.log("Formulário montado com sucesso.");
-              setIsMpReady(true);
-            }
-          },
-          onSubmit: handleCardSubmit,
-          onInstallmentsReceived: (error: any, installments: any) => {
-            if (error) {
-              console.warn("Erro ao obter parcelas:", error);
-            } else {
-              console.log("Parcelas recebidas:", installments);
             }
           },
         },
@@ -198,20 +189,47 @@ const Checkout: React.FC = () => {
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
-    if (!cardFormInstance) return;
+
+    console.log("Iniciando submissão do formulário...");
+
+    if (!cardFormInstance) {
+      console.error("Erro: CardForm não está inicializado.");
+      alert("Erro interno: Por favor, tente novamente.");
+      return;
+    }
 
     const formData = cardFormInstance.getCardFormData();
 
-    // Verifica se o cardholderName está presente antes de dividir
-    const cardholderName = formData.cardholderName || ""; // Define como string vazia se estiver undefined
+    console.log("Form Data Recebido do MercadoPago:", formData);
+
+    if (!formData.token) {
+      console.error("Erro: Token não foi gerado.");
+      console.log("Verifique os seguintes campos:");
+      console.log("Número do cartão:", formData.cardNumber);
+      console.log("Data de expiração:", formData.expirationDate);
+      console.log("Código de segurança:", formData.securityCode);
+      console.log("Nome do titular:", formData.cardholderName);
+      console.log("Email do titular:", formData.cardholderEmail);
+      console.log("Tipo de documento:", formData.identificationType);
+      console.log("Número do documento:", formData.identificationNumber);
+      alert("Erro ao gerar token do cartão. Verifique os dados fornecidos.");
+      return;
+    }
+
+    const cardholderName = formData.cardholderName || "";
     const [firstName, ...lastNameParts] = cardholderName.split(" ");
     const lastName = lastNameParts.join(" ") || "Sobrenome";
+
+    console.log("Nome do titular:", { firstName, lastName });
 
     const transactionAmount = parseFloat(
       checkoutData.totalPrice.replace(",", ".")
     );
 
+    console.log("Valor da Transação Calculado:", transactionAmount);
+
     if (!transactionAmount || isNaN(transactionAmount)) {
+      console.error("Erro: Valor da transação inválido.");
       alert("Erro: Valor da transação inválido.");
       return;
     }
@@ -235,6 +253,8 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
+    console.log("Dados de pagamento prontos para envio:", paymentData);
+
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -246,16 +266,17 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
+        console.log("Pagamento processado com sucesso.");
         clearCart();
         navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        console.error("Erro no pagamento:", errorResponse);
+        console.error("Erro no pagamento (Backend):", errorResponse);
         alert("Pagamento falhou: " + errorResponse.message);
       }
     } catch (error) {
-      console.error("Erro ao processar pagamento:", error);
-      alert("Erro ao processar pagamento.");
+      console.error("Erro ao processar pagamento (Fetch):", error);
+      alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
 
@@ -562,76 +583,47 @@ const Checkout: React.FC = () => {
 
         {selectedPaymentMethod === "card" && (
           <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-            {/* Número do cartão */}
             <input
               type="text"
               id="form-checkout__cardNumber"
               placeholder="Número do cartão"
             />
-
-            {/* Data de Expiração */}
             <input
               type="text"
               id="form-checkout__expirationDate"
               placeholder="MM/YY"
             />
-
-            {/* Código de Segurança */}
             <input
               type="text"
               id="form-checkout__securityCode"
               placeholder="CVC"
             />
-
-            {/* Nome do Titular */}
             <input
               type="text"
               id="form-checkout__cardholderName"
               placeholder="Nome do titular"
             />
-
-            {/* Email do Titular */}
             <input
               type="email"
               id="form-checkout__cardholderEmail"
               placeholder="E-mail"
             />
-
-            {/* Banco Emissor */}
             <select id="form-checkout__issuer">
               <option value="">Selecione o banco emissor</option>
             </select>
-
-            {/* Parcelas */}
             <select id="form-checkout__installments">
               <option value="">Número de parcelas</option>
             </select>
-
-            {/* Tipo de Documento */}
             <select id="form-checkout__identificationType">
-              <option value="">Tipo de documento</option>
               <option value="CPF">CPF</option>
               <option value="CNPJ">CNPJ</option>
             </select>
-
-            {/* Número do Documento */}
             <input
               type="text"
               id="form-checkout__identificationNumber"
               placeholder="Número do documento"
             />
-
-            <Button
-              type="submit"
-              fullWidth
-              sx={{
-                backgroundColor: "#313926",
-                color: "#FFF",
-                mt: 2,
-                "&:hover": { backgroundColor: "#2a2e24" },
-              }}
-              disabled={!isMpReady}
-            >
+            <Button type="submit" fullWidth>
               Pagar
             </Button>
           </form>
