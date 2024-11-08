@@ -14,6 +14,7 @@ import {
   SnackbarContent,
   IconButton,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import PendingIcon from "@mui/icons-material/HourglassEmpty";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -253,7 +254,11 @@ const OrderTracking: React.FC = () => {
       >
         Meus Pedidos
       </Typography>
-      {orders.length === 0 ? (
+      {loading ? ( // Mostra o spinner enquanto carrega
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <CircularProgress sx={{color: '#313926'}} />
+        </Box>
+      ) : orders.length === 0 ? (
         <Typography variant="body1">Nenhum pedido encontrado.</Typography>
       ) : (
         <Paper
@@ -300,7 +305,6 @@ const OrderTracking: React.FC = () => {
               </div>
             ))}
           </List>
-
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -320,7 +324,6 @@ const OrderTracking: React.FC = () => {
           </Box>
         </Paper>
       )}
-
       <Snackbar
         open={openSnackbar}
         autoHideDuration={6000}

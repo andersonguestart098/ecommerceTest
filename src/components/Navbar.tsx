@@ -17,7 +17,7 @@ import {
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { useUser } from "../contexts/UserContext";
@@ -160,118 +160,141 @@ const Navbar: React.FC<NavbarProps> = ({
             }}
           />
         </Box>
-
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          {user ? (
-            <>
-              <Typography
-                sx={{
-                  color: "#313926",
-                  fontSize: isMobile ? "1rem" : "1.1rem",
-                  marginRight: isMobile ? "5px" : "10px",
-                  cursor: "pointer",
-                }}
-                onClick={handleUserClick}
-              >
-                Olá, {user.name}
-              </Typography>
+  {user ? (
+    <>
+      <Typography
+        sx={{
+          color: "#313926",
+          fontSize: isMobile ? "1rem" : "1.1rem",
+          marginRight: isMobile ? "5px" : "10px",
+          cursor: "pointer",
+        }}
+        onClick={handleUserClick}
+      >
+        Olá, {user.name}
+      </Typography>
 
-              <IconButton
-                onClick={handleUserClick}
-                sx={{
-                  padding: "6px",
-                  marginRight: isMobile ? "5px" : "10px",
-                }}
-              >
-                <Badge badgeContent={cart.length} color="primary">
-                  {userType === "admin" ? (
-                    <SettingsSuggestIcon
-                      sx={{
-                        color: "#313926",
-                        fontSize: isMobile ? "2rem" : "1.8rem",
-                      }}
-                    />
-                  ) : (
-                    <MenuOpenIcon
-                      sx={{
-                        color: "#313926",
-                        fontSize: isMobile ? "2rem" : "1.8rem",
-                      }}
-                    />
-                  )}
-                </Badge>
-              </IconButton>
-
-              {/* Menu dropdown com opções baseadas no tipo de usuário */}
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleCloseMenu}
-              >
-                {userType === "admin" ? (
-                  <MenuItem onClick={() => handleNavigate("/admin")}>
-                    <IconButton>
-                      <SettingsSuggestIcon />
-                    </IconButton>
-                    Gerenciador
-                  </MenuItem>
-                ) : (
-                  <>
-                    <MenuItem onClick={() => handleNavigate("/my-orders")}>
-                      <IconButton>
-                        <MenuOpenIcon />
-                      </IconButton>
-                      Meus Pedidos
-                    </MenuItem>
-                    <MenuItem onClick={() => handleNavigate("/meus-dados")}>
-                      <IconButton>
-                        <MenuOpenIcon />
-                      </IconButton>
-                      Meus Dados
-                    </MenuItem>
-                  </>
-                )}
-                {/* Carrinho de compras no dropdown para mobile */}
-                {isMobile && (
-                  <MenuItem onClick={() => handleNavigate("/cart")}>
-                    <IconButton>
-                      <Badge badgeContent={cart.length} color="primary">
-                        <ShoppingCartIcon />
-                      </Badge>
-                    </IconButton>
-                    Carrinho
-                  </MenuItem>
-                )}
-                <MenuItem onClick={handleLogout}>
-                  <IconButton>
-                    <LogoutIcon />
-                  </IconButton>
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
+      {/* Ícone de Menu ou Configurações */}
+      <IconButton
+        onClick={handleUserClick}
+        sx={{
+          padding: "6px",
+          marginRight: isMobile ? "5px" : "10px",
+        }}
+      >
+        {isMobile ? (
+          // Badge no ícone de menu no mobile
+          <Badge badgeContent={cart.length} color="primary">
+            <MenuIcon
+              sx={{
+                color: "#313926",
+                fontSize: isMobile ? "2rem" : "1.8rem",
+              }}
+            />
+          </Badge>
+        ) : (
+          // Ícone de configurações sem Badge no desktop
+          userType === "admin" ? (
+            <SettingsSuggestIcon
+              sx={{
+                color: "#313926",
+                fontSize: "1.8rem",
+              }}
+            />
           ) : (
-            <>
-              <Button
-                onClick={() => navigate("/login")}
-                sx={{
-                  color: "#313926",
-                  fontSize: isMobile ? "0.9rem" : "1.1rem",
-                  marginRight: "5px",
-                }}
-              >
-                Entrar
-              </Button>
-              <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
-                <Badge badgeContent={cart.length} color="primary">
-                  <ShoppingCartIcon
-                    sx={{ color: "#313926", fontSize: "1.8rem" }}
-                  />
-                </Badge>
+            <MenuIcon
+              sx={{
+                color: "#313926",
+                fontSize: "1.8rem",
+              }}
+            />
+          )
+        )}
+      </IconButton>
+
+      {/* Menu dropdown com opções baseadas no tipo de usuário */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+      >
+        {userType === "admin" ? (
+          <MenuItem onClick={() => handleNavigate("/admin")}>
+            <IconButton>
+              <SettingsSuggestIcon />
+            </IconButton>
+            Gerenciador
+          </MenuItem>
+        ) : (
+          <>
+            <MenuItem onClick={() => handleNavigate("/my-orders")}>
+              <IconButton>
+                <MenuIcon />
               </IconButton>
-            </>
-          )}
-        </Box>
+              Meus Pedidos
+            </MenuItem>
+            <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+              <IconButton>
+                <MenuIcon />
+              </IconButton>
+              Meus Dados
+            </MenuItem>
+          </>
+        )}
+        {/* Carrinho de compras no dropdown somente para mobile */}
+        {isMobile && (
+          <MenuItem onClick={() => handleNavigate("/cart")}>
+            <IconButton>
+              <ShoppingCartIcon />
+            </IconButton>
+            Carrinho
+          </MenuItem>
+        )}
+        <MenuItem onClick={handleLogout}>
+          <IconButton>
+            <LogoutIcon />
+          </IconButton>
+          Logout
+        </MenuItem>
+      </Menu>
+
+      {/* Carrinho visível diretamente no Navbar para desktop com Badge */}
+      {!isMobile && (
+        <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
+          <Badge badgeContent={cart.length} color="primary">
+            <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+          </Badge>
+        </IconButton>
+      )}
+    </>
+  ) : (
+    <>
+      <Button
+        onClick={() => navigate("/login")}
+        sx={{
+          color: "#313926",
+          fontSize: isMobile ? "0.9rem" : "1.1rem",
+          marginRight: "5px",
+        }}
+      >
+        Entrar
+      </Button>
+      {/* Carrinho visível diretamente no Navbar para desktop com Badge */}
+      {!isMobile && (
+        <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
+          <Badge badgeContent={cart.length} color="primary">
+            <ShoppingCartIcon sx={{ color: "#313926", fontSize: "1.8rem" }} />
+          </Badge>
+        </IconButton>
+      )}
+    </>
+  )}
+</Box>
+
+
+
+
       </Toolbar>
 
       <Snackbar

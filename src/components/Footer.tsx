@@ -81,7 +81,6 @@ const Footer: React.FC = () => {
             </IconButton>
           </Box>
         </Grid>
-        s
       </Grid>
 
       <Divider sx={{ my: 3, backgroundColor: "#E6E3DB" }} />
