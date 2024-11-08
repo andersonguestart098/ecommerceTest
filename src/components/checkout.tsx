@@ -11,7 +11,6 @@ import {
   useTheme,
   Divider,
 } from "@mui/material";
-import { Snackbar, Alert } from "@mui/material"; // Adicione essas importações
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -30,14 +29,12 @@ const Checkout: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [isOrderCompleted, setIsOrderCompleted] = useState(false);
 
   const [cardPreview, setCardPreview] = useState({
     cardNumber: "•••• •••• •••• ••••",
     cardHolder: "NOME DO TITULAR",
     expiration: "MM/YY",
-    securityCode: "",
   });
 
   const updateCardPreview = (field: string, value: string) => {
@@ -47,61 +44,25 @@ const Checkout: React.FC = () => {
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId) {
-      setSnackbarMessage(
-        "Erro: Usuário não autenticado. Faça login para continuar."
-      );
-      setSnackbarOpen(true);
-      navigate("/login", { state: { from: "/checkout" } }); // Redireciona com a rota de origem
-      return;
-    }
-
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      setCheckoutData(JSON.parse(storedCheckoutData));
-    } else {
-      fetchUserDataFromAPI(storedUserId);
-    }
-  }, [navigate]);
-
-  // Snackbar handler
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
-  };
-
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
       alert("Erro: Usuário não autenticado. Faça login para continuar.");
       navigate("/login");
       return;
     }
 
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      setCheckoutData(JSON.parse(storedCheckoutData));
+    const storedOrderStatus = localStorage.getItem("orderCompleted");
+    if (storedOrderStatus === "true") {
+      setIsOrderCompleted(true);
     } else {
-      fetchUserDataFromAPI(storedUserId);
+      const storedCheckoutData = localStorage.getItem("checkoutData");
+      if (storedCheckoutData) {
+        console.log("Checkout data retrieved:", storedCheckoutData);
+        setCheckoutData(JSON.parse(storedCheckoutData));
+      } else {
+        fetchUserDataFromAPI(storedUserId);
+      }
     }
   }, [navigate]);
 
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
-      alert("Erro: Usuário não autenticado. Faça login para continuar.");
-      navigate("/login");
-      return;
-    }
-
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      console.log("Checkout data retrieved:", storedCheckoutData);
-      setCheckoutData(JSON.parse(storedCheckoutData));
-    } else {
-      fetchUserDataFromAPI(storedUserId);
-    }
-  }, [navigate]);
-
-  // Função para carregar dados do usuário, caso necessário
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
       const response = await axios.get(
@@ -117,8 +78,8 @@ const Checkout: React.FC = () => {
         amount: response.data.totalPrice || 100.5,
         shippingCost: response.data.shippingCost || 0,
         userId: userId,
-        isCompleted: false, // Novo campo para controlar a finalização
       };
+      console.log("User data fetched:", userData);
       setCheckoutData(userData);
       localStorage.setItem("checkoutData", JSON.stringify(userData));
     } catch (error) {
@@ -126,7 +87,6 @@ const Checkout: React.FC = () => {
     }
   };
 
-  // Carrega o SDK do MercadoPago
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
       if (!publicKey) {
@@ -155,81 +115,47 @@ const Checkout: React.FC = () => {
     loadMercadoPagoSdk();
   }, [publicKey]);
 
-  // Inicializa o formulário do MercadoPago
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
       initializeCardForm();
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
-  const handlePaymentSuccess = (
-    method: string,
-    qrCodeData: string | null = null,
-    boletoUrlData: string | null = null
-  ) => {
-    // Atualiza o estado com o QR Code ou Boleto se estiver disponível
-    if (method === "pix" && qrCodeData) {
-      setPixQrCode(qrCodeData);
-    } else if (method === "boleto" && boletoUrlData) {
-      setBoletoUrl(boletoUrlData);
-    }
-
-    const updatedCheckoutData = { ...checkoutData, isCompleted: true };
-    localStorage.setItem("checkoutData", JSON.stringify(updatedCheckoutData));
-
-    // Limpa o carrinho e marca o pedido como concluído
-    setCheckoutData({});
-    clearCart();
-
-    // Navega para a página de sucesso após uma pequena pausa para garantir que o estado foi atualizado
-    setTimeout(() => {
-      navigate("/sucesso", {
-        state: {
-          paymentMethod: method,
-          pixQrCode: qrCodeData,
-          boletoUrl: boletoUrlData,
-        },
-      });
-      localStorage.removeItem("checkoutData");
-    }, 100);
-  };
-
   const initializeCardForm = () => {
     if (mpInstance && formRef.current) {
-      if (cardFormInstance) return; // Evita múltiplas inicializações
+      const formattedAmount = String(
+        (checkoutData.amount || 100.5).toString().replace(",", ".")
+      );
 
       const cardForm = mpInstance.cardForm({
-        amount: String(checkoutData.amount || "100.5"),
+        amount: formattedAmount,
         form: {
           id: "form-checkout",
           cardNumber: { id: "form-checkout__cardNumber" },
           expirationDate: { id: "form-checkout__expirationDate" },
           securityCode: { id: "form-checkout__securityCode" },
           cardholderName: { id: "form-checkout__cardholderName" },
-          issuer: { id: "form-checkout__issuer" },
-          installments: { id: "form-checkout__installments" },
-          identificationType: { id: "form-checkout__identificationType" },
+          issuer: { id: "form-checkout__issuer" }, // Este deve ser um <select>
+          installments: { id: "form-checkout__installments" }, // Este deve ser um <select>
+          identificationType: { id: "form-checkout__identificationType" }, // Este deve ser um <select>
           identificationNumber: { id: "form-checkout__identificationNumber" },
           cardholderEmail: { id: "form-checkout__cardholderEmail" },
         },
         callbacks: {
           onFormMounted: (error: any) => {
             if (error) {
-              console.error("Erro ao montar formulário:", error);
+              console.warn("Erro ao montar formulário:", error);
             } else {
-              console.log("Formulário montado com sucesso.");
               setIsMpReady(true);
             }
           },
           onError: (error: any) => {
-            console.error("Erro ao inicializar o formulário:", error);
+            console.error("Erro no cardForm:", error);
           },
-          onSubmit: async (event: any) => {
-            event.preventDefault();
+          onSubmit: async () => {
             const formData = cardForm.getCardFormData();
-            console.log("Dados capturados pelo cardForm:", formData);
             if (!formData.token) {
-              console.warn("Token ausente. Validação do MercadoPago falhou.");
+              console.warn("Token não gerado, revise os campos do formulário.");
               return;
             }
             handleCardSubmit(formData);
@@ -241,53 +167,13 @@ const Checkout: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchCheckoutData = async () => {
-      const storedUserId = localStorage.getItem("userId");
+  const handleCardSubmit = async (event: any) => {
+    event.preventDefault();
+    if (!cardFormInstance) return;
 
-      if (!storedUserId) {
-        setSnackbarMessage(
-          "Erro: Usuário não autenticado. Faça login para continuar."
-        );
-        setSnackbarOpen(true);
-        navigate("/login", { state: { from: "/checkout" } });
-        return;
-      }
-
-      const storedCheckoutData = localStorage.getItem("checkoutData");
-      if (storedCheckoutData) {
-        setCheckoutData(JSON.parse(storedCheckoutData));
-      } else {
-        await fetchUserDataFromAPI(storedUserId);
-      }
-    };
-
-    fetchCheckoutData();
-  }, [navigate]);
-
-  const handleCardSubmit = async (formData: any) => {
-    console.log("Form Data:", formData);
-
+    const formData = cardFormInstance.getCardFormData();
     if (!formData.token || !formData.installments || !formData.issuerId) {
-      console.warn("Campos obrigatórios ausentes:", {
-        token: formData.token,
-        installments: formData.installments,
-        issuerId: formData.issuerId,
-      });
       alert("Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-
-    console.log("Campos validados antes do envio:", {
-      isCardNumberValid:
-        cardPreview.cardNumber.replace(/\s/g, "").length === 16,
-      isExpirationValid: isExpirationValid(cardPreview.expiration),
-      isCardHolderValid: cardPreview.cardHolder.trim().length > 0,
-      isCvcValid: isCvcValid(cardPreview.securityCode),
-    });
-
-    if (!isFormValid()) {
-      alert("Alguns campos estão inválidos. Verifique os dados inseridos.");
       return;
     }
 
@@ -300,8 +186,12 @@ const Checkout: React.FC = () => {
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName?.split(" ")[0] || "",
-        last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "",
+        first_name: formData.cardholderName
+          ? formData.cardholderName.split(" ")[0]
+          : "",
+        last_name: formData.cardholderName
+          ? formData.cardholderName.split(" ").slice(1).join(" ")
+          : "",
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
@@ -310,7 +200,7 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
-    console.log("Dados enviados para pagamento:", paymentData);
+    console.log("Payment data being sent:", paymentData);
 
     try {
       const response = await fetch(
@@ -323,10 +213,9 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
-        console.log("Pagamento processado com sucesso.");
-        handlePaymentSuccess("card");
+        clearCart();
+        navigate("/sucesso", { state: { paymentMethod: "card" } });
       } else {
-        console.error("Pagamento pendente ou falhou:", response);
         alert("Pagamento pendente ou falhou.");
       }
     } catch (error) {
@@ -337,12 +226,9 @@ const Checkout: React.FC = () => {
 
   const calculateTransactionAmount = () => {
     // Garantindo que o transaction_amount é um número, incluindo frete
-    const amount =
-      parseFloat(checkoutData.amount.toString().replace(",", ".")) || 0;
-
+    const amount = parseFloat(checkoutData.amount.replace(",", ".")) || 0;
     const shippingCost =
-      parseFloat(checkoutData.shippingCost.toString().replace(",", ".")) || 0;
-
+      parseFloat(checkoutData.shippingCost.replace(",", ".")) || 0;
     const transactionAmount = amount + shippingCost;
 
     if (isNaN(transactionAmount) || transactionAmount <= 0) {
@@ -351,17 +237,33 @@ const Checkout: React.FC = () => {
       return null; // Retorna null para indicar erro
     }
 
-    return parseFloat(transactionAmount.toFixed(2)); // Retorna o valor com duas casas decimais
+    return transactionAmount; // Retorna o valor válido
+  };
+
+  const markOrderAsCompleted = () => {
+    localStorage.setItem("orderCompleted", "true");
+    setIsOrderCompleted(true);
+  };
+
+  const clearCheckoutData = () => {
+    setCheckoutData({
+      amount: 0,
+      shippingCost: 0,
+      email: "",
+      firstName: "",
+      lastName: "",
+      identificationType: "",
+      identificationNumber: "",
+      userId: null,
+    });
+    localStorage.removeItem("checkoutData");
   };
 
   const generatePixQrCode = async () => {
-    if (checkoutData.isCompleted) {
-      alert("Este pedido já foi pago.");
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) {
       return;
     }
-
-    const transactionAmount = calculateTransactionAmount();
-    if (transactionAmount === null) return;
 
     try {
       const response = await fetch(
@@ -392,8 +294,15 @@ const Checkout: React.FC = () => {
         response.ok &&
         result.point_of_interaction?.transaction_data?.qr_code_base64
       ) {
-        const qrCodeData = `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`;
-        handlePaymentSuccess("pix", qrCodeData);
+        setPixQrCode(
+          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
+        );
+        clearCart();
+        clearCheckoutData();
+        markOrderAsCompleted();
+        navigate("/sucesso", {
+          state: { paymentMethod: "pix" },
+        });
       } else {
         alert("Erro ao gerar QR code Pix: " + result.error);
       }
@@ -404,13 +313,10 @@ const Checkout: React.FC = () => {
   };
 
   const generateBoleto = async () => {
-    if (checkoutData.isCompleted) {
-      alert("Este pedido já foi pago.");
+    const transactionAmount = calculateTransactionAmount();
+    if (transactionAmount === null) {
       return;
     }
-
-    const transactionAmount = calculateTransactionAmount();
-    if (transactionAmount === null) return;
 
     try {
       const response = await fetch(
@@ -438,7 +344,13 @@ const Checkout: React.FC = () => {
 
       const result = await response.json();
       if (response.ok && result.boleto_url) {
-        handlePaymentSuccess("boleto", null, result.boleto_url);
+        setBoletoUrl(result.boleto_url);
+        clearCart();
+        clearCheckoutData();
+        markOrderAsCompleted();
+        navigate("/sucesso", {
+          state: { paymentMethod: "boleto" },
+        });
       } else {
         alert(
           "Erro ao gerar boleto: " + (result.message || "Erro desconhecido")
@@ -446,51 +358,30 @@ const Checkout: React.FC = () => {
       }
     } catch (error) {
       console.error("Erro ao processar pagamento com boleto:", error);
-      alert("Erro ao Processar Pagamento com boleto.");
+      alert("Erro ao processar pagamento com boleto.");
     }
   };
 
-  const isExpirationValid = (value: string) => {
-    console.log("Validando data de expiração:", value);
-    if (!/^\d{2}\/\d{2}$/.test(value)) return false;
-
-    const [month, year] = value.split("/").map(Number);
-    const currentYear = new Date().getFullYear() % 100;
-    const currentMonth = new Date().getMonth() + 1;
-
-    console.log("Ano e mês atuais:", currentYear, currentMonth);
-
-    if (month < 1 || month > 12) return false;
-    if (year < currentYear || (year === currentYear && month < currentMonth)) {
-      return false;
-    }
-
-    return true;
+  const handleReturnToHome = () => {
+    navigate("/");
   };
 
-  const isCvcValid = (value: string) => {
-    console.log("Validando CVC:", value);
-    return /^\d{3,4}$/.test(value);
-  };
-
-  const isFormValid = () => {
-    const isCardNumberValid =
-      cardPreview.cardNumber.replace(/\s/g, "").length === 16;
-    const expirationValid = isExpirationValid(cardPreview.expiration);
-    const isCardHolderValid = cardPreview.cardHolder.trim().length > 0;
-    const cvcValid = isCvcValid(cardPreview.securityCode);
-
-    console.log("Validação: ", {
-      isCardNumberValid,
-      isExpirationValid: expirationValid,
-      isCardHolderValid,
-      isCvcValid: cvcValid,
-    });
-
+  if (isOrderCompleted) {
     return (
-      isCardNumberValid && expirationValid && isCardHolderValid && cvcValid
+      <Box sx={{ textAlign: "center", padding: "20px" }}>
+        <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
+          Compra já realizada com sucesso!
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={handleReturnToHome}
+          sx={{ backgroundColor: "#313926", color: "#fff" }}
+        >
+          Voltar para a Página Inicial
+        </Button>
+      </Box>
     );
-  };
+  }
 
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
@@ -498,35 +389,6 @@ const Checkout: React.FC = () => {
     } else if (selectedPaymentMethod === "boleto") {
       await generateBoleto();
     }
-  };
-
-  const formatExpirationDate = (value: string) => {
-    return value
-      .replace(/\D/g, "") // Remove não numéricos
-      .replace(/(\d{2})(\d{2})/, "$1/$2") // Adiciona /
-      .slice(0, 5); // Limita a 5 caracteres
-  };
-
-  const getCardBrandLogo = (cardNumber: string) => {
-    if (cardNumber.startsWith("4")) {
-      return "/bandeiras/visa.svg"; // Caminho para o logo da Visa
-    } else if (cardNumber.startsWith("5")) {
-      return "/bandeiras/master.png"; // Caminho para o logo da Mastercard
-    } else if (cardNumber.startsWith("3")) {
-      return "/bandeiras/amex.png"; // Caminho para o logo da Amex
-    } else {
-      return ""; // Caminho para um logo padrão
-    }
-  };
-
-  const formatCardNumber = (value: string) => {
-    return value
-      .replace(/\D/g, "") // Remove não numéricos
-      .replace(/(\d{4})(?=\d)/g, "$1 "); // Adiciona espaço a cada 4 dígitos
-  };
-
-  const formatCVC = (value: string) => {
-    return value.replace(/\D/g, "").slice(0, 3); // Apenas 3 dígitos numéricos
   };
 
   const paymentButtonStyle = (isSelected: boolean): React.CSSProperties => ({
@@ -552,20 +414,6 @@ const Checkout: React.FC = () => {
         gap: "20px",
       }}
     >
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity="warning"
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-
       <Box
         sx={{
           flex: 1,
@@ -583,7 +431,23 @@ const Checkout: React.FC = () => {
           Forma de Pagamento
         </Typography>
 
-        {/* Botões de seleção de forma de pagamento */}
+        {selectedPaymentMethod === "card" && (
+          <Box
+            sx={{
+              backgroundColor: "#313926",
+              color: "#FFF",
+              borderRadius: "10px",
+              padding: "15px",
+              textAlign: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <Typography variant="body2">{cardPreview.cardNumber}</Typography>
+            <Typography variant="body2">{cardPreview.cardHolder}</Typography>
+            <Typography variant="body2">{cardPreview.expiration}</Typography>
+          </Box>
+        )}
+
         <Box
           onClick={() => setSelectedPaymentMethod("pix")}
           sx={paymentButtonStyle(selectedPaymentMethod === "pix")}
@@ -603,104 +467,107 @@ const Checkout: React.FC = () => {
           <span>Cartão de Crédito</span>
         </Box>
 
-        {/* Exibição do cartão virtual somente quando "Cartão de Crédito" for selecionado */}
         {selectedPaymentMethod === "card" && (
-          <>
-            <Box sx={{ mt: 2 }}>
-              <form id="form-checkout" ref={formRef}>
-                <input
-                  type="text"
-                  id="form-checkout__cardNumber"
-                  placeholder="Número do Cartão"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="text"
-                  id="form-checkout__expirationDate"
-                  placeholder="MM/YY"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="text"
-                  id="form-checkout__securityCode"
-                  placeholder="CVC"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="text"
-                  id="form-checkout__cardholderName"
-                  placeholder="Nome do Titular"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="email"
-                  id="form-checkout__cardholderEmail"
-                  placeholder="E-mail"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input id="form-checkout__issuer" type="hidden" />
-                <input id="form-checkout__installments" type="hidden" />
-                <input id="form-checkout__identificationType" type="hidden" />
-                <input
-                  type="text"
-                  id="form-checkout__identificationNumber"
-                  placeholder="Número do Documento"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  sx={{
-                    backgroundColor: isMpReady ? "#313926" : "#B0B0B0",
-                    color: "#FFF",
-                    mt: 2,
-                    "&:hover": {
-                      backgroundColor: isMpReady ? "#2a2e24" : "#B0B0B0",
-                    },
-                  }}
-                  disabled={!isMpReady} // O botão será habilitado quando o Mercado Pago estiver pronto
-                >
-                  Pagar
-                </Button>
-              </form>
-            </Box>
-          </>
+          <Box sx={{ mt: 2 }}>
+            <form id="form-checkout" ref={formRef}>
+              <input
+                id="form-checkout__cardNumber"
+                placeholder="Número do Cartão"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <input
+                id="form-checkout__expirationDate"
+                placeholder="MM/YY"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <input
+                id="form-checkout__securityCode"
+                placeholder="CVC"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <input
+                id="form-checkout__cardholderName"
+                placeholder="Nome do Titular"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <input
+                id="form-checkout__identificationNumber"
+                placeholder="Número do Documento"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <input
+                id="form-checkout__cardholderEmail"
+                type="email"
+                placeholder="E-mail"
+                style={{
+                  marginBottom: "16px",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                }}
+              />
+
+              <select
+                id="form-checkout__issuer"
+                style={{ display: "none" }}
+              ></select>
+              <select
+                id="form-checkout__installments"
+                style={{ display: "none" }}
+              ></select>
+              <select
+                id="form-checkout__identificationType"
+                style={{ display: "none" }}
+              ></select>
+
+              <Button
+                type="submit"
+                fullWidth
+                sx={{
+                  backgroundColor: isMpReady ? "#313926" : "#B0B0B0",
+                  color: "#FFF",
+                  mt: 2,
+                  "&:hover": {
+                    backgroundColor: isMpReady ? "#2a2e24" : "#B0B0B0",
+                  },
+                }}
+                disabled={!isMpReady}
+              >
+                Pagar
+              </Button>
+            </form>
+          </Box>
         )}
 
         {selectedPaymentMethod !== "card" && (
@@ -736,7 +603,7 @@ const Checkout: React.FC = () => {
           Resumo
         </Typography>
 
-        {/* Informações detalhadas do resumo */}
+        {/* Alinhamento à esquerda e linha sutil */}
         <Box sx={{ textAlign: "left", mb: 1 }}>
           <Typography>
             Valor dos Produtos: R$ {checkoutData.amount || "0,00"}
@@ -751,6 +618,7 @@ const Checkout: React.FC = () => {
           </Typography>
         </Box>
 
+        {/* Cálculo do total com conversão de string para número */}
         <Typography sx={{ fontWeight: "bold", mt: 1 }}>
           Total: R${" "}
           {(
