@@ -275,6 +275,11 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    if (!isFormValid()) {
+      alert("Alguns campos estão inválidos. Verifique os dados inseridos.");
+      return;
+    }
+
     const paymentData = {
       token: formData.token,
       issuer_id: formData.issuerId,
@@ -719,16 +724,14 @@ const Checkout: React.FC = () => {
                   type="submit"
                   fullWidth
                   sx={{
-                    backgroundColor:
-                      !isMpReady || !isFormValid() ? "#B0B0B0" : "#313926",
+                    backgroundColor: isMpReady ? "#313926" : "#B0B0B0",
                     color: "#FFF",
                     mt: 2,
                     "&:hover": {
-                      backgroundColor:
-                        !isMpReady || !isFormValid() ? "#B0B0B0" : "#2a2e24",
+                      backgroundColor: isMpReady ? "#2a2e24" : "#B0B0B0",
                     },
                   }}
-                  disabled={!isMpReady || !isFormValid()} // Desabilita dinamicamente
+                  disabled={!isMpReady} // O botão será habilitado quando o Mercado Pago estiver pronto
                 >
                   Pagar
                 </Button>
