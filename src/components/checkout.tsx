@@ -127,13 +127,17 @@ const Checkout: React.FC = () => {
 
   const initializeCardForm = () => {
     if (cardFormInstance) {
-      console.log("CardForm já instanciado.");
+      console.log("CardForm já instanciado. Retornando instância existente.");
       return;
     }
 
     if (mpInstance && formRef.current) {
+      const sanitizedAmount = String(
+        parseFloat((checkoutData.totalPrice || "0").replace(",", "."))
+      ); // Corrige o formato para ponto decimal
+
       const cardForm = mpInstance.cardForm({
-        amount: String(checkoutData.amount || 100.5),
+        amount: sanitizedAmount,
         form: {
           id: "form-checkout",
           cardNumber: { id: "form-checkout__cardNumber" },
@@ -149,13 +153,20 @@ const Checkout: React.FC = () => {
         callbacks: {
           onFormMounted: (error: any) => {
             if (error) {
-              console.warn("Erro ao montar o formulário:", error);
+              console.warn("Erro ao montar formulário:", error);
             } else {
               console.log("Formulário montado com sucesso.");
               setIsMpReady(true);
             }
           },
           onSubmit: handleCardSubmit,
+          onInstallmentsReceived: (error: any, installments: any) => {
+            if (error) {
+              console.warn("Erro ao obter parcelas:", error);
+            } else {
+              console.log("Parcelas recebidas:", installments);
+            }
+          },
         },
       });
 
@@ -187,32 +198,35 @@ const Checkout: React.FC = () => {
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
-
-    if (!cardFormInstance) {
-      console.error("CardForm instance não encontrada.");
-      return;
-    }
+    if (!cardFormInstance) return;
 
     const formData = cardFormInstance.getCardFormData();
 
-    console.log("Form Data Recebido:", formData); // Adicione logs para validar os dados recebidos
+    // Verifica se o cardholderName está presente antes de dividir
+    const cardholderName = formData.cardholderName || ""; // Define como string vazia se estiver undefined
+    const [firstName, ...lastNameParts] = cardholderName.split(" ");
+    const lastName = lastNameParts.join(" ") || "Sobrenome";
 
-    if (!formData.token) {
-      alert("Erro: Token do cartão não foi gerado.");
+    const transactionAmount = parseFloat(
+      checkoutData.totalPrice.replace(",", ".")
+    );
+
+    if (!transactionAmount || isNaN(transactionAmount)) {
+      alert("Erro: Valor da transação inválido.");
       return;
     }
 
     const paymentData = {
+      transaction_amount: transactionAmount,
       token: formData.token,
-      issuer_id: formData.issuerId,
       payment_method_id: formData.paymentMethodId,
-      transaction_amount: calculateTransactionAmount(),
       installments: Number(formData.installments || 1),
-      description: "Descrição do produto",
+      issuer_id: formData.issuerId,
+      description: "Compra via Cartão de Crédito",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName?.split(" ")[0] || "",
-        last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "",
+        first_name: firstName || "Nome",
+        last_name: lastName,
         identification: {
           type: formData.identificationType || "CPF",
           number: formData.identificationNumber,
@@ -220,8 +234,6 @@ const Checkout: React.FC = () => {
       },
       userId: checkoutData.userId,
     };
-
-    console.log("Enviando Dados do Pagamento:", paymentData);
 
     try {
       const response = await fetch(
@@ -235,50 +247,35 @@ const Checkout: React.FC = () => {
 
       if (response.ok) {
         clearCart();
-        navigate("/sucesso", { state: { paymentMethod: "card" } });
+        navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        console.error("Erro ao processar pagamento:", errorResponse);
-        alert("Erro ao processar pagamento: " + errorResponse.message);
+        console.error("Erro no pagamento:", errorResponse);
+        alert("Pagamento falhou: " + errorResponse.message);
       }
     } catch (error) {
-      console.error("Erro ao enviar pagamento:", error);
-      alert("Erro ao enviar pagamento. Tente novamente.");
+      console.error("Erro ao processar pagamento:", error);
+      alert("Erro ao processar pagamento.");
     }
   };
 
   const calculateTransactionAmount = () => {
     try {
-      // Remove separadores de milhares e converte separador decimal
-      const sanitizeValue = (value: string | number): number => {
-        if (typeof value === "string") {
-          return parseFloat(value.replace(/\./g, "").replace(",", "."));
-        }
-        return Number(value);
-      };
-
-      const amount = sanitizeValue(checkoutData.amount || "0");
-      const shippingCost = sanitizeValue(checkoutData.shippingCost || "0");
+      const amount = parseFloat(checkoutData.amount.replace(",", "."));
+      const shippingCost = parseFloat(
+        checkoutData.shippingCost.replace(",", ".")
+      );
 
       const transactionAmount = amount + shippingCost;
 
       if (isNaN(transactionAmount) || transactionAmount <= 0) {
-        console.error(
-          "Valor de transaction_amount inválido:",
-          transactionAmount
-        );
-        alert("Erro: Valor total da transação inválido.");
-        return null;
+        throw new Error("Valor da transação inválido");
       }
 
-      console.log(
-        "Transaction Amount calculado corretamente:",
-        transactionAmount
-      );
-      return transactionAmount;
+      // Arredondar para 2 casas decimais antes de enviar
+      return parseFloat(transactionAmount.toFixed(2));
     } catch (error) {
-      console.error("Erro na conversão de transaction_amount:", error);
-      alert("Erro ao calcular o valor da transação.");
+      console.error("Erro ao calcular o valor da transação:", error);
       return null;
     }
   };
