@@ -59,14 +59,14 @@ const Checkout: React.FC = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (selectedPaymentMethod === "card" && cardFormInstance) {
-      cardFormInstance.unmount();
-      setCardFormInstance(null); // Para evitar conflitos, reinicializa o estado.
-    }
-    if (selectedPaymentMethod === "card") {
-      initializeCardForm();
-    }
-  }, [selectedPaymentMethod]);
+    return () => {
+      if (cardFormInstance) {
+        console.log("Desmontando CardForm...");
+        cardFormInstance.unmount();
+        setCardFormInstance(null);
+      }
+    };
+  }, []);
 
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
@@ -124,57 +124,63 @@ const Checkout: React.FC = () => {
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
+      console.log("Chamando initializeCardForm...");
       initializeCardForm();
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
   const initializeCardForm = () => {
     if (cardFormInstance) {
-      console.log("CardForm já instanciado. Retornando instância existente.");
+      console.log("CardForm já instanciado.");
       return;
     }
 
-    if (mpInstance && formRef.current) {
-      const sanitizedAmount = String(
-        parseFloat((checkoutData.totalPrice || "0").replace(",", "."))
-      );
-
-      const cardForm = mpInstance.cardForm({
-        amount: sanitizedAmount,
-        form: {
-          id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" },
-          expirationDate: { id: "form-checkout__expirationDate" },
-          securityCode: { id: "form-checkout__securityCode" },
-          cardholderName: { id: "form-checkout__cardholderName" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail" },
-          issuer: { id: "form-checkout__issuer" },
-          installments: { id: "form-checkout__installments" },
-          identificationType: { id: "form-checkout__identificationType" },
-          identificationNumber: { id: "form-checkout__identificationNumber" },
-        },
-        callbacks: {
-          onFormMounted: (error: any) => {
-            if (error) {
-              console.error("Erro ao montar formulário:", error);
-            } else {
-              console.log("Formulário montado com sucesso.");
-              setIsMpReady(true);
-            }
-          },
-          onSubmit: handleCardSubmit,
-          onInstallmentsReceived: (error: any, installments: any) => {
-            if (error) {
-              console.warn("Erro ao obter parcelas:", error);
-            } else {
-              console.log("Parcelas recebidas:", installments);
-            }
-          },
-        },
-      });
-
-      setCardFormInstance(cardForm);
+    if (!mpInstance || !formRef.current) {
+      console.error("MercadoPago ou form não está disponível.");
+      return;
     }
+
+    console.log("Inicializando CardForm...");
+
+    const sanitizedAmount = String(
+      parseFloat((checkoutData.totalPrice || "0").replace(",", "."))
+    );
+
+    const cardForm = mpInstance.cardForm({
+      amount: sanitizedAmount,
+      form: {
+        id: "form-checkout",
+        cardNumber: { id: "form-checkout__cardNumber" },
+        expirationDate: { id: "form-checkout__expirationDate" },
+        securityCode: { id: "form-checkout__securityCode" },
+        cardholderName: { id: "form-checkout__cardholderName" },
+        cardholderEmail: { id: "form-checkout__cardholderEmail" },
+        issuer: { id: "form-checkout__issuer" },
+        installments: { id: "form-checkout__installments" },
+        identificationType: { id: "form-checkout__identificationType" },
+        identificationNumber: { id: "form-checkout__identificationNumber" },
+      },
+      callbacks: {
+        onFormMounted: (error: any) => {
+          if (error) {
+            console.error("Erro ao montar formulário:", error);
+            return;
+          }
+          console.log("Formulário montado com sucesso.");
+          setIsMpReady(true);
+        },
+        onSubmit: handleCardSubmit,
+        onInstallmentsReceived: (error: any, installments: any) => {
+          if (error) {
+            console.warn("Erro ao obter parcelas:", error);
+          } else {
+            console.log("Parcelas recebidas:", installments);
+          }
+        },
+      },
+    });
+
+    setCardFormInstance(cardForm);
   };
 
   function isValidCPF(cpf: string): boolean {
@@ -205,12 +211,20 @@ const Checkout: React.FC = () => {
 
     if (!cardFormInstance) {
       console.error("Erro: CardForm não está inicializado.");
-      alert("Erro interno: Por favor, tente novamente.");
+      alert("Erro interno: O formulário não está pronto. Tente novamente.");
       return;
     }
 
     const formData = cardFormInstance.getCardFormData();
     console.log("Form Data Recebido do MercadoPago:", formData);
+
+    if (!formData.token) {
+      console.error("Erro: Token não foi gerado.");
+      alert(
+        "Erro ao gerar token do cartão. Verifique os dados e tente novamente."
+      );
+      return;
+    }
 
     // Validação de campos obrigatórios
     const missingFields: string[] = [];
