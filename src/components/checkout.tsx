@@ -126,6 +126,7 @@ const Checkout: React.FC = () => {
     }
   };
 
+  // Carrega o SDK do MercadoPago
   useEffect(() => {
     const loadMercadoPagoSdk = async () => {
       if (!publicKey) {
@@ -153,6 +154,13 @@ const Checkout: React.FC = () => {
 
     loadMercadoPagoSdk();
   }, [publicKey]);
+
+  // Inicializa o formulário do MercadoPago
+  useEffect(() => {
+    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
+      initializeCardForm();
+    }
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
   const handlePaymentSuccess = (
     method: string,
@@ -186,74 +194,82 @@ const Checkout: React.FC = () => {
     }, 100);
   };
 
-  useEffect(() => {
-    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
-      initializeCardForm();
-    }
-  }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
-
   const initializeCardForm = () => {
-    if (mpInstance && formRef.current) {
-      if (cardFormInstance) {
-        return;
-      }
+    if (mpInstance && !cardFormInstance && formRef.current) {
+      const formattedAmount = String(
+        (checkoutData.amount || 100.5).toString().replace(",", ".")
+      );
 
       const cardForm = mpInstance.cardForm({
-        amount: String(checkoutData.amount || 100.5),
-        iframe: true,
+        amount: formattedAmount,
         form: {
           id: "form-checkout",
-          cardNumber: {
-            id: "form-checkout__cardNumber",
-            placeholder: "Número do cartão",
-          },
-          expirationDate: {
-            id: "form-checkout__expirationDate",
-            placeholder: "MM/YY",
-          },
-          securityCode: {
-            id: "form-checkout__securityCode",
-            placeholder: "CVC",
-          },
-          cardholderName: {
-            id: "form-checkout__cardholderName",
-            placeholder: "Nome do titular",
-          },
-          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
-          installments: {
-            id: "form-checkout__installments",
-            placeholder: "Número de parcelas",
-          },
-          identificationType: {
-            id: "form-checkout__identificationType",
-            placeholder: "Tipo de documento",
-          },
-          identificationNumber: {
-            id: "form-checkout__identificationNumber",
-            placeholder: "Número do documento",
-          },
-          cardholderEmail: {
-            id: "form-checkout__cardholderEmail",
-            placeholder: "E-mail",
-          },
+          cardNumber: { id: "form-checkout__cardNumber" },
+          expirationDate: { id: "form-checkout__expirationDate" },
+          securityCode: { id: "form-checkout__securityCode" },
+          cardholderName: { id: "form-checkout__cardholderName" },
+          issuer: { id: "form-checkout__issuer" },
+          installments: { id: "form-checkout__installments" },
+          identificationType: { id: "form-checkout__identificationType" },
+          identificationNumber: { id: "form-checkout__identificationNumber" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail" },
         },
         callbacks: {
-          onFormMounted: (error: any) =>
-            error
-              ? console.warn("Erro ao montar formulário:", error)
-              : setIsMpReady(true),
-          onSubmit: handleCardSubmit,
+          onFormMounted: (error: any) => {
+            if (error) {
+              console.warn("Erro ao montar formulário:", error);
+            } else {
+              setIsMpReady(true);
+            }
+          },
+          onError: (error: any) => {
+            console.error("Erro no cardForm:", error);
+            setSnackbarMessage(
+              "Erro ao processar o formulário. Por favor, tente novamente."
+            );
+            setSnackbarOpen(true);
+          },
+
+          onSubmit: async () => {
+            const formData = cardForm.getCardFormData();
+            if (!formData.token) {
+              console.warn("Token não gerado, revise os campos do formulário.");
+              return;
+            }
+            handleCardSubmit(formData);
+          },
         },
       });
+
       setCardFormInstance(cardForm);
     }
   };
 
-  const handleCardSubmit = async (event: any) => {
-    event.preventDefault();
-    if (!cardFormInstance) return;
+  useEffect(() => {
+    const fetchCheckoutData = async () => {
+      const storedUserId = localStorage.getItem("userId");
 
-    const formData = cardFormInstance.getCardFormData();
+      if (!storedUserId) {
+        setSnackbarMessage(
+          "Erro: Usuário não autenticado. Faça login para continuar."
+        );
+        setSnackbarOpen(true);
+        navigate("/login", { state: { from: "/checkout" } });
+        return;
+      }
+
+      const storedCheckoutData = localStorage.getItem("checkoutData");
+      if (storedCheckoutData) {
+        setCheckoutData(JSON.parse(storedCheckoutData));
+      } else {
+        await fetchUserDataFromAPI(storedUserId);
+      }
+    };
+
+    fetchCheckoutData();
+  }, [navigate]);
+
+  const handleCardSubmit = async (formData: any) => {
     if (!formData.token || !formData.installments || !formData.issuerId) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
@@ -268,12 +284,8 @@ const Checkout: React.FC = () => {
       description: "Descrição do produto",
       payer: {
         email: formData.cardholderEmail,
-        first_name: formData.cardholderName
-          ? formData.cardholderName.split(" ")[0]
-          : "",
-        last_name: formData.cardholderName
-          ? formData.cardholderName.split(" ").slice(1).join(" ")
-          : "",
+        first_name: formData.cardholderName?.split(" ")[0] || "",
+        last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "",
         identification: {
           type: formData.identificationType,
           number: formData.identificationNumber,
@@ -293,7 +305,6 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
-        // Marca o pedido como concluído e navega para a página de sucesso
         handlePaymentSuccess("card");
       } else {
         alert("Pagamento pendente ou falhou.");
@@ -419,22 +430,42 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const isExpirationValid = (value: string) => {
+    // Valida o formato MM/YY e checa se a data é válida e futura.
+    if (!/^\d{2}\/\d{2}$/.test(value)) return false;
+
+    const [month, year] = value.split("/").map(Number);
+    const currentYear = new Date().getFullYear() % 100; // Últimos dois dígitos do ano atual
+    const currentMonth = new Date().getMonth() + 1;
+
+    if (month < 1 || month > 12) return false;
+    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+      return false; // Data de expiração inválida ou no passado
+    }
+
+    return true;
+  };
+
+  const isCvcValid = (value: string) => {
+    return /^\d{3,4}$/.test(value); // Valida 3 ou 4 dígitos numéricos
+  };
+
   const isFormValid = () => {
     const isCardNumberValid =
       cardPreview.cardNumber.replace(/\s/g, "").length === 16;
-    const isExpirationValid = /^\d{2}\/\d{2}$/.test(cardPreview.expiration);
+    const expirationValid = isExpirationValid(cardPreview.expiration);
     const isCardHolderValid = cardPreview.cardHolder.trim().length > 0;
-    const isCvcValid = /^\d{3}$/.test(cardPreview.securityCode);
+    const cvcValid = isCvcValid(cardPreview.securityCode);
 
     console.log("Validação: ", {
       isCardNumberValid,
-      isExpirationValid,
+      isExpirationValid: expirationValid,
       isCardHolderValid,
-      isCvcValid,
+      isCvcValid: cvcValid,
     });
 
     return (
-      isCardNumberValid && isExpirationValid && isCardHolderValid && isCvcValid
+      isCardNumberValid && expirationValid && isCardHolderValid && cvcValid
     );
   };
 
@@ -593,61 +624,95 @@ const Checkout: React.FC = () => {
                 </Box>
               </Box>
             </Box>
-
-            {/* Espaçamento entre o cartão e os inputs */}
             <Box sx={{ mt: 2 }}>
               <form
                 id="form-checkout"
                 ref={formRef}
                 onSubmit={handleCardSubmit}
               >
-                <TextField
-                  fullWidth
+                <input
+                  type="text"
                   id="form-checkout__cardNumber"
-                  placeholder="Número do cartão"
-                  value={cardPreview.cardNumber}
-                  onChange={(e) =>
-                    updateCardPreview(
-                      "cardNumber",
-                      formatCardNumber(e.target.value)
-                    )
-                  }
-                  sx={{ mb: 2 }}
+                  placeholder="Número do Cartão"
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
                 />
-
-                <TextField
-                  fullWidth
+                <input
+                  type="text"
                   id="form-checkout__expirationDate"
                   placeholder="MM/YY"
-                  value={cardPreview.expiration}
-                  onChange={(e) =>
-                    updateCardPreview(
-                      "expiration",
-                      formatExpirationDate(e.target.value)
-                    )
-                  }
-                  sx={{ mb: 2 }}
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
                 />
-
-                <TextField
-                  fullWidth
+                <input
+                  type="text"
                   id="form-checkout__securityCode"
                   placeholder="CVC"
-                  value={cardPreview.securityCode}
-                  onChange={(e) =>
-                    updateCardPreview("securityCode", formatCVC(e.target.value))
-                  }
-                  sx={{ mb: 2 }}
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
                 />
-
-                <TextField
-                  fullWidth
+                <input
+                  type="text"
                   id="form-checkout__cardholderName"
                   placeholder="Nome do Titular"
-                  onChange={(e) =>
-                    updateCardPreview("cardHolder", e.target.value)
-                  }
-                  sx={{ mb: 2 }}
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                />
+                <input
+                  type="email"
+                  id="form-checkout__cardholderEmail"
+                  placeholder="E-mail"
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                />
+                <select
+                  id="form-checkout__issuer"
+                  style={{ display: "none" }}
+                ></select>
+                <select
+                  id="form-checkout__installments"
+                  style={{ display: "none" }}
+                ></select>
+                <select
+                  id="form-checkout__identificationType"
+                  style={{ display: "none" }}
+                ></select>
+                <input
+                  type="text"
+                  id="form-checkout__identificationNumber"
+                  placeholder="Número do Documento"
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
                 />
 
                 <Button
@@ -663,7 +728,7 @@ const Checkout: React.FC = () => {
                         !isMpReady || !isFormValid() ? "#B0B0B0" : "#2a2e24",
                     },
                   }}
-                  disabled={!isMpReady || !isFormValid()} // Botão desabilita com base na validação
+                  disabled={!isMpReady || !isFormValid()} // Desabilita dinamicamente
                 >
                   Pagar
                 </Button>
