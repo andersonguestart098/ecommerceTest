@@ -270,10 +270,25 @@ const Checkout: React.FC = () => {
   }, [navigate]);
 
   const handleCardSubmit = async (formData: any) => {
+    console.log("Form Data:", formData);
+
     if (!formData.token || !formData.installments || !formData.issuerId) {
+      console.warn("Campos obrigatórios ausentes:", {
+        token: formData.token,
+        installments: formData.installments,
+        issuerId: formData.issuerId,
+      });
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
+
+    console.log("Campos validados antes do envio:", {
+      isCardNumberValid:
+        cardPreview.cardNumber.replace(/\s/g, "").length === 16,
+      isExpirationValid: isExpirationValid(cardPreview.expiration),
+      isCardHolderValid: cardPreview.cardHolder.trim().length > 0,
+      isCvcValid: isCvcValid(cardPreview.securityCode),
+    });
 
     if (!isFormValid()) {
       alert("Alguns campos estão inválidos. Verifique os dados inseridos.");
@@ -299,6 +314,8 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
+    console.log("Dados enviados para pagamento:", paymentData);
+
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -310,8 +327,10 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
+        console.log("Pagamento processado com sucesso.");
         handlePaymentSuccess("card");
       } else {
+        console.error("Pagamento pendente ou falhou:", response);
         alert("Pagamento pendente ou falhou.");
       }
     } catch (error) {
@@ -436,23 +455,26 @@ const Checkout: React.FC = () => {
   };
 
   const isExpirationValid = (value: string) => {
-    // Valida o formato MM/YY e checa se a data é válida e futura.
+    console.log("Validando data de expiração:", value);
     if (!/^\d{2}\/\d{2}$/.test(value)) return false;
 
     const [month, year] = value.split("/").map(Number);
-    const currentYear = new Date().getFullYear() % 100; // Últimos dois dígitos do ano atual
+    const currentYear = new Date().getFullYear() % 100;
     const currentMonth = new Date().getMonth() + 1;
+
+    console.log("Ano e mês atuais:", currentYear, currentMonth);
 
     if (month < 1 || month > 12) return false;
     if (year < currentYear || (year === currentYear && month < currentMonth)) {
-      return false; // Data de expiração inválida ou no passado
+      return false;
     }
 
     return true;
   };
 
   const isCvcValid = (value: string) => {
-    return /^\d{3,4}$/.test(value); // Valida 3 ou 4 dígitos numéricos
+    console.log("Validando CVC:", value);
+    return /^\d{3,4}$/.test(value);
   };
 
   const isFormValid = () => {
