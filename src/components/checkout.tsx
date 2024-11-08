@@ -29,7 +29,6 @@ const Checkout: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [pixQrCode, setPixQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
-  const [isOrderCompleted, setIsOrderCompleted] = useState(false);
 
   const [cardPreview, setCardPreview] = useState({
     cardNumber: "•••• •••• •••• ••••",
@@ -49,17 +48,12 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const storedOrderStatus = localStorage.getItem("orderCompleted");
-    if (storedOrderStatus === "true") {
-      setIsOrderCompleted(true);
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      console.log("Checkout data retrieved:", storedCheckoutData);
+      setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
-      const storedCheckoutData = localStorage.getItem("checkoutData");
-      if (storedCheckoutData) {
-        console.log("Checkout data retrieved:", storedCheckoutData);
-        setCheckoutData(JSON.parse(storedCheckoutData));
-      } else {
-        fetchUserDataFromAPI(storedUserId);
-      }
+      fetchUserDataFromAPI(storedUserId);
     }
   }, [navigate]);
 
@@ -123,55 +117,98 @@ const Checkout: React.FC = () => {
 
   const initializeCardForm = () => {
     if (mpInstance && formRef.current) {
-      const formattedAmount = String(
-        (checkoutData.amount || 100.5).toString().replace(",", ".")
-      );
+      if (cardFormInstance) {
+        return;
+      }
 
       const cardForm = mpInstance.cardForm({
-        amount: formattedAmount,
+        amount: String(checkoutData.amount || 100.5),
+        iframe: true,
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" },
-          expirationDate: { id: "form-checkout__expirationDate" },
-          securityCode: { id: "form-checkout__securityCode" },
-          cardholderName: { id: "form-checkout__cardholderName" },
-          issuer: { id: "form-checkout__issuer" }, // Este deve ser um <select>
-          installments: { id: "form-checkout__installments" }, // Este deve ser um <select>
-          identificationType: { id: "form-checkout__identificationType" }, // Este deve ser um <select>
-          identificationNumber: { id: "form-checkout__identificationNumber" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail" },
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/YY",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "CVC",
+          },
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome do titular",
+          },
+          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
+          installments: {
+            id: "form-checkout__installments",
+            placeholder: "Número de parcelas",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+            placeholder: "Tipo de documento",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "Número do documento",
+          },
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail",
+          },
         },
         callbacks: {
-          onFormMounted: (error: any) => {
-            if (error) {
-              console.warn("Erro ao montar formulário:", error);
-            } else {
-              setIsMpReady(true);
-            }
-          },
-          onError: (error: any) => {
-            console.error("Erro no cardForm:", error);
-          },
-          onSubmit: async () => {
-            const formData = cardForm.getCardFormData();
-            if (!formData.token) {
-              console.warn("Token não gerado, revise os campos do formulário.");
-              return;
-            }
-            handleCardSubmit(formData);
-          },
+          onFormMounted: (error: any) =>
+            error
+              ? console.warn("Erro ao montar formulário:", error)
+              : setIsMpReady(true),
+          onSubmit: handleCardSubmit,
         },
       });
-
       setCardFormInstance(cardForm);
     }
   };
+
+  function isValidCPF(cpf: string): boolean {
+    cpf = cpf.replace(/[^\d]+/g, ""); // Remove caracteres não numéricos
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+      soma += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.charAt(9))) return false;
+
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+      soma += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+
+    return resto === parseInt(cpf.charAt(10));
+  }
 
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
     if (!cardFormInstance) return;
 
     const formData = cardFormInstance.getCardFormData();
+
+    // Validação do CPF
+    if (
+      !formData.identificationNumber ||
+      !isValidCPF(formData.identificationNumber)
+    ) {
+      alert("Por favor, insira um CPF válido.");
+      return;
+    }
+
     if (!formData.token || !formData.installments || !formData.issuerId) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
@@ -240,29 +277,18 @@ const Checkout: React.FC = () => {
     return transactionAmount; // Retorna o valor válido
   };
 
-  const markOrderAsCompleted = () => {
-    localStorage.setItem("orderCompleted", "true");
-    setIsOrderCompleted(true);
-  };
-
-  const clearCheckoutData = () => {
-    setCheckoutData({
-      amount: 0,
-      shippingCost: 0,
-      email: "",
-      firstName: "",
-      lastName: "",
-      identificationType: "",
-      identificationNumber: "",
-      userId: null,
-    });
-    localStorage.removeItem("checkoutData");
-  };
-
   const generatePixQrCode = async () => {
-    const transactionAmount = calculateTransactionAmount();
+    // Logs para verificar os dados antes de enviar a requisição
+    console.log("Dados antes de gerar o QR Code:", {
+      amount: checkoutData.amount,
+      shippingCost: checkoutData.shippingCost,
+      userId: checkoutData.userId,
+    });
+
+    const transactionAmount = calculateTransactionAmount(); // Chama a função para calcular
+
     if (transactionAmount === null) {
-      return;
+      return; // Se houve erro no cálculo, sai da função
     }
 
     try {
@@ -273,7 +299,7 @@ const Checkout: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_method_id: "pix",
-            transaction_amount: transactionAmount,
+            transaction_amount: transactionAmount, // Agora inclui o valor do frete
             description: "Pagamento via Pix",
             payer: {
               email: checkoutData.email,
@@ -290,6 +316,8 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
+      console.log("Pix payment response:", result);
+
       if (
         response.ok &&
         result.point_of_interaction?.transaction_data?.qr_code_base64
@@ -298,10 +326,11 @@ const Checkout: React.FC = () => {
           `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
         );
         clearCart();
-        clearCheckoutData();
-        markOrderAsCompleted();
         navigate("/sucesso", {
-          state: { paymentMethod: "pix" },
+          state: {
+            paymentMethod: "pix",
+            pixQrCode: `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`,
+          },
         });
       } else {
         alert("Erro ao gerar QR code Pix: " + result.error);
@@ -313,9 +342,16 @@ const Checkout: React.FC = () => {
   };
 
   const generateBoleto = async () => {
-    const transactionAmount = calculateTransactionAmount();
+    console.log("Dados antes de gerar o boleto:", {
+      amount: checkoutData.amount,
+      shippingCost: checkoutData.shippingCost,
+      userId: checkoutData.userId,
+    });
+
+    const transactionAmount = calculateTransactionAmount(); // Chama a função para calcular
+
     if (transactionAmount === null) {
-      return;
+      return; // Se houve erro no cálculo, sai da função
     }
 
     try {
@@ -343,13 +379,13 @@ const Checkout: React.FC = () => {
       );
 
       const result = await response.json();
+      console.log("Boleto payment response:", result);
+
       if (response.ok && result.boleto_url) {
         setBoletoUrl(result.boleto_url);
         clearCart();
-        clearCheckoutData();
-        markOrderAsCompleted();
         navigate("/sucesso", {
-          state: { paymentMethod: "boleto" },
+          state: { paymentMethod: "boleto", boletoUrl: result.boleto_url },
         });
       } else {
         alert(
@@ -361,27 +397,6 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento com boleto.");
     }
   };
-
-  const handleReturnToHome = () => {
-    navigate("/");
-  };
-
-  if (isOrderCompleted) {
-    return (
-      <Box sx={{ textAlign: "center", padding: "20px" }}>
-        <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
-          Compra já realizada com sucesso!
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={handleReturnToHome}
-          sx={{ backgroundColor: "#313926", color: "#fff" }}
-        >
-          Voltar para a Página Inicial
-        </Button>
-      </Box>
-    );
-  }
 
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
@@ -468,106 +483,54 @@ const Checkout: React.FC = () => {
         </Box>
 
         {selectedPaymentMethod === "card" && (
-          <Box sx={{ mt: 2 }}>
-            <form id="form-checkout" ref={formRef}>
-              <input
-                id="form-checkout__cardNumber"
-                placeholder="Número do Cartão"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-              <input
-                id="form-checkout__expirationDate"
-                placeholder="MM/YY"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-              <input
-                id="form-checkout__securityCode"
-                placeholder="CVC"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-              <input
-                id="form-checkout__cardholderName"
-                placeholder="Nome do Titular"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-              <input
-                id="form-checkout__identificationNumber"
-                placeholder="Número do Documento"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-              <input
-                id="form-checkout__cardholderEmail"
-                type="email"
-                placeholder="E-mail"
-                style={{
-                  marginBottom: "16px",
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
-              />
-
-              <select
-                id="form-checkout__issuer"
-                style={{ display: "none" }}
-              ></select>
-              <select
-                id="form-checkout__installments"
-                style={{ display: "none" }}
-              ></select>
-              <select
-                id="form-checkout__identificationType"
-                style={{ display: "none" }}
-              ></select>
-
-              <Button
-                type="submit"
-                fullWidth
-                sx={{
-                  backgroundColor: isMpReady ? "#313926" : "#B0B0B0",
-                  color: "#FFF",
-                  mt: 2,
-                  "&:hover": {
-                    backgroundColor: isMpReady ? "#2a2e24" : "#B0B0B0",
-                  },
-                }}
-                disabled={!isMpReady}
-              >
-                Pagar
-              </Button>
-            </form>
-          </Box>
+          <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
+            <TextField
+              fullWidth
+              id="form-checkout__cardNumber"
+              placeholder="Número do cartão"
+              onChange={(e) => updateCardPreview("cardNumber", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__expirationDate"
+              placeholder="MM/YY"
+              onChange={(e) => updateCardPreview("expiration", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__securityCode"
+              placeholder="CVC"
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__cardholderName"
+              placeholder="Nome do Titular"
+              onChange={(e) => updateCardPreview("cardHolder", e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              id="form-checkout__cardholderEmail"
+              placeholder="E-mail do Titular"
+              sx={{ mb: 2 }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              sx={{
+                backgroundColor: "#313926",
+                color: "#FFF",
+                mt: 2,
+                "&:hover": { backgroundColor: "#2a2e24" },
+              }}
+              disabled={!isMpReady && selectedPaymentMethod !== "card"}
+            >
+              Pagar
+            </Button>
+          </form>
         )}
 
         {selectedPaymentMethod !== "card" && (
