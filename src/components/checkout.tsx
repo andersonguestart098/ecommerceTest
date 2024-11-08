@@ -210,17 +210,24 @@ const Checkout: React.FC = () => {
     const formData = cardFormInstance.getCardFormData();
     console.log("Form Data Recebido do MercadoPago:", formData);
 
+    // Validação de campos obrigatórios antes do envio
     if (!formData.token) {
       console.error("Erro: Token não foi gerado.");
-      console.log("Verifique os seguintes campos:");
-      console.log("Número do cartão:", formData.cardNumber);
-      console.log("Data de expiração:", formData.expirationDate);
-      console.log("Código de segurança:", formData.securityCode);
-      console.log("Nome do titular:", formData.cardholderName);
-      console.log("Email do titular:", formData.cardholderEmail);
-      console.log("Tipo de documento:", formData.identificationType);
-      console.log("Número do documento:", formData.identificationNumber);
-      alert("Erro ao gerar token do cartão. Verifique os dados fornecidos.");
+      const missingFields = [];
+
+      if (!formData.cardNumber) missingFields.push("Número do cartão");
+      if (!formData.expirationDate) missingFields.push("Data de expiração");
+      if (!formData.securityCode) missingFields.push("Código de segurança");
+      if (!formData.cardholderName) missingFields.push("Nome do titular");
+      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
+      if (!formData.identificationNumber)
+        missingFields.push("Número do documento");
+
+      alert(
+        `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
+          ", "
+        )}.`
+      );
       return;
     }
 
@@ -228,16 +235,11 @@ const Checkout: React.FC = () => {
     const [firstName, ...lastNameParts] = cardholderName.split(" ");
     const lastName = lastNameParts.join(" ") || "Sobrenome";
 
-    console.log("Nome do titular:", { firstName, lastName });
-
     const transactionAmount = parseFloat(
       checkoutData.totalPrice.replace(",", ".")
     );
 
-    console.log("Valor da Transação Calculado:", transactionAmount);
-
     if (!transactionAmount || isNaN(transactionAmount)) {
-      console.error("Erro: Valor da transação inválido.");
       alert("Erro: Valor da transação inválido.");
       return;
     }
@@ -261,8 +263,6 @@ const Checkout: React.FC = () => {
       userId: checkoutData.userId,
     };
 
-    console.log("Dados de pagamento prontos para envio:", paymentData);
-
     try {
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -274,16 +274,13 @@ const Checkout: React.FC = () => {
       );
 
       if (response.ok) {
-        console.log("Pagamento processado com sucesso.");
         clearCart();
         navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        console.error("Erro no pagamento (Backend):", errorResponse);
-        alert("Pagamento falhou: " + errorResponse.message);
+        alert(`Pagamento falhou: ${errorResponse.message}`);
       }
     } catch (error) {
-      console.error("Erro ao processar pagamento (Fetch):", error);
       alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
