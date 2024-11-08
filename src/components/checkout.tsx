@@ -37,6 +37,7 @@ const Checkout: React.FC = () => {
     cardNumber: "•••• •••• •••• ••••",
     cardHolder: "NOME DO TITULAR",
     expiration: "MM/YY",
+    securityCode: "",
   });
 
   const updateCardPreview = (field: string, value: string) => {
@@ -418,12 +419,60 @@ const Checkout: React.FC = () => {
     }
   };
 
+  const isFormValid = () => {
+    const isCardNumberValid =
+      cardPreview.cardNumber.replace(/\s/g, "").length === 16;
+    const isExpirationValid = /^\d{2}\/\d{2}$/.test(cardPreview.expiration);
+    const isCardHolderValid = cardPreview.cardHolder.trim().length > 0;
+    const isCvcValid = /^\d{3}$/.test(cardPreview.securityCode);
+
+    console.log("Validação: ", {
+      isCardNumberValid,
+      isExpirationValid,
+      isCardHolderValid,
+      isCvcValid,
+    });
+
+    return (
+      isCardNumberValid && isExpirationValid && isCardHolderValid && isCvcValid
+    );
+  };
+
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
       await generatePixQrCode();
     } else if (selectedPaymentMethod === "boleto") {
       await generateBoleto();
     }
+  };
+
+  const formatExpirationDate = (value: string) => {
+    return value
+      .replace(/\D/g, "") // Remove não numéricos
+      .replace(/(\d{2})(\d{2})/, "$1/$2") // Adiciona /
+      .slice(0, 5); // Limita a 5 caracteres
+  };
+
+  const getCardBrandLogo = (cardNumber: string) => {
+    if (cardNumber.startsWith("4")) {
+      return "/bandeiras/visa.svg"; // Caminho para o logo da Visa
+    } else if (cardNumber.startsWith("5")) {
+      return "/bandeiras/master.png"; // Caminho para o logo da Mastercard
+    } else if (cardNumber.startsWith("3")) {
+      return "/bandeiras/amex.png"; // Caminho para o logo da Amex
+    } else {
+      return ""; // Caminho para um logo padrão
+    }
+  };
+
+  const formatCardNumber = (value: string) => {
+    return value
+      .replace(/\D/g, "") // Remove não numéricos
+      .replace(/(\d{4})(?=\d)/g, "$1 "); // Adiciona espaço a cada 4 dígitos
+  };
+
+  const formatCVC = (value: string) => {
+    return value.replace(/\D/g, "").slice(0, 3); // Apenas 3 dígitos numéricos
   };
 
   const paymentButtonStyle = (isSelected: boolean): React.CSSProperties => ({
@@ -480,23 +529,7 @@ const Checkout: React.FC = () => {
           Forma de Pagamento
         </Typography>
 
-        {selectedPaymentMethod === "card" && (
-          <Box
-            sx={{
-              backgroundColor: "#313926",
-              color: "#FFF",
-              borderRadius: "10px",
-              padding: "15px",
-              textAlign: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <Typography variant="body2">{cardPreview.cardNumber}</Typography>
-            <Typography variant="body2">{cardPreview.cardHolder}</Typography>
-            <Typography variant="body2">{cardPreview.expiration}</Typography>
-          </Box>
-        )}
-
+        {/* Botões de seleção de forma de pagamento */}
         <Box
           onClick={() => setSelectedPaymentMethod("pix")}
           sx={paymentButtonStyle(selectedPaymentMethod === "pix")}
@@ -516,55 +549,127 @@ const Checkout: React.FC = () => {
           <span>Cartão de Crédito</span>
         </Box>
 
+        {/* Exibição do cartão virtual somente quando "Cartão de Crédito" for selecionado */}
         {selectedPaymentMethod === "card" && (
-          <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-            <TextField
-              fullWidth
-              id="form-checkout__cardNumber"
-              placeholder="Número do cartão"
-              onChange={(e) => updateCardPreview("cardNumber", e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              id="form-checkout__expirationDate"
-              placeholder="MM/YY"
-              onChange={(e) => updateCardPreview("expiration", e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              id="form-checkout__securityCode"
-              placeholder="CVC"
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              id="form-checkout__cardholderName"
-              placeholder="Nome do Titular"
-              onChange={(e) => updateCardPreview("cardHolder", e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              id="form-checkout__cardholderEmail"
-              placeholder="E-mail do Titular"
-              sx={{ mb: 2 }}
-            />
-            <Button
-              type="submit"
-              fullWidth
+          <>
+            <Box
               sx={{
+                width: "350px",
+                height: "200px",
                 backgroundColor: "#313926",
                 color: "#FFF",
-                mt: 2,
-                "&:hover": { backgroundColor: "#2a2e24" },
+                borderRadius: "12px",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                textAlign: "center",
+                position: "relative",
               }}
-              disabled={!isMpReady}
             >
-              Pagar
-            </Button>
-          </form>
+              <Box
+                component="img"
+                src={getCardBrandLogo(cardPreview.cardNumber)}
+                alt="Bandeira do cartão"
+                sx={{
+                  position: "absolute",
+                  top: "10px",
+                  left: "10px",
+                  width: "50px",
+                  display: getCardBrandLogo(cardPreview.cardNumber)
+                    ? "block"
+                    : "none",
+                }}
+              />
+
+              <Box sx={{ fontSize: "1.5rem", letterSpacing: "3px" }}>
+                {cardPreview.cardNumber || "**** **** **** ****"}
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Box>{cardPreview.cardHolder || "NOME DO TITULAR"}</Box>
+                <Box>
+                  {formatExpirationDate(cardPreview.expiration) || "MM/YY"}
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Espaçamento entre o cartão e os inputs */}
+            <Box sx={{ mt: 2 }}>
+              <form
+                id="form-checkout"
+                ref={formRef}
+                onSubmit={handleCardSubmit}
+              >
+                <TextField
+                  fullWidth
+                  id="form-checkout__cardNumber"
+                  placeholder="Número do cartão"
+                  value={cardPreview.cardNumber}
+                  onChange={(e) =>
+                    updateCardPreview(
+                      "cardNumber",
+                      formatCardNumber(e.target.value)
+                    )
+                  }
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  id="form-checkout__expirationDate"
+                  placeholder="MM/YY"
+                  value={cardPreview.expiration}
+                  onChange={(e) =>
+                    updateCardPreview(
+                      "expiration",
+                      formatExpirationDate(e.target.value)
+                    )
+                  }
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  id="form-checkout__securityCode"
+                  placeholder="CVC"
+                  value={cardPreview.securityCode}
+                  onChange={(e) =>
+                    updateCardPreview("securityCode", formatCVC(e.target.value))
+                  }
+                  sx={{ mb: 2 }}
+                />
+
+                <TextField
+                  fullWidth
+                  id="form-checkout__cardholderName"
+                  placeholder="Nome do Titular"
+                  onChange={(e) =>
+                    updateCardPreview("cardHolder", e.target.value)
+                  }
+                  sx={{ mb: 2 }}
+                />
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  sx={{
+                    backgroundColor:
+                      !isMpReady || !isFormValid() ? "#B0B0B0" : "#313926",
+                    color: "#FFF",
+                    mt: 2,
+                    "&:hover": {
+                      backgroundColor:
+                        !isMpReady || !isFormValid() ? "#B0B0B0" : "#2a2e24",
+                    },
+                  }}
+                  disabled={!isMpReady || !isFormValid()} // Botão desabilita com base na validação
+                >
+                  Pagar
+                </Button>
+              </form>
+            </Box>
+          </>
         )}
 
         {selectedPaymentMethod !== "card" && (
@@ -600,8 +705,7 @@ const Checkout: React.FC = () => {
           Resumo
         </Typography>
 
-        {/* Alinhamento à esquerda e linha sutil */}
-        {/* Alinhamento à esquerda e linha sutil */}
+        {/* Informações detalhadas do resumo */}
         <Box sx={{ textAlign: "left", mb: 1 }}>
           <Typography>
             Valor dos Produtos: R$ {checkoutData.amount || "0,00"}
@@ -616,7 +720,6 @@ const Checkout: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Cálculo do total com conversão de string para número */}
         <Typography sx={{ fontWeight: "bold", mt: 1 }}>
           Total: R${" "}
           {(

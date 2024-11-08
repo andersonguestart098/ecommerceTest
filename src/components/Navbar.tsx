@@ -23,6 +23,8 @@ import { useCart } from "../contexts/CartContext";
 import { useUser } from "../contexts/UserContext";
 import SearchBar from "./SearchBar";
 import { useSocket } from "../contexts/SocketContext";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
 interface NavbarProps {
   onSearch: (
@@ -227,13 +229,13 @@ const Navbar: React.FC<NavbarProps> = ({
                   <>
                     <MenuItem onClick={() => handleNavigate("/my-orders")}>
                       <IconButton>
-                        <MenuIcon />
+                        <LocalShippingIcon />
                       </IconButton>
                       Meus Pedidos
                     </MenuItem>
                     <MenuItem onClick={() => handleNavigate("/meus-dados")}>
                       <IconButton>
-                        <MenuIcon />
+                        <ManageAccountsIcon />
                       </IconButton>
                       Meus Dados
                     </MenuItem>

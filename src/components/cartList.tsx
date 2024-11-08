@@ -397,6 +397,23 @@ const CartList: React.FC = () => {
             >
               Finalizar Compra
             </Button>
+            <Button
+              variant="outlined"
+              onClick={handleCheckout}
+              fullWidth
+              sx={{
+                mt: 2,
+                color: "#313926",
+                borderColor: "#313926",
+                "&:hover": {
+                  backgroundColor: "#313926",
+                  borderColor: "#313926",
+                  color: "#fff",
+                },
+              }}
+            >
+              Continuar Comprando
+            </Button>
           </Box>
         </Paper>
       )}
