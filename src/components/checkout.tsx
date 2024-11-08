@@ -606,55 +606,12 @@ const Checkout: React.FC = () => {
         {/* Exibição do cartão virtual somente quando "Cartão de Crédito" for selecionado */}
         {selectedPaymentMethod === "card" && (
           <>
-            <Box
-              sx={{
-                width: "350px",
-                height: "200px",
-                backgroundColor: "#313926",
-                color: "#FFF",
-                borderRadius: "12px",
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                textAlign: "center",
-                position: "relative",
-              }}
-            >
-              <Box
-                component="img"
-                src={getCardBrandLogo(cardPreview.cardNumber)}
-                alt="Bandeira do cartão"
-                sx={{
-                  position: "absolute",
-                  top: "10px",
-                  left: "10px",
-                  width: "50px",
-                  display: getCardBrandLogo(cardPreview.cardNumber)
-                    ? "block"
-                    : "none",
-                }}
-              />
-
-              <Box sx={{ fontSize: "1.5rem", letterSpacing: "3px" }}>
-                {cardPreview.cardNumber || "**** **** **** ****"}
-              </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Box>{cardPreview.cardHolder || "NOME DO TITULAR"}</Box>
-                <Box>
-                  {formatExpirationDate(cardPreview.expiration) || "MM/YY"}
-                </Box>
-              </Box>
-            </Box>
             <Box sx={{ mt: 2 }}>
-              <form
-                id="form-checkout"
-                ref={formRef}
-                onSubmit={handleCardSubmit}
-              >
-                <div
+              <form id="form-checkout" ref={formRef}>
+                <input
+                  type="text"
                   id="form-checkout__cardNumber"
+                  placeholder="Número do Cartão"
                   style={{
                     marginBottom: "16px",
                     width: "100%",
@@ -662,9 +619,11 @@ const Checkout: React.FC = () => {
                     borderRadius: "4px",
                     border: "1px solid #ccc",
                   }}
-                ></div>
-                <div
+                />
+                <input
+                  type="text"
                   id="form-checkout__expirationDate"
+                  placeholder="MM/YY"
                   style={{
                     marginBottom: "16px",
                     width: "100%",
@@ -672,9 +631,11 @@ const Checkout: React.FC = () => {
                     borderRadius: "4px",
                     border: "1px solid #ccc",
                   }}
-                ></div>
-                <div
+                />
+                <input
+                  type="text"
                   id="form-checkout__securityCode"
+                  placeholder="CVC"
                   style={{
                     marginBottom: "16px",
                     width: "100%",
@@ -682,9 +643,11 @@ const Checkout: React.FC = () => {
                     borderRadius: "4px",
                     border: "1px solid #ccc",
                   }}
-                ></div>
-                <div
+                />
+                <input
+                  type="text"
                   id="form-checkout__cardholderName"
+                  placeholder="Nome do Titular"
                   style={{
                     marginBottom: "16px",
                     width: "100%",
@@ -692,37 +655,11 @@ const Checkout: React.FC = () => {
                     borderRadius: "4px",
                     border: "1px solid #ccc",
                   }}
-                ></div>
-                <div
-                  id="form-checkout__issuer"
-                  style={{
-                    display: "none",
-                  }}
-                ></div>
-                <div
-                  id="form-checkout__installments"
-                  style={{
-                    display: "none",
-                  }}
-                ></div>
-                <div
-                  id="form-checkout__identificationType"
-                  style={{
-                    display: "none",
-                  }}
-                ></div>
-                <div
-                  id="form-checkout__identificationNumber"
-                  style={{
-                    marginBottom: "16px",
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                ></div>
-                <div
+                />
+                <input
+                  type="email"
                   id="form-checkout__cardholderEmail"
+                  placeholder="E-mail"
                   style={{
                     marginBottom: "16px",
                     width: "100%",
@@ -730,8 +667,22 @@ const Checkout: React.FC = () => {
                     borderRadius: "4px",
                     border: "1px solid #ccc",
                   }}
-                ></div>
-
+                />
+                <input id="form-checkout__issuer" type="hidden" />
+                <input id="form-checkout__installments" type="hidden" />
+                <input id="form-checkout__identificationType" type="hidden" />
+                <input
+                  type="text"
+                  id="form-checkout__identificationNumber"
+                  placeholder="Número do Documento"
+                  style={{
+                    marginBottom: "16px",
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                />
                 <Button
                   type="submit"
                   fullWidth
@@ -743,7 +694,7 @@ const Checkout: React.FC = () => {
                       backgroundColor: isMpReady ? "#2a2e24" : "#B0B0B0",
                     },
                   }}
-                  disabled={!isMpReady}
+                  disabled={!isMpReady} // O botão será habilitado quando o Mercado Pago estiver pronto
                 >
                   Pagar
                 </Button>
