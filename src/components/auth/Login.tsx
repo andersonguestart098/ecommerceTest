@@ -39,14 +39,16 @@ const Login: React.FC = () => {
 
       const { token, user } = response.data;
 
+      // Armazena o token e define o usuário no contexto
       localStorage.setItem("token", token);
       setUser(user);
 
+      // Emite evento de login via socket
       if (socket) {
         socket.emit("userLoggedIn", user.name);
       }
 
-      // Se há uma rota de origem, redirecione para ela
+      // Redireciona para a rota de origem ou para a home
       const redirectPath = location.state?.from || "/";
       navigate(redirectPath);
     } catch (err: any) {

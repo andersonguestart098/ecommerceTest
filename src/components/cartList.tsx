@@ -12,6 +12,8 @@ import {
   IconButton,
   TextField,
   ListItemButton,
+  Snackbar,
+  SnackbarContent,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AddIcon from "@mui/icons-material/Add";
@@ -31,6 +33,7 @@ const CartList: React.FC = () => {
   const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
   const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false); // Adiciona estado para Snackbar
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -42,7 +45,6 @@ const CartList: React.FC = () => {
     }
   }, []);
 
-  // Calcula o total de produtos no carrinho
   const totalProductAmount = cart.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -107,6 +109,17 @@ const CartList: React.FC = () => {
   };
 
   const handleCheckout = () => {
+    const user = localStorage.getItem("user"); // Verifica se o usuário está logado
+    if (!user) {
+      setOpenSnackbar(true); // Exibe o Snackbar
+      setTimeout(() => {
+        navigate("/login", {
+          state: { from: cart.length > 0 ? "/checkout" : "/" },
+        });
+      }, 2000);
+      return;
+    }
+
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
@@ -114,10 +127,6 @@ const CartList: React.FC = () => {
 
     const formattedFreightPrice = freightPrice.toFixed(2).replace(".", ",");
     const formattedTotalPrice = totalPrice.replace(".", ",");
-
-    console.log("Freight selected:", selectedFreightOption);
-    console.log("Formatted freight price:", formattedFreightPrice);
-    console.log("Formatted total price:", formattedTotalPrice);
 
     const items = cart.map((item) => ({
       productId: String(item.id),
@@ -128,32 +137,37 @@ const CartList: React.FC = () => {
       category_id: item.category_id || "default",
     }));
 
-    console.log("Items to be checked out:", items);
-
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
-        amount: totalProductAmount.toFixed(2).replace(".", ","), // Armazenando o total não formatado
-        shippingCost: formattedFreightPrice, // Armazena o frete formatado
+        amount: totalProductAmount.toFixed(2).replace(".", ","),
+        shippingCost: formattedFreightPrice,
         totalPrice: formattedTotalPrice,
         items,
         userId,
       })
     );
 
-    console.log("Checkout data stored in localStorage:", {
-      amount: totalProductAmount.toFixed(2).replace(".", ","),
-      shippingCost: formattedFreightPrice,
-      totalPrice: formattedTotalPrice,
-      items,
-      userId,
-    });
-
     navigate("/checkout");
   };
 
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <SnackbarContent
+          message="Você precisa estar logado para finalizar a compra."
+          sx={{
+            backgroundColor: "#313926",
+            color: "#fff",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        />
+      </Snackbar>
       <IconButton
         onClick={() => navigate("/")}
         sx={{
@@ -178,6 +192,7 @@ const CartList: React.FC = () => {
         />
         Meu Carrinho
       </Typography>
+
       {cart.length === 0 ? (
         <Typography
           variant="h6"

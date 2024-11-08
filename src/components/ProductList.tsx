@@ -11,7 +11,7 @@ interface Product {
   price: number;
   discount: number;
   paymentOptions: string[];
-  image: string[];
+  image: string[] | string; // Aceita string ou array de strings
   metersPerBox: number;
   colors: { name: string; image: string; imageRefIndex: number }[]; // Inclui imageRefIndex
 }
@@ -60,7 +60,7 @@ const ProductList: React.FC<ProductListProps> = ({
             : product.image,
         colors: product.colors.map((color: any, index: number) => ({
           ...color,
-          imageRefIndex: color.imageRefIndex ?? index, // Garante imageRefIndex
+          imageRefIndex: color.imageRefIndex ?? index,
         })),
       }));
 
@@ -104,10 +104,7 @@ const ProductList: React.FC<ProductListProps> = ({
     <Grid container spacing={3}>
       {products.map((product) => (
         <Grid item xs={12} sm={6} md={4} key={product.id}>
-          <ProductCard
-            product={product}
-            addToCart={(product) => addToCart(product)}
-          />
+          <ProductCard product={product} addToCart={addToCart} />
         </Grid>
       ))}
     </Grid>
