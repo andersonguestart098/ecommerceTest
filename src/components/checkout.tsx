@@ -229,10 +229,12 @@ const Checkout: React.FC = () => {
         last_name: formData.cardholderName
           ? formData.cardholderName.split(" ").slice(1).join(" ")
           : "",
-        identification: {
-          type: formData.identificationType,
-          number: formData.identificationNumber,
-        },
+        identification: formData.identificationNumber
+          ? {
+              type: formData.identificationType || "CPF", // Padrão para CPF
+              number: formData.identificationNumber,
+            }
+          : undefined, // Não envia identificação se não disponível
       },
       userId: checkoutData.userId,
     };
@@ -278,17 +280,25 @@ const Checkout: React.FC = () => {
   };
 
   const generatePixQrCode = async () => {
-    // Logs para verificar os dados antes de enviar a requisição
     console.log("Dados antes de gerar o QR Code:", {
       amount: checkoutData.amount,
       shippingCost: checkoutData.shippingCost,
       userId: checkoutData.userId,
+      payer: {
+        email: checkoutData.email,
+        first_name: checkoutData.firstName,
+        last_name: checkoutData.lastName,
+        identification: {
+          type: checkoutData.identificationType,
+          number: checkoutData.identificationNumber,
+        },
+      },
     });
 
-    const transactionAmount = calculateTransactionAmount(); // Chama a função para calcular
+    const transactionAmount = calculateTransactionAmount();
 
     if (transactionAmount === null) {
-      return; // Se houve erro no cálculo, sai da função
+      return;
     }
 
     try {
@@ -299,7 +309,7 @@ const Checkout: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             payment_method_id: "pix",
-            transaction_amount: transactionAmount, // Agora inclui o valor do frete
+            transaction_amount: transactionAmount,
             description: "Pagamento via Pix",
             payer: {
               email: checkoutData.email,
@@ -333,7 +343,8 @@ const Checkout: React.FC = () => {
           },
         });
       } else {
-        alert("Erro ao gerar QR code Pix: " + result.error);
+        console.error("Erro ao gerar QR code Pix:", result);
+        alert("Erro ao gerar QR code Pix.");
       }
     } catch (error) {
       console.error("Erro ao processar pagamento com Pix:", error);
