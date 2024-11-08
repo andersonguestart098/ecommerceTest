@@ -13,7 +13,7 @@ interface Product {
   paymentOptions: string[];
   image: string[];
   metersPerBox: number;
-  colors: { name: string; image: string }[];
+  colors: { name: string; image: string; imageRefIndex: number }[]; // Inclui imageRefIndex
 }
 
 interface ProductListProps {
@@ -58,6 +58,10 @@ const ProductList: React.FC<ProductListProps> = ({
           typeof product.image === "string"
             ? JSON.parse(product.image)
             : product.image,
+        colors: product.colors.map((color: any, index: number) => ({
+          ...color,
+          imageRefIndex: color.imageRefIndex ?? index, // Garante imageRefIndex
+        })),
       }));
 
       setProducts(processedProducts || []);
@@ -69,7 +73,6 @@ const ProductList: React.FC<ProductListProps> = ({
     }
   };
 
-  // UseEffect to fetch products initially and whenever filters change
   useEffect(() => {
     fetchProducts();
   }, [searchTerm, color, minPrice, maxPrice]);
