@@ -298,6 +298,7 @@ const Checkout: React.FC = () => {
     const transactionAmount = calculateTransactionAmount();
 
     if (transactionAmount === null) {
+      alert("Erro: valor de transação inválido.");
       return;
     }
 
@@ -328,23 +329,19 @@ const Checkout: React.FC = () => {
       const result = await response.json();
       console.log("Pix payment response:", result);
 
-      if (
-        response.ok &&
-        result.point_of_interaction?.transaction_data?.qr_code_base64
-      ) {
-        setPixQrCode(
-          `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`
-        );
+      if (response.ok && result.qr_code_base64) {
+        const qrCode = `data:image/png;base64,${result.qr_code_base64}`;
+        setPixQrCode(qrCode);
         clearCart();
         navigate("/sucesso", {
           state: {
             paymentMethod: "pix",
-            pixQrCode: `data:image/png;base64,${result.point_of_interaction.transaction_data.qr_code_base64}`,
+            pixQrCode: qrCode,
           },
         });
       } else {
         console.error("Erro ao gerar QR code Pix:", result);
-        alert("Erro ao gerar QR code Pix.");
+        alert(result.message || "Erro desconhecido ao gerar QR Code.");
       }
     } catch (error) {
       console.error("Erro ao processar pagamento com Pix:", error);
