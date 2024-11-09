@@ -51,43 +51,25 @@ const Checkout: React.FC = () => {
 
     const storedCheckoutData = localStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      console.log("Checkout data retrieved:", storedCheckoutData);
       setCheckoutData(JSON.parse(storedCheckoutData));
     } else {
       fetchUserDataFromAPI(storedUserId);
     }
   }, [navigate]);
 
-  useEffect(() => {
-    if (sdkLoaded && mpInstance) {
-      if (selectedPaymentMethod === "card" && !cardFormInstance) {
-        initializeCardForm();
-      } else if (cardFormInstance && selectedPaymentMethod !== "card") {
-        console.log("Desmontando CardForm...");
-        cardFormInstance.unmount();
-        setCardFormInstance(null);
-      }
-    }
-  }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
-  
-
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
-      const response = await axios.get(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
-      );
+      const response = await axios.get(`https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`);
       const userData = {
         firstName: response.data.name,
         lastName: response.data.last_name,
         email: response.data.email,
         identificationType: response.data.identification?.type || "CPF",
-        identificationNumber:
-          response.data.identification?.number || "00000000000",
+        identificationNumber: response.data.identification?.number || "00000000000",
         amount: response.data.totalPrice || 100.5,
         shippingCost: response.data.shippingCost || 0,
         userId: userId,
       };
-      console.log("User data fetched:", userData);
       setCheckoutData(userData);
       localStorage.setItem("checkoutData", JSON.stringify(userData));
     } catch (error) {
@@ -95,79 +77,98 @@ const Checkout: React.FC = () => {
     }
   };
 
- // Carrega o SDK do MercadoPago assim que o componente é montado
-useEffect(() => {
-  const loadMercadoPagoSdk = async () => {
-    if (!publicKey) {
-      console.error("Public key não está definida.");
-      return;
-    }
+  useEffect(() => {
+    const loadMercadoPagoSdk = async () => {
+      if (!publicKey) {
+        console.error("Public key não está definida.");
+        return;
+      }
 
-    if (window.MercadoPago) {
-      console.log("MercadoPago SDK já carregado.");
-      setSdkLoaded(true);
-      setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-    } else {
-      const scriptSdk = document.createElement("script");
-      scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
-      scriptSdk.async = true;
-      scriptSdk.onload = () => {
-        console.log("MercadoPago SDK carregado com sucesso.");
+      if (window.MercadoPago) {
         setSdkLoaded(true);
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-      };
-      scriptSdk.onerror = () => {
-        console.error("Erro ao carregar o SDK do MercadoPago.");
-      };
-      document.body.appendChild(scriptSdk);
-    }
-  };
+      } else {
+        const scriptSdk = document.createElement("script");
+        scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
+        scriptSdk.async = true;
+        scriptSdk.onload = () => {
+          setSdkLoaded(true);
+          setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+        };
+        scriptSdk.onerror = () => {
+          console.error("Erro ao carregar o SDK do MercadoPago.");
+        };
+        document.body.appendChild(scriptSdk);
+      }
+    };
 
-  loadMercadoPagoSdk();
-}, [publicKey]);
-
-// Inicializa o CardForm após carregar SDK e selecionar método "card"
-useEffect(() => {
-  if (sdkLoaded && mpInstance) {
-    if (selectedPaymentMethod === "card") {
-      console.log("Chamando initializeCardForm...");
-      initializeCardForm();
-    } else if (cardFormInstance) {
-      console.log("Desmontando CardForm pois o método de pagamento mudou.");
-      cardFormInstance.unmount();
-      setCardFormInstance(null);
-    }
-  }
-}, [sdkLoaded, mpInstance, selectedPaymentMethod]);
-
-// Cleanup no unmount para garantir que o CardForm não fique ativo
-useEffect(() => {
-  return () => {
-    if (cardFormInstance) {
-      console.log("Desmontando CardForm ao desmontar o componente...");
-      cardFormInstance.unmount();
-      setCardFormInstance(null);
-    }
-  };
-}, []);
-
+    loadMercadoPagoSdk();
+  }, [publicKey]);
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
-      console.log("Chamando initializeCardForm...");
       initializeCardForm();
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
-  const handleCardSubmit = async (formData: any) => {
-    console.log("Iniciando submissão do formulário...");
-  
-    if (!formData.token || !formData.paymentMethodId) {
-      alert("Erro: Token ou Método de Pagamento ausente.");
+  const initializeCardForm = () => {
+    if (cardFormInstance) {
+      console.log("CardForm já está instanciado.");
       return;
     }
-  
+
+    if (!mpInstance || !formRef.current) {
+      console.error("Instância do MercadoPago ou form não disponível.");
+      return;
+    }
+
+    const sanitizedAmount = String(parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0);
+
+    const cardForm = mpInstance.cardForm({
+      amount: sanitizedAmount,
+      autoMount: true,
+      form: {
+        id: "form-checkout",
+        cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
+        expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/YY" },
+        securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
+        cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
+        cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+        issuer: { id: "form-checkout__issuer", placeholder: "Banco Emissor" },
+        installments: { id: "form-checkout__installments", placeholder: "Parcelas" },
+        identificationType: { id: "form-checkout__identificationType" },
+        identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
+      },
+      callbacks: {
+        onFormMounted: (error: any) => {
+          if (error) {
+            console.error("Erro ao montar o formulário:", error);
+            return;
+          }
+          setIsMpReady(true);
+        },
+        onSubmit: async (event: any) => {
+          event.preventDefault();
+          try {
+            const formData = cardForm.getCardFormData();
+            if (!formData.token || !formData.paymentMethodId) {
+              alert("Preencha os campos corretamente.");
+              return;
+            }
+            await handleCardSubmit(formData);
+          } catch (error) {
+            console.error("Erro durante submissão do formulário:", error);
+          }
+        },
+      },
+    });
+
+    setCardFormInstance(cardForm);
+  };
+
+  const handleCardSubmit = async (formData: any) => {
     try {
+      const [firstName, ...lastName] = (formData.cardholderName || "Nome Sobrenome").split(" ");
       const paymentData = {
         transaction_amount: calculateTransactionAmount(),
         token: formData.token,
@@ -177,8 +178,8 @@ useEffect(() => {
         description: "Compra via Cartão de Crédito",
         payer: {
           email: formData.cardholderEmail,
-          first_name: formData.cardholderName.split(" ")[0] || "Nome",
-          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
+          first_name: firstName,
+          last_name: lastName.join(" "),
           identification: {
             type: formData.identificationType || "CPF",
             number: formData.identificationNumber,
@@ -186,9 +187,7 @@ useEffect(() => {
         },
         userId: checkoutData.userId,
       };
-  
-      console.log("Enviando dados para backend:", paymentData);
-  
+
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -197,127 +196,16 @@ useEffect(() => {
           body: JSON.stringify(paymentData),
         }
       );
-  
+
       if (response.ok) {
-        console.log("Pagamento processado com sucesso.");
         clearCart();
         navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        console.error("Erro no pagamento:", errorResponse);
         alert(`Erro no pagamento: ${errorResponse.message || "Erro desconhecido"}`);
       }
     } catch (error) {
-      console.error("Erro durante o processo de pagamento:", error);
       alert("Erro ao processar o pagamento. Tente novamente.");
-    }
-  };
-  
-  const initializeCardForm = () => {
-    if (cardFormInstance) {
-      console.log("CardForm já está instanciado.");
-      return;
-    }
-  
-    if (!mpInstance) {
-      console.error("Erro: Instância do MercadoPago não disponível.");
-      return;
-    }
-  
-    if (!formRef.current) {
-      console.error("Erro: Referência ao formulário não definida.");
-      return;
-    }
-  
-    console.log("Inicializando CardForm...");
-  
-    try {
-      const sanitizedAmount = String(
-        parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0
-      );
-  
-      const cardForm = mpInstance.cardForm({
-        amount: sanitizedAmount,
-        autoMount: true,
-        form: {
-          id: "form-checkout",
-          cardNumber: {
-            id: "form-checkout__cardNumber",
-            placeholder: "Número do cartão",
-          },
-          expirationDate: {
-            id: "form-checkout__expirationDate",
-            placeholder: "MM/YY",
-          },
-          securityCode: {
-            id: "form-checkout__securityCode",
-            placeholder: "CVC",
-          },
-          cardholderName: {
-            id: "form-checkout__cardholderName",
-            placeholder: "Nome do titular",
-          },
-          cardholderEmail: {
-            id: "form-checkout__cardholderEmail",
-            placeholder: "E-mail",
-          },
-          issuer: {
-            id: "form-checkout__issuer",
-            placeholder: "Banco Emissor",
-          },
-          installments: {
-            id: "form-checkout__installments",
-            placeholder: "Parcelas",
-          },
-          identificationType: {
-            id: "form-checkout__identificationType",
-          },
-          identificationNumber: {
-            id: "form-checkout__identificationNumber",
-            placeholder: "Número do documento",
-          },
-        },
-        callbacks: {
-          onFormMounted: (error: any) => {
-            if (error) {
-              console.error("Erro ao montar o formulário:", error);
-              return;
-            }
-            console.log("Formulário montado com sucesso.");
-            setIsMpReady(true);
-          },
-          onValidityChange: (error: any, fields: any) => {
-            if (error) {
-              console.warn("Dados inválidos:", fields);
-            } else {
-              console.log("Todos os campos estão válidos.");
-            }
-          },
-          onSubmit: async (event: any) => {
-            event.preventDefault();
-        
-            try {
-              const formData = cardForm.getCardFormData();
-        
-              if (!formData.token || !formData.paymentMethodId) {
-                console.error("Token ou Método de Pagamento inválidos:", formData);
-                alert("Por favor, preencha todos os campos obrigatórios.");
-                return;
-              }
-        
-              console.log("Dados capturados do formulário:", formData);
-              await handleCardSubmit(formData);
-            } catch (error) {
-              console.error("Erro durante submissão do formulário:", error);
-            }
-          },
-        },
-      });
-  
-      setCardFormInstance(cardForm);
-    } catch (error) {
-      console.error("Erro ao inicializar o CardForm:", error);
-      alert("Erro ao inicializar o formulário.");
     }
   };
   
