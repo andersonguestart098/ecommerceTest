@@ -59,14 +59,17 @@ const Checkout: React.FC = () => {
   }, [navigate]);
 
   useEffect(() => {
-    return () => {
-      if (cardFormInstance) {
+    if (sdkLoaded && mpInstance) {
+      if (selectedPaymentMethod === "card" && !cardFormInstance) {
+        initializeCardForm();
+      } else if (cardFormInstance && selectedPaymentMethod !== "card") {
         console.log("Desmontando CardForm...");
         cardFormInstance.unmount();
         setCardFormInstance(null);
       }
-    };
-  }, []);
+    }
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
+  
 
   const fetchUserDataFromAPI = async (userId: string) => {
     try {
@@ -159,8 +162,12 @@ useEffect(() => {
   const handleCardSubmit = async (formData: any) => {
     console.log("Iniciando submissão do formulário...");
   
+    if (!formData.token || !formData.paymentMethodId) {
+      alert("Erro: Token ou Método de Pagamento ausente.");
+      return;
+    }
+  
     try {
-      // Prepara os dados para envio
       const paymentData = {
         transaction_amount: calculateTransactionAmount(),
         token: formData.token,
@@ -170,8 +177,8 @@ useEffect(() => {
         description: "Compra via Cartão de Crédito",
         payer: {
           email: formData.cardholderEmail,
-          first_name: formData.cardholderName?.split(" ")[0] || "Nome",
-          last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "Sobrenome",
+          first_name: formData.cardholderName.split(" ")[0] || "Nome",
+          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
           identification: {
             type: formData.identificationType || "CPF",
             number: formData.identificationNumber,
@@ -180,9 +187,8 @@ useEffect(() => {
         userId: checkoutData.userId,
       };
   
-      console.log("Dados de pagamento prontos:", paymentData);
+      console.log("Enviando dados para backend:", paymentData);
   
-      // Envio para o backend
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -198,17 +204,18 @@ useEffect(() => {
         navigate("/sucesso");
       } else {
         const errorResponse = await response.json();
-        alert(`Erro no pagamento: ${errorResponse.message || "Erro desconhecido."}`);
+        console.error("Erro no pagamento:", errorResponse);
+        alert(`Erro no pagamento: ${errorResponse.message || "Erro desconhecido"}`);
       }
     } catch (error) {
-      console.error("Erro ao processar o pagamento:", error);
+      console.error("Erro durante o processo de pagamento:", error);
       alert("Erro ao processar o pagamento. Tente novamente.");
     }
   };
-
+  
   const initializeCardForm = () => {
     if (cardFormInstance) {
-      console.log("CardForm já instanciado.");
+      console.log("CardForm já está instanciado.");
       return;
     }
   
@@ -229,13 +236,23 @@ useEffect(() => {
         parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0
       );
   
-      console.log("Valor total sanitizado para o formulário:", sanitizedAmount);
-  
       const cardForm = mpInstance.cardForm({
         amount: sanitizedAmount,
-        autoMount: true, // Monta automaticamente os campos do formulário.
+        autoMount: true,
         form: {
           id: "form-checkout",
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/YY",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "CVC",
+          },
           cardholderName: {
             id: "form-checkout__cardholderName",
             placeholder: "Nome do titular",
@@ -244,25 +261,13 @@ useEffect(() => {
             id: "form-checkout__cardholderEmail",
             placeholder: "E-mail",
           },
-          cardNumber: {
-            id: "form-checkout__cardNumber",
-            placeholder: "Número do cartão",
-          },
-          expirationDate: {
-            id: "form-checkout__expirationDate",
-            placeholder: "MM/AA",
-          },
-          securityCode: {
-            id: "form-checkout__securityCode",
-            placeholder: "CVC",
+          issuer: {
+            id: "form-checkout__issuer",
+            placeholder: "Banco Emissor",
           },
           installments: {
             id: "form-checkout__installments",
             placeholder: "Parcelas",
-          },
-          issuer: {
-            id: "form-checkout__issuer",
-            placeholder: "Banco Emissor",
           },
           identificationType: {
             id: "form-checkout__identificationType",
@@ -272,45 +277,47 @@ useEffect(() => {
             placeholder: "Número do documento",
           },
         },
-          callbacks: {
-            onFormMounted: (error: any) => {
-              if (error) {
-                console.error("Erro ao montar o formulário:", error);
-                return;
-              }
-              console.log("Formulário montado com sucesso.");
-              setIsMpReady(true);
-            },
-            onValidityChange: (error: any) => {
-              if (error) {
-                console.warn("Dados inválidos no formulário:", error);
-              } else {
-                console.log("Todos os campos são válidos.");
-              }
-            },
-            onSubmit: async (event: any) => {
-              event.preventDefault();
-              const formData = cardForm.getCardFormData();
-              if (!formData.token || !formData.paymentMethodId) {
-                console.log("Token gerado:", formData.token);
-console.log("Método de pagamento:", formData.paymentMethodId);
-
-                alert("Erro: Preencha os campos corretamente.");
-                return;
-              }
-          
-              console.log("Dados enviados:", formData);
-              await handleCardSubmit(formData);
-            },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) {
+              console.error("Erro ao montar o formulário:", error);
+              return;
+            }
+            console.log("Formulário montado com sucesso.");
+            setIsMpReady(true);
           },
-          
+          onValidityChange: (error: any, fields: any) => {
+            if (error) {
+              console.warn("Dados inválidos:", fields);
+            } else {
+              console.log("Todos os campos estão válidos.");
+            }
+          },
+          onSubmit: async (event: any) => {
+            event.preventDefault();
+        
+            try {
+              const formData = cardForm.getCardFormData();
+        
+              if (!formData.token || !formData.paymentMethodId) {
+                console.error("Token ou Método de Pagamento inválidos:", formData);
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+              }
+        
+              console.log("Dados capturados do formulário:", formData);
+              await handleCardSubmit(formData);
+            } catch (error) {
+              console.error("Erro durante submissão do formulário:", error);
+            }
+          },
+        },
       });
   
-      console.log("CardForm inicializado com sucesso.");
       setCardFormInstance(cardForm);
     } catch (error) {
       console.error("Erro ao inicializar o CardForm:", error);
-      alert("Erro ao inicializar o formulário de pagamento.");
+      alert("Erro ao inicializar o formulário.");
     }
   };
   
