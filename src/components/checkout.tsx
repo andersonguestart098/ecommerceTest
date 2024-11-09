@@ -124,46 +124,89 @@ const Checkout: React.FC = () => {
 
     const sanitizedAmount = String(parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0);
 
+    
     const cardForm = mpInstance.cardForm({
       amount: sanitizedAmount,
       autoMount: true,
       form: {
         id: "form-checkout",
-        cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
-        expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/YY" },
-        securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
-        cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
-        cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
-        issuer: { id: "form-checkout__issuer", placeholder: "Banco Emissor" },
-        installments: { id: "form-checkout__installments", placeholder: "Parcelas" },
-        identificationType: { id: "form-checkout__identificationType" },
-        identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
+        cardNumber: {
+          id: "form-checkout__cardNumber",
+          placeholder: "Número do cartão",
+        },
+        expirationDate: {
+          id: "form-checkout__expirationDate",
+          placeholder: "MM/YY",
+        },
+        securityCode: {
+          id: "form-checkout__securityCode",
+          placeholder: "CVC",
+        },
+        cardholderName: {
+          id: "form-checkout__cardholderName",
+          placeholder: "Nome do titular",
+        },
+        cardholderEmail: {
+          id: "form-checkout__cardholderEmail",
+          placeholder: "E-mail",
+        },
+        issuer: {
+          id: "form-checkout__issuer",
+          placeholder: "Banco Emissor",
+        },
+        installments: {
+          id: "form-checkout__installments",
+          placeholder: "Parcelas",
+        },
+        identificationType: {
+          id: "form-checkout__identificationType",
+          placeholder: "Tipo de documento",
+        },
+        identificationNumber: {
+          id: "form-checkout__identificationNumber",
+          placeholder: "Número do documento",
+        },
       },
       callbacks: {
         onFormMounted: (error: any) => {
           if (error) {
             console.error("Erro ao montar o formulário:", error);
+            alert("Erro ao carregar o formulário de pagamento. Tente novamente.");
             return;
           }
+          console.log("Formulário montado com sucesso.");
           setIsMpReady(true);
         },
         onSubmit: async (event: any) => {
           event.preventDefault();
           try {
             const formData = cardForm.getCardFormData();
+    
             if (!formData.token || !formData.paymentMethodId) {
-              alert("Preencha os campos corretamente.");
+              console.error("Campos obrigatórios ausentes:", formData);
+              alert("Por favor, preencha todos os campos obrigatórios corretamente.");
               return;
             }
+    
+            console.log("Dados capturados do formulário:", formData);
             await handleCardSubmit(formData);
           } catch (error) {
             console.error("Erro durante submissão do formulário:", error);
+            alert("Erro ao processar a submissão do formulário. Tente novamente.");
+          }
+        },
+        onValidityChange: (error: any, fields: any) => {
+          if (error) {
+            console.warn("Alguns campos são inválidos:", fields);
+          } else {
+            console.log("Todos os campos estão válidos.");
           }
         },
       },
     });
-
+    
     setCardFormInstance(cardForm);
+    
   };
 
   const handleCardSubmit = async (formData: any) => {
