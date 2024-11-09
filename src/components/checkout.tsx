@@ -170,8 +170,8 @@ useEffect(() => {
         description: "Compra via Cartão de Crédito",
         payer: {
           email: formData.cardholderEmail,
-          first_name: formData.cardholderName.split(" ")[0] || "Nome",
-          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
+          first_name: formData.cardholderName?.split(" ")[0] || "Nome",
+          last_name: formData.cardholderName?.split(" ").slice(1).join(" ") || "Sobrenome",
           identification: {
             type: formData.identificationType || "CPF",
             number: formData.identificationNumber,
@@ -273,7 +273,7 @@ useEffect(() => {
                 return;
               }
   
-              console.log("Token do cartão recebido com sucesso:", formData.token);
+              console.log("Form Data Recebido do MercadoPago:", formData);
   
               // Submete os dados
               await handleCardSubmit(formData);
@@ -292,8 +292,6 @@ useEffect(() => {
       alert("Erro ao inicializar o formulário de pagamento. Recarregue a página e tente novamente.");
     }
   };
-  
-  
   
 
   function isValidCPF(cpf: string): boolean {
