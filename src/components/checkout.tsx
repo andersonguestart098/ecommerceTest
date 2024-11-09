@@ -78,32 +78,30 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
-    const loadMercadoPagoSdk = async () => {
-      if (!publicKey) {
-        console.error("Public key não está definida.");
-        return;
-      }
-
-      if (window.MercadoPago) {
-        setSdkLoaded(true);
+    if (!publicKey) {
+      console.error("Public key do MercadoPago não encontrada!");
+      return;
+    }
+  
+    if (window.MercadoPago) {
+      console.log("SDK do MercadoPago já carregado.");
+      setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+    } else {
+      console.log("Carregando SDK do MercadoPago...");
+      const scriptSdk = document.createElement("script");
+      scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
+      scriptSdk.async = true;
+      scriptSdk.onload = () => {
+        console.log("SDK do MercadoPago carregado com sucesso.");
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-      } else {
-        const scriptSdk = document.createElement("script");
-        scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
-        scriptSdk.async = true;
-        scriptSdk.onload = () => {
-          setSdkLoaded(true);
-          setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-        };
-        scriptSdk.onerror = () => {
-          console.error("Erro ao carregar o SDK do MercadoPago.");
-        };
-        document.body.appendChild(scriptSdk);
-      }
-    };
-
-    loadMercadoPagoSdk();
+      };
+      scriptSdk.onerror = () => {
+        console.error("Erro ao carregar o SDK do MercadoPago.");
+      };
+      document.body.appendChild(scriptSdk);
+    }
   }, [publicKey]);
+  
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
@@ -124,7 +122,6 @@ const Checkout: React.FC = () => {
 
     const sanitizedAmount = String(parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0);
 
-    
     const cardForm = mpInstance.cardForm({
       amount: sanitizedAmount,
       autoMount: true,
@@ -170,44 +167,22 @@ const Checkout: React.FC = () => {
       callbacks: {
         onFormMounted: (error: any) => {
           if (error) {
-            console.error("Erro ao montar o formulário:", error);
-            alert("Erro ao carregar o formulário de pagamento. Tente novamente.");
+            console.error("Erro ao montar o formulário do MercadoPago:", error);
             return;
           }
-          console.log("Formulário montado com sucesso.");
-          setIsMpReady(true);
+          console.log("Formulário MercadoPago montado com sucesso.");
         },
-        onSubmit: async (event: any) => {
-          event.preventDefault();
-          try {
-            const formData = cardForm.getCardFormData();
-        
-            // Validação dos campos obrigatórios
-            if (!formData.cardholderName || !formData.securityCode) {
-              alert("Por favor, preencha todos os campos obrigatórios.");
-              return;
-            }
-        
-            if (!formData.token || !formData.paymentMethodId) {
-              console.error("Campos obrigatórios ausentes:", formData);
-              alert("Por favor, preencha todos os campos obrigatórios corretamente.");
-              return;
-            }
-        
-            console.log("Dados capturados do formulário:", formData);
-            await handleCardSubmit(formData);
-          } catch (error) {
-            console.error("Erro durante submissão do formulário:", error);
-            alert("Erro ao processar a submissão do formulário. Tente novamente.");
-          }
+        onFormValid: () => {
+          console.log("Formulário validado, pronto para submissão.");
         },
-        
-        onValidityChange: (error: any, fields: any) => {
-          if (error) {
-            console.warn("Alguns campos são inválidos:", fields);
-          } else {
-            console.log("Todos os campos estão válidos.");
-          }
+        onFormError: (fields: any) => {
+          console.warn("Campos inválidos detectados pelo SDK:", fields);
+        },
+        onCardTokenReceived: (tokenData: any) => {
+          console.log("Token gerado com sucesso:", tokenData);
+        },
+        onPaymentMethodReceived: (paymentMethod: any) => {
+          console.log("Método de pagamento identificado:", paymentMethod);
         },
       },
     });
