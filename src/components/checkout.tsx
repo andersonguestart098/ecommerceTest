@@ -78,40 +78,37 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
-    const publicKey = "TEST-b5aec00c-9c26-47ec-b013-448dd8ffda2c"; // Chave pública fixa para teste
-    console.log("Chave pública carregada (fixa):", publicKey); // Log para garantir que a chave está correta
-    
-    if (!publicKey) {
-      console.error("Public key do MercadoPago não encontrada!");
-      return;
-    }
-  
+    // Carregamento do SDK do Mercado Pago
+    const publicKey = "TEST-b5aec00c-9c26-47ec-b013-448dd8ffda2c";
     if (window.MercadoPago) {
-      console.log("SDK do MercadoPago já carregado.");
       setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
     } else {
-      console.log("Carregando SDK do MercadoPago...");
       const scriptSdk = document.createElement("script");
       scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
       scriptSdk.async = true;
       scriptSdk.onload = () => {
-        console.log("SDK do MercadoPago carregado com sucesso.");
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+        setSdkLoaded(true);
       };
-      scriptSdk.onerror = () => {
-        console.error("Erro ao carregar o SDK do MercadoPago.");
-      };
+      scriptSdk.onerror = () => console.error("Erro ao carregar o SDK do MercadoPago.");
       document.body.appendChild(scriptSdk);
     }
   }, []);
-  
-  
-
-  
 
   useEffect(() => {
+    // Verificação da existência dos elementos do formulário
+    console.log("Verificando elementos do formulário...");
+    const cardNumberElement = document.getElementById("form-checkout__cardNumber");
+    console.log("Elemento cardNumber encontrado:", cardNumberElement);
+  }, []);
+  
+  useEffect(() => {
+    // Inicialização do CardForm com delay
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
-      initializeCardForm();
+      const timeout = setTimeout(() => {
+        initializeCardForm();
+      }, 500); // Ajuste o tempo se necessário
+      return () => clearTimeout(timeout);
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
@@ -120,87 +117,51 @@ const Checkout: React.FC = () => {
       console.log("CardForm já está instanciado.");
       return;
     }
-  
+
     if (!mpInstance || !formRef.current) {
-      console.error("Instância do MercadoPago ou formulário não disponível.");
+      console.error("MercadoPago ou formRef não disponíveis.");
       return;
     }
-  
-    console.log("Iniciando CardForm...");
-  
-    // Chame a função para calcular o valor da transação
-    const sanitizedAmount = calculateTransactionAmount();
+
+    console.log("Iniciando manualmente o CardForm...");
+    
+    const sanitizedAmount = calculateTransactionAmount(); // Valor para o campo `amount`
     if (!sanitizedAmount) {
       console.error("Erro no valor da transação.");
       return;
     }
-    
-  
+
     const cardForm = mpInstance.cardForm({
-      amount: String(sanitizedAmount), // Converte o valor para string como esperado pelo SDK
+      amount: String(sanitizedAmount),
       autoMount: true,
       form: {
         id: "form-checkout",
-        cardNumber: {
-          id: "form-checkout__cardNumber",
-          placeholder: "Número do cartão",
-        },
-        expirationDate: {
-          id: "form-checkout__expirationDate",
-          placeholder: "MM/YY",
-        },
-        securityCode: {
-          id: "form-checkout__securityCode",
-          placeholder: "CVC",
-        },
-        cardholderName: {
-          id: "form-checkout__cardholderName",
-          placeholder: "Nome do titular",
-        },
-        cardholderEmail: {
-          id: "form-checkout__cardholderEmail",
-          placeholder: "E-mail",
-        },
-        issuer: {
-          id: "form-checkout__issuer",
-          placeholder: "Banco Emissor",
-        },
-        installments: {
-          id: "form-checkout__installments",
-          placeholder: "Parcelas",
-        },
-        identificationType: {
-          id: "form-checkout__identificationType",
-          placeholder: "Tipo de documento",
-        },
-        identificationNumber: {
-          id: "form-checkout__identificationNumber",
-          placeholder: "Número do documento",
-        },
+        cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
+        expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/YY" },
+        securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
+        cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
+        cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+        issuer: { id: "form-checkout__issuer", placeholder: "Banco Emissor" },
+        installments: { id: "form-checkout__installments", placeholder: "Parcelas" },
+        identificationType: { id: "form-checkout__identificationType", placeholder: "Tipo de documento" },
+        identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
       },
       callbacks: {
         onFormMounted: (error: any) => {
-          console.log("onFormMounted disparado!");
+          console.log("onFormMounted chamado!");
           if (error) {
             console.error("Erro na montagem do formulário:", error);
           } else {
-            console.log("Formulário carregado corretamente.");
+            console.log("Formulário montado com sucesso.");
             setIsMpReady(true);
           }
         },
-        
-        onCardTokenReceived: (tokenData: any) => {
-          console.log("Token gerado com sucesso:", tokenData);
-        },
-        onPaymentMethodReceived: (paymentMethod: any) => {
-          console.log("Método de pagamento identificado:", paymentMethod);
-        },
-        onFormError: (fields: any) => {
-          console.error("Campos inválidos detectados:", fields);
-        },
+        onCardTokenReceived: (tokenData: any) => console.log("Token gerado com sucesso:", tokenData),
+        onPaymentMethodReceived: (paymentMethod: any) => console.log("Método de pagamento identificado:", paymentMethod),
+        onFormError: (fields: any) => console.error("Campos inválidos ou ausentes:", fields),
       },
     });
-  
+
     setCardFormInstance(cardForm);
   };
   
@@ -581,21 +542,23 @@ const Checkout: React.FC = () => {
         </Box>
 
         {selectedPaymentMethod === "card" && (
-          <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-            <input type="text" id="form-checkout__cardNumber" placeholder="Número do cartão" disabled={!isMpReady} />
-<input type="text" id="form-checkout__expirationDate" placeholder="MM/YY" disabled={!isMpReady} />
-<input type="text" id="form-checkout__securityCode" placeholder="CVC" disabled={!isMpReady} />
-<input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" disabled={!isMpReady} />
-<input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail" disabled={!isMpReady} />
-<select id="form-checkout__issuer" disabled={!isMpReady}><option value="">Selecione o banco emissor</option></select>
-<select id="form-checkout__installments" disabled={!isMpReady}><option value="">Número de parcelas</option></select>
-<select id="form-checkout__identificationType" disabled={!isMpReady}><option value="CPF">CPF</option></select>
-<input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" disabled={!isMpReady} />
-
-            <Button type="submit" fullWidth disabled={!isMpReady}>
-              {isMpReady ? "Pagar" : "Carregando..."}
-            </Button>
-          </form>
+           <form id="form-checkout" ref={formRef}>
+           <input id="form-checkout__cardNumber" placeholder="Número do cartão" />
+           <input id="form-checkout__expirationDate" placeholder="MM/YY" />
+           <input id="form-checkout__securityCode" placeholder="CVC" />
+           <input id="form-checkout__cardholderName" placeholder="Nome do titular" />
+           <input id="form-checkout__cardholderEmail" placeholder="E-mail" />
+           <select id="form-checkout__issuer">
+             <option value="">Selecione o banco emissor</option>
+           </select>
+           <select id="form-checkout__installments">
+             <option value="">Número de parcelas</option>
+           </select>
+           <select id="form-checkout__identificationType">
+             <option value="CPF">CPF</option>
+           </select>
+           <input id="form-checkout__identificationNumber" placeholder="Número do documento" />
+         </form>
         )}
 
         {selectedPaymentMethod !== "card" && (
