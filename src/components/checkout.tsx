@@ -36,7 +36,7 @@ const Checkout: React.FC = () => {
     console.log("Dados do checkout:", checkoutData);
   }, [checkoutData]);
 
-  
+
   const formRef = useRef<HTMLFormElement | null>(null);
 
  
@@ -109,30 +109,42 @@ const Checkout: React.FC = () => {
         return;
       }
   
-      const cardForm = mpInstance.cardForm({
-        amount: amount,
-        form: {
-          id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" },
-          expirationDate: { id: "form-checkout__expirationDate" },
-          securityCode: { id: "form-checkout__securityCode" },
-          cardholderName: { id: "form-checkout__cardholderName" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail" },
-          installments: { id: "form-checkout__installments" },
-          identificationType: { id: "form-checkout__identificationType" },
-          identificationNumber: { id: "form-checkout__identificationNumber" },
-        },
-        callbacks: {
-          onFormMounted: (error: any) => {
-            if (!error) {
-              console.log("Formulário montado com sucesso");
-              setIsMpReady(true);
-            } else {
-              console.error("Erro ao montar formulário:", error);
-            }
-          },
-        },
-      });
+const cardForm = mpInstance.cardForm({
+  amount: amount,
+  form: {
+    id: "form-checkout",
+    cardNumber: { id: "form-checkout__cardNumber" },
+    expirationDate: { id: "form-checkout__expirationDate" },
+    securityCode: { id: "form-checkout__securityCode" },
+    cardholderName: { id: "form-checkout__cardholderName" },
+    cardholderEmail: { id: "form-checkout__cardholderEmail" },
+    installments: { id: "form-checkout__installments" },
+    identificationType: { id: "form-checkout__identificationType" },
+    identificationNumber: { id: "form-checkout__identificationNumber" },
+  },
+  callbacks: {
+    onFormMounted: (error: any) => {
+      if (error) {
+        console.error("Erro ao montar formulário:", error);
+        alert("Erro ao montar formulário. Por favor, recarregue a página.");
+      } else {
+        console.log("Formulário montado com sucesso");
+        setIsMpReady(true);
+      }
+    },
+    onSubmit: (event: any) => {
+      event.preventDefault();
+      console.log("Submit triggered");
+    },
+    onFetching: (resource: any) => {
+      console.log(`Fetching resource: ${resource}`);
+    },
+    onError: (error: any) => {
+      console.error("Erro no cardForm:", error);
+    },
+  },
+});
+
       setCardFormInstance(cardForm);
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
@@ -321,6 +333,10 @@ const Checkout: React.FC = () => {
     cursor: "pointer",
     backgroundColor: isSelected ? "#E6E3DB" : "#FFF",
   });
+
+  if (!isMpReady && selectedPaymentMethod === "card") {
+    return <Typography>Carregando formulário de pagamento...</Typography>;
+  }
 
   return (
     <Box
