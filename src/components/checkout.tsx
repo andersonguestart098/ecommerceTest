@@ -129,59 +129,79 @@ const Checkout: React.FC = () => {
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
+  
   const initializeCardForm = () => {
     if (cardFormInstance) {
       console.log("CardForm já instanciado.");
       return;
     }
-
-    if (!mpInstance || !formRef.current) {
-      console.error("MercadoPago ou form não está disponível.");
+  
+    if (!mpInstance) {
+      console.error("Erro: Instância do MercadoPago não disponível.");
       return;
     }
-
+  
+    if (!formRef.current) {
+      console.error("Erro: Referência ao formulário não definida.");
+      return;
+    }
+  
     console.log("Inicializando CardForm...");
-
-    const sanitizedAmount = String(
-      parseFloat((checkoutData.totalPrice || "0").replace(",", "."))
-    );
-
-    const cardForm = mpInstance.cardForm({
-      amount: sanitizedAmount,
-      form: {
-        id: "form-checkout",
-        cardNumber: { id: "form-checkout__cardNumber" },
-        expirationDate: { id: "form-checkout__expirationDate" },
-        securityCode: { id: "form-checkout__securityCode" },
-        cardholderName: { id: "form-checkout__cardholderName" },
-        cardholderEmail: { id: "form-checkout__cardholderEmail" },
-        issuer: { id: "form-checkout__issuer" },
-        installments: { id: "form-checkout__installments" },
-        identificationType: { id: "form-checkout__identificationType" },
-        identificationNumber: { id: "form-checkout__identificationNumber" },
-      },
-      callbacks: {
-        onFormMounted: (error: any) => {
-          if (error) {
-            console.error("Erro ao montar formulário:", error);
-            return;
-          }
-          console.log("Formulário montado com sucesso.");
-          setIsMpReady(true);
+  
+    try {
+      const sanitizedAmount = String(
+        parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0
+      );
+  
+      console.log("Valor total sanitizado para o formulário:", sanitizedAmount);
+  
+      const cardForm = mpInstance.cardForm({
+        amount: sanitizedAmount,
+        form: {
+          id: "form-checkout",
+          cardNumber: { id: "form-checkout__cardNumber" },
+          expirationDate: { id: "form-checkout__expirationDate" },
+          securityCode: { id: "form-checkout__securityCode" },
+          cardholderName: { id: "form-checkout__cardholderName" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail" },
+          issuer: { id: "form-checkout__issuer" },
+          installments: { id: "form-checkout__installments" },
+          identificationType: { id: "form-checkout__identificationType" },
+          identificationNumber: { id: "form-checkout__identificationNumber" },
         },
-        onSubmit: handleCardSubmit,
-        onInstallmentsReceived: (error: any, installments: any) => {
-          if (error) {
-            console.warn("Erro ao obter parcelas:", error);
-          } else {
-            console.log("Parcelas recebidas:", installments);
-          }
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) {
+              console.error("Erro ao montar o formulário:", error);
+              return;
+            }
+            console.log("Formulário montado com sucesso.");
+            setIsMpReady(true);
+          },
+          onSubmit: handleCardSubmit,
+          onInstallmentsReceived: (error: any, installments: any) => {
+            if (error) {
+              console.warn("Erro ao obter parcelas:", error);
+            } else {
+              console.log("Parcelas recebidas com sucesso:", installments);
+            }
+          },
+          onFetchingInstallments: (payload: any) => {
+            console.log("Buscando parcelas disponíveis...", payload);
+          },
+          onCardTokenReceived: (token: any) => {
+            console.log("Token do cartão recebido com sucesso:", token);
+          },
         },
-      },
-    });
-
-    setCardFormInstance(cardForm);
+      });
+  
+      console.log("CardForm inicializado:", cardForm);
+      setCardFormInstance(cardForm);
+    } catch (error) {
+      console.error("Erro durante a inicialização do CardForm:", error);
+    }
   };
+  
 
   function isValidCPF(cpf: string): boolean {
     cpf = cpf.replace(/[^\d]+/g, ""); // Remove caracteres não numéricos
@@ -208,79 +228,74 @@ const Checkout: React.FC = () => {
   const handleCardSubmit = async (event: any) => {
     event.preventDefault();
     console.log("Iniciando submissão do formulário...");
-
+  
     if (!cardFormInstance) {
       console.error("Erro: CardForm não está inicializado.");
       alert("Erro interno: O formulário não está pronto. Tente novamente.");
       return;
     }
-
-    const formData = cardFormInstance.getCardFormData();
-    console.log("Form Data Recebido do MercadoPago:", formData);
-
-    if (!formData.token) {
-      console.error("Erro: Token não foi gerado.");
-      alert(
-        "Erro ao gerar token do cartão. Verifique os dados e tente novamente."
-      );
-      return;
-    }
-
-    // Validação de campos obrigatórios
-    const missingFields: string[] = [];
-    if (!formData.cardNumber) missingFields.push("Número do cartão");
-    if (!formData.expirationDate) missingFields.push("Data de expiração");
-    if (!formData.securityCode) missingFields.push("Código de segurança");
-    if (!formData.cardholderName) missingFields.push("Nome do titular");
-    if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
-    if (!formData.identificationNumber)
-      missingFields.push("Número do documento");
-
-    if (missingFields.length > 0) {
-      alert(
-        `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
-          ", "
-        )}.`
-      );
-      return;
-    }
-
-    if (!formData.token) {
-      console.error("Erro: Token não foi gerado.");
-      alert("Erro ao gerar token do cartão. Tente novamente.");
-      return;
-    }
-
-    // Preparação dos dados de pagamento
-    const transactionAmount = parseFloat(formData.amount || "0");
-    if (!transactionAmount || isNaN(transactionAmount)) {
-      console.error("Erro: Valor da transação inválido.");
-      alert("Erro: Valor da transação inválido.");
-      return;
-    }
-
-    const paymentData = {
-      transaction_amount: transactionAmount,
-      token: formData.token,
-      payment_method_id: formData.paymentMethodId,
-      installments: Number(formData.installments || 1),
-      issuer_id: formData.issuerId,
-      description: "Compra via Cartão de Crédito",
-      payer: {
-        email: formData.cardholderEmail,
-        first_name: formData.cardholderName.split(" ")[0],
-        last_name: formData.cardholderName.split(" ").slice(1).join(" "),
-        identification: {
-          type: formData.identificationType || "CPF",
-          number: formData.identificationNumber,
-        },
-      },
-      userId: checkoutData.userId,
-    };
-
-    console.log("Dados de pagamento prontos para envio:", paymentData);
-
+  
     try {
+      const formData = cardFormInstance.getCardFormData();
+      console.log("Form Data Recebido do MercadoPago:", formData);
+  
+      if (!formData.token) {
+        console.error("Erro: Token não foi gerado.");
+        alert(
+          "Erro ao gerar token do cartão. Verifique os dados e tente novamente."
+        );
+        return;
+      }
+  
+      // Validação de campos obrigatórios
+      const missingFields: string[] = [];
+      if (!formData.cardNumber) missingFields.push("Número do cartão");
+      if (!formData.expirationDate) missingFields.push("Data de expiração");
+      if (!formData.securityCode) missingFields.push("Código de segurança");
+      if (!formData.cardholderName) missingFields.push("Nome do titular");
+      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
+      if (!formData.identificationNumber)
+        missingFields.push("Número do documento");
+  
+      if (missingFields.length > 0) {
+        console.warn("Campos obrigatórios ausentes:", missingFields);
+        alert(
+          `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
+            ", "
+          )}.`
+        );
+        return;
+      }
+  
+      // Preparação dos dados de pagamento
+      const transactionAmount = calculateTransactionAmount();
+      if (!transactionAmount) {
+        console.error("Erro: Valor da transação inválido.");
+        alert("Erro: Valor da transação inválido.");
+        return;
+      }
+  
+      const paymentData = {
+        transaction_amount: transactionAmount,
+        token: formData.token,
+        payment_method_id: formData.paymentMethodId,
+        installments: Number(formData.installments || 1),
+        issuer_id: formData.issuerId,
+        description: "Compra via Cartão de Crédito",
+        payer: {
+          email: formData.cardholderEmail,
+          first_name: formData.cardholderName.split(" ")[0] || "Nome",
+          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
+          identification: {
+            type: formData.identificationType || "CPF",
+            number: formData.identificationNumber,
+          },
+        },
+        userId: checkoutData.userId,
+      };
+  
+      console.log("Dados de pagamento prontos para envio:", paymentData);
+  
       const response = await fetch(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -289,7 +304,7 @@ const Checkout: React.FC = () => {
           body: JSON.stringify(paymentData),
         }
       );
-
+  
       if (response.ok) {
         console.log("Pagamento processado com sucesso.");
         clearCart();
@@ -306,7 +321,7 @@ const Checkout: React.FC = () => {
       alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
-
+  
   useEffect(() => {
     if (!isMpReady) {
       console.log("Aguardando a inicialização do MercadoPago...");
@@ -314,28 +329,30 @@ const Checkout: React.FC = () => {
       console.log("MercadoPago pronto para uso.");
     }
   }, [isMpReady]);
-
-  const calculateTransactionAmount = () => {
+  
+  const calculateTransactionAmount = (): number | null => {
     try {
-      const amount = parseFloat(checkoutData.amount.replace(",", "."));
+      const amount = parseFloat((checkoutData.amount || "0").replace(",", "."));
       const shippingCost = parseFloat(
-        checkoutData.shippingCost.replace(",", ".")
+        (checkoutData.shippingCost || "0").replace(",", ".")
       );
-
+  
       const transactionAmount = amount + shippingCost;
-
+  
       if (isNaN(transactionAmount) || transactionAmount <= 0) {
         throw new Error("Valor da transação inválido");
       }
-
+  
       // Arredondar para 2 casas decimais antes de enviar
-      return parseFloat(transactionAmount.toFixed(2));
+      const roundedAmount = parseFloat(transactionAmount.toFixed(2));
+      console.log("Valor da transação calculado:", roundedAmount);
+      return roundedAmount;
     } catch (error) {
       console.error("Erro ao calcular o valor da transação:", error);
       return null;
     }
   };
-
+  
   const generateBoleto = async () => {
     console.log("Dados antes de gerar o boleto:", {
       amount: checkoutData.amount,
