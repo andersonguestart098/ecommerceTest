@@ -120,16 +120,23 @@ const Checkout: React.FC = () => {
       console.log("CardForm já está instanciado.");
       return;
     }
-
+  
     if (!mpInstance || !formRef.current) {
-      console.error("Instância do MercadoPago ou form não disponível.");
+      console.error("Instância do MercadoPago ou formulário não disponível.");
       return;
     }
-
-    const sanitizedAmount = String(parseFloat((checkoutData.totalPrice || "0").replace(",", ".")) || 0);
-
+  
+    console.log("Iniciando CardForm...");
+  
+    // Calcular valor sanitizado aqui
+    const sanitizedAmount = calculateTransactionAmount();
+    if (!sanitizedAmount) {
+      console.error("Erro ao calcular valor da transação.");
+      return;
+    }
+  
     const cardForm = mpInstance.cardForm({
-      amount: sanitizedAmount,
+      amount: String(sanitizedAmount), // Converte o valor para string como esperado pelo SDK
       autoMount: true,
       form: {
         id: "form-checkout",
@@ -174,15 +181,10 @@ const Checkout: React.FC = () => {
         onFormMounted: (error: any) => {
           if (error) {
             console.error("Erro ao montar o formulário do MercadoPago:", error);
-            return;
+          } else {
+            console.log("Formulário montado com sucesso!");
+            setIsMpReady(true);
           }
-          console.log("Formulário MercadoPago montado com sucesso.");
-        },
-        onFormValid: () => {
-          console.log("Formulário validado, pronto para submissão.");
-        },
-        onFormError: (fields: any) => {
-          console.warn("Campos inválidos detectados pelo SDK:", fields);
         },
         onCardTokenReceived: (tokenData: any) => {
           console.log("Token gerado com sucesso:", tokenData);
@@ -190,12 +192,16 @@ const Checkout: React.FC = () => {
         onPaymentMethodReceived: (paymentMethod: any) => {
           console.log("Método de pagamento identificado:", paymentMethod);
         },
+        onFormError: (fields: any) => {
+          console.warn("Campos inválidos:", fields);
+        },
       },
     });
-    
+  
     setCardFormInstance(cardForm);
-    
   };
+  
+  
 
   const handleCardSubmit = async (formData: any) => {
     try {
