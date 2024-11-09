@@ -92,35 +92,62 @@ const Checkout: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const loadMercadoPagoSdk = async () => {
-      if (!publicKey) {
-        console.error("Public key não está definida.");
-        return;
-      }
+ // Carrega o SDK do MercadoPago assim que o componente é montado
+useEffect(() => {
+  const loadMercadoPagoSdk = async () => {
+    if (!publicKey) {
+      console.error("Public key não está definida.");
+      return;
+    }
 
-      if (window.MercadoPago) {
-        console.log("MercadoPago SDK já carregado.");
+    if (window.MercadoPago) {
+      console.log("MercadoPago SDK já carregado.");
+      setSdkLoaded(true);
+      setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+    } else {
+      const scriptSdk = document.createElement("script");
+      scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
+      scriptSdk.async = true;
+      scriptSdk.onload = () => {
+        console.log("MercadoPago SDK carregado com sucesso.");
         setSdkLoaded(true);
         setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-      } else {
-        const scriptSdk = document.createElement("script");
-        scriptSdk.src = "https://sdk.mercadopago.com/js/v2";
-        scriptSdk.async = true;
-        scriptSdk.onload = () => {
-          console.log("MercadoPago SDK carregado com sucesso.");
-          setSdkLoaded(true);
-          setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
-        };
-        scriptSdk.onerror = () => {
-          console.error("Erro ao carregar o SDK do MercadoPago.");
-        };
-        document.body.appendChild(scriptSdk);
-      }
-    };
+      };
+      scriptSdk.onerror = () => {
+        console.error("Erro ao carregar o SDK do MercadoPago.");
+      };
+      document.body.appendChild(scriptSdk);
+    }
+  };
 
-    loadMercadoPagoSdk();
-  }, [publicKey]);
+  loadMercadoPagoSdk();
+}, [publicKey]);
+
+// Inicializa o CardForm após carregar SDK e selecionar método "card"
+useEffect(() => {
+  if (sdkLoaded && mpInstance) {
+    if (selectedPaymentMethod === "card") {
+      console.log("Chamando initializeCardForm...");
+      initializeCardForm();
+    } else if (cardFormInstance) {
+      console.log("Desmontando CardForm pois o método de pagamento mudou.");
+      cardFormInstance.unmount();
+      setCardFormInstance(null);
+    }
+  }
+}, [sdkLoaded, mpInstance, selectedPaymentMethod]);
+
+// Cleanup no unmount para garantir que o CardForm não fique ativo
+useEffect(() => {
+  return () => {
+    if (cardFormInstance) {
+      console.log("Desmontando CardForm ao desmontar o componente...");
+      cardFormInstance.unmount();
+      setCardFormInstance(null);
+    }
+  };
+}, []);
+
 
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
@@ -239,11 +266,10 @@ const Checkout: React.FC = () => {
       const formData = cardFormInstance.getCardFormData();
       console.log("Form Data Recebido do MercadoPago:", formData);
   
-      if (!formData.token) {
+      // Verificar se o token foi gerado corretamente
+      if (!formData.token || formData.token.trim() === "") {
         console.error("Erro: Token não foi gerado.");
-        alert(
-          "Erro ao gerar token do cartão. Verifique os dados e tente novamente."
-        );
+        alert("Erro ao gerar token do cartão. Verifique os dados e tente novamente.");
         return;
       }
   
@@ -312,15 +338,14 @@ const Checkout: React.FC = () => {
       } else {
         const errorResponse = await response.json();
         console.error("Erro no pagamento (Backend):", errorResponse);
-        alert(
-          `Pagamento falhou: ${errorResponse.message || "Erro desconhecido."}`
-        );
+        alert(`Pagamento falhou: ${errorResponse.message || "Erro desconhecido."}`);
       }
     } catch (error) {
       console.error("Erro ao processar pagamento (Fetch):", error);
       alert("Erro ao processar pagamento. Tente novamente.");
     }
   };
+  
   
   useEffect(() => {
     if (!isMpReady) {
