@@ -78,6 +78,8 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("Chave pública carregada:", publicKey); // Log adicionado aqui para verificar a chave pública
+    
     if (!publicKey) {
       console.error("Public key do MercadoPago não encontrada!");
       return;
@@ -101,6 +103,8 @@ const Checkout: React.FC = () => {
       document.body.appendChild(scriptSdk);
     }
   }, [publicKey]);
+  
+
   
 
   useEffect(() => {
