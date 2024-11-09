@@ -156,43 +156,11 @@ useEffect(() => {
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
-  const handleCardSubmit = async () => {
+  const handleCardSubmit = async (formData: any) => {
     console.log("Iniciando submissão do formulário...");
   
-    if (!cardFormInstance) {
-      console.error("Erro: CardForm não está inicializado.");
-      alert("Erro interno: O formulário não está pronto. Tente novamente.");
-      return;
-    }
-  
     try {
-      const formData = cardFormInstance.getCardFormData();
-  
-      console.log("Form Data Recebido do MercadoPago:", formData);
-  
-      // Validar se o token foi gerado corretamente antes de continuar
-      if (!formData.token || formData.token.trim() === "") {
-        alert("Erro ao gerar token do cartão. Tente novamente.");
-        return;
-      }
-  
-      const missingFields: string[] = [];
-      if (!formData.cardNumber) missingFields.push("Número do cartão");
-      if (!formData.expirationDate) missingFields.push("Data de expiração");
-      if (!formData.securityCode) missingFields.push("Código de segurança");
-      if (!formData.cardholderName) missingFields.push("Nome do titular");
-      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
-      if (!formData.identificationNumber)
-        missingFields.push("Número do documento");
-  
-      if (missingFields.length > 0) {
-        alert(
-          `Erro: Os seguintes campos estão faltando: ${missingFields.join(", ")}.`
-        );
-        return;
-      }
-  
-      // Preparar os dados de pagamento
+      // Prepara os dados para envio
       const paymentData = {
         transaction_amount: calculateTransactionAmount(),
         token: formData.token,
@@ -238,7 +206,6 @@ useEffect(() => {
     }
   };
   
-
   const initializeCardForm = () => {
     if (cardFormInstance) {
       console.log("CardForm já instanciado.");
@@ -289,13 +256,30 @@ useEffect(() => {
           },
           onSubmit: async (event: any) => {
             event.preventDefault();
-            await handleCardSubmit();
-          },
-          onCardTokenReceived: (token: any) => {
-            if (!token) {
-              console.error("Erro ao receber o token do cartão.");
-            } else {
-              console.log("Token do cartão recebido com sucesso:", token);
+  
+            try {
+              if (!cardFormInstance) {
+                console.error("Erro: CardForm não inicializado.");
+                alert("Erro interno: Formulário não está pronto. Tente novamente.");
+                return;
+              }
+  
+              // Obter os dados do formulário corretamente
+              const formData = cardFormInstance.getCardFormData();
+  
+              if (!formData.token || formData.token.trim() === "") {
+                console.error("Erro ao gerar token do cartão.");
+                alert("Erro ao gerar token. Verifique os dados do cartão e tente novamente.");
+                return;
+              }
+  
+              console.log("Token do cartão recebido com sucesso:", formData.token);
+  
+              // Submete os dados
+              await handleCardSubmit(formData);
+            } catch (error) {
+              console.error("Erro ao processar o formulário do cartão:", error);
+              alert("Erro ao processar os dados do cartão. Tente novamente.");
             }
           },
         },
@@ -305,8 +289,10 @@ useEffect(() => {
       setCardFormInstance(cardForm);
     } catch (error) {
       console.error("Erro durante a inicialização do CardForm:", error);
+      alert("Erro ao inicializar o formulário de pagamento. Recarregue a página e tente novamente.");
     }
   };
+  
   
   
 
