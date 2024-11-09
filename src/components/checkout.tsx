@@ -233,74 +233,86 @@ useEffect(() => {
   
       const cardForm = mpInstance.cardForm({
         amount: sanitizedAmount,
-        autoMount: true, // Garante que o formulário será montado automaticamente
+        autoMount: true, // Monta automaticamente os campos do formulário.
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
-          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
-          securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
-          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
-          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
-          installments: { id: "form-checkout__installments", placeholder: "Parcelas" },
-          identificationType: { id: "form-checkout__identificationType", placeholder: "Tipo de documento" },
-          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
-        },
-        callbacks: {
-          onFormMounted: (error: any) => {
-            if (error) {
-              console.error("Erro ao montar o formulário:", error);
-              return;
-            }
-            console.log("Formulário montado com sucesso.");
-            setIsMpReady(true);
+          cardholderName: {
+            id: "form-checkout__cardholderName",
+            placeholder: "Nome do titular",
           },
-          onSubmit: async (event: any) => {
-            event.preventDefault();
-  
-            try {
-              if (!cardFormInstance) {
-                console.error("Erro: CardForm não inicializado.");
-                alert("Erro interno: Formulário não está pronto. Tente novamente.");
+          cardholderEmail: {
+            id: "form-checkout__cardholderEmail",
+            placeholder: "E-mail",
+          },
+          cardNumber: {
+            id: "form-checkout__cardNumber",
+            placeholder: "Número do cartão",
+          },
+          expirationDate: {
+            id: "form-checkout__expirationDate",
+            placeholder: "MM/AA",
+          },
+          securityCode: {
+            id: "form-checkout__securityCode",
+            placeholder: "CVC",
+          },
+          installments: {
+            id: "form-checkout__installments",
+            placeholder: "Parcelas",
+          },
+          issuer: {
+            id: "form-checkout__issuer",
+            placeholder: "Banco Emissor",
+          },
+          identificationType: {
+            id: "form-checkout__identificationType",
+          },
+          identificationNumber: {
+            id: "form-checkout__identificationNumber",
+            placeholder: "Número do documento",
+          },
+        },
+          callbacks: {
+            onFormMounted: (error: any) => {
+              if (error) {
+                console.error("Erro ao montar o formulário:", error);
                 return;
               }
-  
-              const formData = cardFormInstance.getCardFormData();
-  
-              // Verificação de campos obrigatórios
-              if (!formData.token || !formData.paymentMethodId || !formData.cardholderEmail) {
-                console.error("Dados incompletos recebidos:", formData);
-                alert("Erro ao gerar token ou preencher campos. Verifique os dados e tente novamente.");
+              console.log("Formulário montado com sucesso.");
+              setIsMpReady(true);
+            },
+            onValidityChange: (error: any) => {
+              if (error) {
+                console.warn("Dados inválidos no formulário:", error);
+              } else {
+                console.log("Todos os campos são válidos.");
+              }
+            },
+            onSubmit: async (event: any) => {
+              event.preventDefault();
+              const formData = cardForm.getCardFormData();
+              if (!formData.token || !formData.paymentMethodId) {
+                console.log("Token gerado:", formData.token);
+console.log("Método de pagamento:", formData.paymentMethodId);
+
+                alert("Erro: Preencha os campos corretamente.");
                 return;
               }
-  
-              console.log("Form Data Recebido do MercadoPago:", formData);
-  
-              // Submete os dados ao backend
+          
+              console.log("Dados enviados:", formData);
               await handleCardSubmit(formData);
-            } catch (error) {
-              console.error("Erro ao processar o formulário do cartão:", error);
-              alert("Erro ao processar os dados do cartão. Tente novamente.");
-            }
+            },
           },
-          onCardTokenReceived: (data: any) => {
-            if (!data.token) {
-              console.error("Erro ao gerar token do cartão.");
-            } else {
-              console.log("Token gerado com sucesso:", data.token);
-            }
-          },
-        },
+          
       });
   
-      console.log("CardForm inicializado:", cardForm);
+      console.log("CardForm inicializado com sucesso.");
       setCardFormInstance(cardForm);
     } catch (error) {
-      console.error("Erro durante a inicialização do CardForm:", error);
-      alert("Erro ao inicializar o formulário de pagamento. Recarregue a página e tente novamente.");
+      console.error("Erro ao inicializar o CardForm:", error);
+      alert("Erro ao inicializar o formulário de pagamento.");
     }
   };
-  
   
 
   function isValidCPF(cpf: string): boolean {
