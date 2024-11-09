@@ -128,12 +128,13 @@ const Checkout: React.FC = () => {
   
     console.log("Iniciando CardForm...");
   
-    // Calcular valor sanitizado aqui
+    // Chame a função para calcular o valor da transação
     const sanitizedAmount = calculateTransactionAmount();
     if (!sanitizedAmount) {
-      console.error("Erro ao calcular valor da transação.");
+      console.error("Erro no valor da transação.");
       return;
     }
+    
   
     const cardForm = mpInstance.cardForm({
       amount: String(sanitizedAmount), // Converte o valor para string como esperado pelo SDK
@@ -179,13 +180,15 @@ const Checkout: React.FC = () => {
       },
       callbacks: {
         onFormMounted: (error: any) => {
+          console.log("onFormMounted disparado!");
           if (error) {
-            console.error("Erro ao montar o formulário do MercadoPago:", error);
+            console.error("Erro na montagem do formulário:", error);
           } else {
-            console.log("Formulário montado com sucesso!");
+            console.log("Formulário carregado corretamente.");
             setIsMpReady(true);
           }
         },
+        
         onCardTokenReceived: (tokenData: any) => {
           console.log("Token gerado com sucesso:", tokenData);
         },
@@ -193,7 +196,7 @@ const Checkout: React.FC = () => {
           console.log("Método de pagamento identificado:", paymentMethod);
         },
         onFormError: (fields: any) => {
-          console.warn("Campos inválidos:", fields);
+          console.error("Campos inválidos detectados:", fields);
         },
       },
     });
@@ -281,9 +284,7 @@ const Checkout: React.FC = () => {
   const calculateTransactionAmount = (): number | null => {
     try {
       const amount = parseFloat((checkoutData.amount || "0").replace(",", "."));
-      const shippingCost = parseFloat(
-        (checkoutData.shippingCost || "0").replace(",", ".")
-      );
+      const shippingCost = parseFloat((checkoutData.shippingCost || "0").replace(",", "."));
   
       const transactionAmount = amount + shippingCost;
   
@@ -291,15 +292,13 @@ const Checkout: React.FC = () => {
         throw new Error("Valor da transação inválido");
       }
   
-      // Arredondar para 2 casas decimais antes de enviar
-      const roundedAmount = parseFloat(transactionAmount.toFixed(2));
-      console.log("Valor da transação calculado:", roundedAmount);
-      return roundedAmount;
+      return parseFloat(transactionAmount.toFixed(2)); // Valor arredondado
     } catch (error) {
       console.error("Erro ao calcular o valor da transação:", error);
       return null;
     }
   };
+  
   
   const generateBoleto = async () => {
     console.log("Dados antes de gerar o boleto:", {
@@ -583,55 +582,16 @@ const Checkout: React.FC = () => {
 
         {selectedPaymentMethod === "card" && (
           <form id="form-checkout" ref={formRef} onSubmit={handleCardSubmit}>
-            <input
-              type="text"
-              id="form-checkout__cardNumber"
-              placeholder="Número do cartão"
-              disabled={!isMpReady}
-            />
-            <input
-              type="text"
-              id="form-checkout__expirationDate"
-              placeholder="MM/YY"
-              disabled={!isMpReady}
-            />
-            <input
-              type="text"
-              id="form-checkout__securityCode"
-              placeholder="CVC"
-              disabled={!isMpReady}
-            />
-            <input
-              type="text"
-              id="form-checkout__cardholderName"
-              placeholder="Nome do titular"
-              disabled={!isMpReady}
-            />
-            <input
-              type="email"
-              id="form-checkout__cardholderEmail"
-              placeholder="E-mail"
-              disabled={!isMpReady}
-            />
-            <select id="form-checkout__issuer" disabled={!isMpReady}>
-              <option value="">Selecione o banco emissor</option>
-            </select>
-            <select id="form-checkout__installments" disabled={!isMpReady}>
-              <option value="">Número de parcelas</option>
-            </select>
-            <select
-              id="form-checkout__identificationType"
-              disabled={!isMpReady}
-            >
-              <option value="CPF">CPF</option>
-              <option value="CNPJ">CNPJ</option>
-            </select>
-            <input
-              type="text"
-              id="form-checkout__identificationNumber"
-              placeholder="Número do documento"
-              disabled={!isMpReady}
-            />
+            <input type="text" id="form-checkout__cardNumber" placeholder="Número do cartão" disabled={!isMpReady} />
+<input type="text" id="form-checkout__expirationDate" placeholder="MM/YY" disabled={!isMpReady} />
+<input type="text" id="form-checkout__securityCode" placeholder="CVC" disabled={!isMpReady} />
+<input type="text" id="form-checkout__cardholderName" placeholder="Nome do titular" disabled={!isMpReady} />
+<input type="email" id="form-checkout__cardholderEmail" placeholder="E-mail" disabled={!isMpReady} />
+<select id="form-checkout__issuer" disabled={!isMpReady}><option value="">Selecione o banco emissor</option></select>
+<select id="form-checkout__installments" disabled={!isMpReady}><option value="">Número de parcelas</option></select>
+<select id="form-checkout__identificationType" disabled={!isMpReady}><option value="CPF">CPF</option></select>
+<input type="text" id="form-checkout__identificationNumber" placeholder="Número do documento" disabled={!isMpReady} />
+
             <Button type="submit" fullWidth disabled={!isMpReady}>
               {isMpReady ? "Pagar" : "Carregando..."}
             </Button>
