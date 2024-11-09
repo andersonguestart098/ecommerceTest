@@ -205,7 +205,7 @@ useEffect(() => {
       alert("Erro ao processar o pagamento. Tente novamente.");
     }
   };
-  
+
   const initializeCardForm = () => {
     if (cardFormInstance) {
       console.log("CardForm já instanciado.");
@@ -264,22 +264,29 @@ useEffect(() => {
                 return;
               }
   
-              // Obter os dados do formulário corretamente
               const formData = cardFormInstance.getCardFormData();
   
-              if (!formData.token || formData.token.trim() === "") {
-                console.error("Erro ao gerar token do cartão.");
-                alert("Erro ao gerar token. Verifique os dados do cartão e tente novamente.");
+              // Verificação se os campos essenciais estão preenchidos
+              if (!formData.token || !formData.paymentMethodId || !formData.cardholderEmail) {
+                console.error("Dados incompletos recebidos:", formData);
+                alert("Erro ao gerar token ou preencher campos. Verifique os dados e tente novamente.");
                 return;
               }
   
               console.log("Form Data Recebido do MercadoPago:", formData);
   
-              // Submete os dados
+              // Submete os dados ao backend
               await handleCardSubmit(formData);
             } catch (error) {
               console.error("Erro ao processar o formulário do cartão:", error);
               alert("Erro ao processar os dados do cartão. Tente novamente.");
+            }
+          },
+          onCardTokenReceived: (data: any) => {
+            if (!data.token) {
+              console.error("Erro ao gerar token do cartão.");
+            } else {
+              console.log("Token gerado com sucesso:", data.token);
             }
           },
         },
@@ -292,6 +299,7 @@ useEffect(() => {
       alert("Erro ao inicializar o formulário de pagamento. Recarregue a página e tente novamente.");
     }
   };
+  
   
 
   function isValidCPF(cpf: string): boolean {
