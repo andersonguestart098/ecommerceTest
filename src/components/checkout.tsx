@@ -32,6 +32,11 @@ const Checkout: React.FC = () => {
     expiration: "MM/YY",
   });
 
+  useEffect(() => {
+    console.log("Dados do checkout:", checkoutData);
+  }, [checkoutData]);
+
+  
   const formRef = useRef<HTMLFormElement | null>(null);
 
  
@@ -94,8 +99,18 @@ const Checkout: React.FC = () => {
   
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
+      console.log("Iniciando o cardForm...");
+  
+      const amount = calculateTransactionAmount();
+      console.log("Valor da transação calculado: ", amount);
+  
+      if (!amount || amount <= 0) {
+        console.error("Valor inválido para a transação");
+        return;
+      }
+  
       const cardForm = mpInstance.cardForm({
-        amount: calculateTransactionAmount(),
+        amount: amount,
         form: {
           id: "form-checkout",
           cardNumber: { id: "form-checkout__cardNumber" },
@@ -109,13 +124,19 @@ const Checkout: React.FC = () => {
         },
         callbacks: {
           onFormMounted: (error: any) => {
-            if (!error) setIsMpReady(true);
+            if (!error) {
+              console.log("Formulário montado com sucesso");
+              setIsMpReady(true);
+            } else {
+              console.error("Erro ao montar formulário:", error);
+            }
           },
         },
       });
       setCardFormInstance(cardForm);
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
+  
   
 
   const handleCardSubmit = async (formData: any) => {
