@@ -233,17 +233,18 @@ useEffect(() => {
   
       const cardForm = mpInstance.cardForm({
         amount: sanitizedAmount,
+        autoMount: true, // Garante que o formulário será montado automaticamente
         form: {
           id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber" },
-          expirationDate: { id: "form-checkout__expirationDate" },
-          securityCode: { id: "form-checkout__securityCode" },
-          cardholderName: { id: "form-checkout__cardholderName" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail" },
-          issuer: { id: "form-checkout__issuer" },
-          installments: { id: "form-checkout__installments" },
-          identificationType: { id: "form-checkout__identificationType" },
-          identificationNumber: { id: "form-checkout__identificationNumber" },
+          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
+          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
+          securityCode: { id: "form-checkout__securityCode", placeholder: "CVC" },
+          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do titular" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+          issuer: { id: "form-checkout__issuer", placeholder: "Banco emissor" },
+          installments: { id: "form-checkout__installments", placeholder: "Parcelas" },
+          identificationType: { id: "form-checkout__identificationType", placeholder: "Tipo de documento" },
+          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "Número do documento" },
         },
         callbacks: {
           onFormMounted: (error: any) => {
@@ -266,7 +267,7 @@ useEffect(() => {
   
               const formData = cardFormInstance.getCardFormData();
   
-              // Verificação se os campos essenciais estão preenchidos
+              // Verificação de campos obrigatórios
               if (!formData.token || !formData.paymentMethodId || !formData.cardholderEmail) {
                 console.error("Dados incompletos recebidos:", formData);
                 alert("Erro ao gerar token ou preencher campos. Verifique os dados e tente novamente.");
