@@ -181,13 +181,19 @@ const Checkout: React.FC = () => {
           event.preventDefault();
           try {
             const formData = cardForm.getCardFormData();
-    
+        
+            // Validação dos campos obrigatórios
+            if (!formData.cardholderName || !formData.securityCode) {
+              alert("Por favor, preencha todos os campos obrigatórios.");
+              return;
+            }
+        
             if (!formData.token || !formData.paymentMethodId) {
               console.error("Campos obrigatórios ausentes:", formData);
               alert("Por favor, preencha todos os campos obrigatórios corretamente.");
               return;
             }
-    
+        
             console.log("Dados capturados do formulário:", formData);
             await handleCardSubmit(formData);
           } catch (error) {
@@ -195,6 +201,7 @@ const Checkout: React.FC = () => {
             alert("Erro ao processar a submissão do formulário. Tente novamente.");
           }
         },
+        
         onValidityChange: (error: any, fields: any) => {
           if (error) {
             console.warn("Alguns campos são inválidos:", fields);
