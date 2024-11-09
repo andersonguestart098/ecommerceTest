@@ -75,6 +75,49 @@ const Checkout: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const publicKey = "TEST-b5aec00c-9c26-47ec-b013-448dd8ffda2c"; // Use uma chave pública válida
+    if (window.MercadoPago) {
+      setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+      setSdkLoaded(true);
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://sdk.mercadopago.com/js/v2";
+      script.async = true;
+      script.onload = () => {
+        setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
+        setSdkLoaded(true);
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
+      const cardForm = mpInstance.cardForm({
+        amount: calculateTransactionAmount(),
+        form: {
+          id: "form-checkout",
+          cardNumber: { id: "form-checkout__cardNumber" },
+          expirationDate: { id: "form-checkout__expirationDate" },
+          securityCode: { id: "form-checkout__securityCode" },
+          cardholderName: { id: "form-checkout__cardholderName" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail" },
+          installments: { id: "form-checkout__installments" },
+          identificationType: { id: "form-checkout__identificationType" },
+          identificationNumber: { id: "form-checkout__identificationNumber" },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (!error) setIsMpReady(true);
+          },
+        },
+      });
+      setCardFormInstance(cardForm);
+    }
+  }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
+  
+
   const handleCardSubmit = async (formData: any) => {
     try {
       const [firstName, ...lastName] = (formData.cardholderName || "Nome Sobrenome").split(" ");
