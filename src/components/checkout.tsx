@@ -156,7 +156,89 @@ useEffect(() => {
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
 
+  const handleCardSubmit = async () => {
+    console.log("Iniciando submissão do formulário...");
   
+    if (!cardFormInstance) {
+      console.error("Erro: CardForm não está inicializado.");
+      alert("Erro interno: O formulário não está pronto. Tente novamente.");
+      return;
+    }
+  
+    try {
+      const formData = cardFormInstance.getCardFormData();
+  
+      console.log("Form Data Recebido do MercadoPago:", formData);
+  
+      // Validar se o token foi gerado corretamente antes de continuar
+      if (!formData.token || formData.token.trim() === "") {
+        alert("Erro ao gerar token do cartão. Tente novamente.");
+        return;
+      }
+  
+      const missingFields: string[] = [];
+      if (!formData.cardNumber) missingFields.push("Número do cartão");
+      if (!formData.expirationDate) missingFields.push("Data de expiração");
+      if (!formData.securityCode) missingFields.push("Código de segurança");
+      if (!formData.cardholderName) missingFields.push("Nome do titular");
+      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
+      if (!formData.identificationNumber)
+        missingFields.push("Número do documento");
+  
+      if (missingFields.length > 0) {
+        alert(
+          `Erro: Os seguintes campos estão faltando: ${missingFields.join(", ")}.`
+        );
+        return;
+      }
+  
+      // Preparar os dados de pagamento
+      const paymentData = {
+        transaction_amount: calculateTransactionAmount(),
+        token: formData.token,
+        payment_method_id: formData.paymentMethodId,
+        installments: Number(formData.installments || 1),
+        issuer_id: formData.issuerId,
+        description: "Compra via Cartão de Crédito",
+        payer: {
+          email: formData.cardholderEmail,
+          first_name: formData.cardholderName.split(" ")[0] || "Nome",
+          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
+          identification: {
+            type: formData.identificationType || "CPF",
+            number: formData.identificationNumber,
+          },
+        },
+        userId: checkoutData.userId,
+      };
+  
+      console.log("Dados de pagamento prontos:", paymentData);
+  
+      // Envio para o backend
+      const response = await fetch(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(paymentData),
+        }
+      );
+  
+      if (response.ok) {
+        console.log("Pagamento processado com sucesso.");
+        clearCart();
+        navigate("/sucesso");
+      } else {
+        const errorResponse = await response.json();
+        alert(`Erro no pagamento: ${errorResponse.message || "Erro desconhecido."}`);
+      }
+    } catch (error) {
+      console.error("Erro ao processar o pagamento:", error);
+      alert("Erro ao processar o pagamento. Tente novamente.");
+    }
+  };
+  
+
   const initializeCardForm = () => {
     if (cardFormInstance) {
       console.log("CardForm já instanciado.");
@@ -205,19 +287,16 @@ useEffect(() => {
             console.log("Formulário montado com sucesso.");
             setIsMpReady(true);
           },
-          onSubmit: handleCardSubmit,
-          onInstallmentsReceived: (error: any, installments: any) => {
-            if (error) {
-              console.warn("Erro ao obter parcelas:", error);
-            } else {
-              console.log("Parcelas recebidas com sucesso:", installments);
-            }
-          },
-          onFetchingInstallments: (payload: any) => {
-            console.log("Buscando parcelas disponíveis...", payload);
+          onSubmit: async (event: any) => {
+            event.preventDefault();
+            await handleCardSubmit();
           },
           onCardTokenReceived: (token: any) => {
-            console.log("Token do cartão recebido com sucesso:", token);
+            if (!token) {
+              console.error("Erro ao receber o token do cartão.");
+            } else {
+              console.log("Token do cartão recebido com sucesso:", token);
+            }
           },
         },
       });
@@ -228,6 +307,7 @@ useEffect(() => {
       console.error("Erro durante a inicialização do CardForm:", error);
     }
   };
+  
   
 
   function isValidCPF(cpf: string): boolean {
@@ -252,100 +332,6 @@ useEffect(() => {
     return resto === parseInt(cpf.charAt(10));
   }
 
-  const handleCardSubmit = async (event: any) => {
-    event.preventDefault();
-    console.log("Iniciando submissão do formulário...");
-  
-    if (!cardFormInstance) {
-      console.error("Erro: CardForm não está inicializado.");
-      alert("Erro interno: O formulário não está pronto. Tente novamente.");
-      return;
-    }
-  
-    try {
-      const formData = cardFormInstance.getCardFormData();
-      console.log("Form Data Recebido do MercadoPago:", formData);
-  
-      // Verificar se o token foi gerado corretamente
-      if (!formData.token || formData.token.trim() === "") {
-        console.error("Erro: Token não foi gerado.");
-        alert("Erro ao gerar token do cartão. Verifique os dados e tente novamente.");
-        return;
-      }
-  
-      // Validação de campos obrigatórios
-      const missingFields: string[] = [];
-      if (!formData.cardNumber) missingFields.push("Número do cartão");
-      if (!formData.expirationDate) missingFields.push("Data de expiração");
-      if (!formData.securityCode) missingFields.push("Código de segurança");
-      if (!formData.cardholderName) missingFields.push("Nome do titular");
-      if (!formData.cardholderEmail) missingFields.push("E-mail do titular");
-      if (!formData.identificationNumber)
-        missingFields.push("Número do documento");
-  
-      if (missingFields.length > 0) {
-        console.warn("Campos obrigatórios ausentes:", missingFields);
-        alert(
-          `Erro ao gerar token do cartão. Verifique os seguintes campos: ${missingFields.join(
-            ", "
-          )}.`
-        );
-        return;
-      }
-  
-      // Preparação dos dados de pagamento
-      const transactionAmount = calculateTransactionAmount();
-      if (!transactionAmount) {
-        console.error("Erro: Valor da transação inválido.");
-        alert("Erro: Valor da transação inválido.");
-        return;
-      }
-  
-      const paymentData = {
-        transaction_amount: transactionAmount,
-        token: formData.token,
-        payment_method_id: formData.paymentMethodId,
-        installments: Number(formData.installments || 1),
-        issuer_id: formData.issuerId,
-        description: "Compra via Cartão de Crédito",
-        payer: {
-          email: formData.cardholderEmail,
-          first_name: formData.cardholderName.split(" ")[0] || "Nome",
-          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "Sobrenome",
-          identification: {
-            type: formData.identificationType || "CPF",
-            number: formData.identificationNumber,
-          },
-        },
-        userId: checkoutData.userId,
-      };
-  
-      console.log("Dados de pagamento prontos para envio:", paymentData);
-  
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(paymentData),
-        }
-      );
-  
-      if (response.ok) {
-        console.log("Pagamento processado com sucesso.");
-        clearCart();
-        navigate("/sucesso");
-      } else {
-        const errorResponse = await response.json();
-        console.error("Erro no pagamento (Backend):", errorResponse);
-        alert(`Pagamento falhou: ${errorResponse.message || "Erro desconhecido."}`);
-      }
-    } catch (error) {
-      console.error("Erro ao processar pagamento (Fetch):", error);
-      alert("Erro ao processar pagamento. Tente novamente.");
-    }
-  };
-  
   
   useEffect(() => {
     if (!isMpReady) {
