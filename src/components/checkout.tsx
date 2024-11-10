@@ -34,7 +34,7 @@ const Checkout: React.FC = () => {
     }
 
     if (!publicKey) {
-      console.error("Chave pública do Mercado Pago não Encontrada!");
+      console.error("Chave Pública do Mercado Pago não Encontrada!");
       return;
     }
 
