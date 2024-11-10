@@ -1,11 +1,18 @@
-// FailurePage.tsx
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
+
+interface LocationState {
+  message?: string;
+}
 
 const FailurePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState | null; // Casting explícito
+
+  const message = state?.message || "Infelizmente, ocorreu um problema ao processar seu pagamento. Por favor, verifique seus dados e tente novamente.";
 
   const handleRetryPayment = () => {
     navigate("/checkout");
@@ -31,7 +38,7 @@ const FailurePage: React.FC = () => {
         Pagamento Falhou
       </Typography>
       <Typography variant="body1" gutterBottom sx={{ maxWidth: 600 }}>
-        Infelizmente, ocorreu um problema ao processar seu pagamento. Por favor, verifique seus dados e tente novamente.
+        {message}
       </Typography>
 
       {/* Botão para tentar novamente */}

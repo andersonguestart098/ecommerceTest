@@ -1,11 +1,18 @@
-// PendingPage.tsx
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+
+interface LocationState {
+  message?: string;
+}
 
 const PendingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState | null; // Casting explícito
+
+  const message = state?.message || "Seu pagamento está sendo processado.";
 
   const handleReturnHome = () => {
     navigate("/");
@@ -31,7 +38,7 @@ const PendingPage: React.FC = () => {
         Pagamento Pendente
       </Typography>
       <Typography variant="body1" gutterBottom sx={{ maxWidth: 600 }}>
-        Seu pagamento está em processo de análise. Você será notificado assim que for confirmado.
+        {message}
       </Typography>
 
       {/* Botão para retornar à página inicial */}

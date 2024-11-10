@@ -31,6 +31,7 @@ const Checkout: React.FC = () => {
     cardHolder: "NOME DO TITULAR",
     expiration: "MM/YY",
   });
+  
 
   useEffect(() => {
     console.log("Dados do checkout:", checkoutData);
@@ -39,7 +40,6 @@ const Checkout: React.FC = () => {
 
   const formRef = useRef<HTMLFormElement | null>(null);
 
- 
   const validateForm = (): boolean => {
     const fields = [
       "form-checkout__cardNumber",
@@ -52,13 +52,13 @@ const Checkout: React.FC = () => {
 
     let isValid = true;
 
-    for (const fieldId of fields) {
+    fields.forEach((fieldId) => {
       const field = document.getElementById(fieldId) as HTMLInputElement;
       if (!field?.value) {
         console.error(`Campo obrigatório faltando: ${fieldId}`);
         isValid = false;
       }
-    }
+    });
 
     return isValid;
   };
@@ -81,7 +81,7 @@ const Checkout: React.FC = () => {
   };
 
   useEffect(() => {
-    const publicKey = "TEST-b5aec00c-9c26-47ec-b013-448dd8ffda2c"; // Use uma chave pública válida
+    const publicKey = "TEST-b5aec00c-9c26-47ec-b013-448dd8ffda2c";
     if (window.MercadoPago) {
       setMpInstance(new window.MercadoPago(publicKey, { locale: "pt-BR" }));
       setSdkLoaded(true);
@@ -96,64 +96,63 @@ const Checkout: React.FC = () => {
       document.body.appendChild(script);
     }
   }, []);
+
   
   useEffect(() => {
     if (sdkLoaded && mpInstance && selectedPaymentMethod === "card") {
-      console.log("Iniciando o cardForm...");
-  
       const amount = calculateTransactionAmount();
-      console.log("Valor da transação calculado: ", amount);
-  
+
       if (!amount || amount <= 0) {
         console.error("Valor inválido para a transação");
         return;
       }
-  
-const cardForm = mpInstance.cardForm({
-  amount: amount,
-  form: {
-    id: "form-checkout",
-    cardNumber: { id: "form-checkout__cardNumber" },
-    expirationDate: { id: "form-checkout__expirationDate" },
-    securityCode: { id: "form-checkout__securityCode" },
-    cardholderName: { id: "form-checkout__cardholderName" },
-    cardholderEmail: { id: "form-checkout__cardholderEmail" },
-    installments: { id: "form-checkout__installments" },
-    identificationType: { id: "form-checkout__identificationType" },
-    identificationNumber: { id: "form-checkout__identificationNumber" },
-  },
-  callbacks: {
-    onFormMounted: (error: any) => {
-      if (error) {
-        console.error("Erro ao montar formulário:", error);
-        alert("Erro ao montar formulário. Por favor, recarregue a página.");
-      } else {
-        console.log("Formulário montado com sucesso");
-        setIsMpReady(true);
-      }
-    },
-    onSubmit: (event: any) => {
-      event.preventDefault();
-      console.log("Submit triggered");
-    },
-    onFetching: (resource: any) => {
-      console.log(`Fetching resource: ${resource}`);
-    },
-    onError: (error: any) => {
-      console.error("Erro no cardForm:", error);
-    },
-  },
-});
+
+      const cardForm = mpInstance.cardForm({
+        amount: amount,
+        form: {
+          id: "form-checkout",
+          cardNumber: { id: "form-checkout__cardNumber" },
+          expirationDate: { id: "form-checkout__expirationDate" },
+          securityCode: { id: "form-checkout__securityCode" },
+          cardholderName: { id: "form-checkout__cardholderName" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail" },
+          installments: { id: "form-checkout__installments" },
+          identificationType: { id: "form-checkout__identificationType" },
+          identificationNumber: { id: "form-checkout__identificationNumber" },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => {
+            if (error) {
+              console.error("Erro ao montar formulário:", JSON.stringify(error));
+              alert("Erro ao montar formulário. Recarregue a página.");
+            } else {
+              setIsMpReady(true);
+            }
+          },
+          onSubmit: async (event: any) => {
+            event.preventDefault();
+            try {
+              const formData = await cardFormInstance?.createCardToken();
+              handleCardSubmit(formData);
+            } catch (err) {
+              alert("Erro ao processar pagamento. Tente novamente.");
+            }
+          },
+          onFetching: (resource: any) => {
+            console.log(`Carregando recurso: ${resource}`);
+          },
+          onError: (error: any) => {
+            console.error("Erro no cardForm:", JSON.stringify(error));
+          },
+        },
+      });
 
       setCardFormInstance(cardForm);
     }
   }, [sdkLoaded, mpInstance, selectedPaymentMethod]);
   
-  
-
   const handleCardSubmit = async (formData: any) => {
     try {
-      const [firstName, ...lastName] = (formData.cardholderName || "Nome Sobrenome").split(" ");
       const paymentData = {
         transaction_amount: calculateTransactionAmount(),
         token: formData.token,
@@ -163,37 +162,33 @@ const cardForm = mpInstance.cardForm({
         description: "Compra via Cartão de Crédito",
         payer: {
           email: formData.cardholderEmail,
-          first_name: firstName,
-          last_name: lastName.join(" "),
-          identification: {
-            type: formData.identificationType || "CPF",
-            number: formData.identificationNumber,
-          },
+          first_name: formData.cardholderName.split(" ")[0],
         },
         userId: checkoutData.userId,
       };
 
-      const response = await fetch(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(paymentData),
-        }
-      );
+      const response = await fetch("/payment/process_payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentData),
+      });
 
       if (response.ok) {
-        clearCart();
-        navigate("/sucesso");
+        const result = await response.json();
+        if (result.status === "approved") {
+          navigate("/sucesso", { state: { paymentMethod: "cartao" } });
+        } else {
+          navigate("/pendente");
+        }
       } else {
-        const errorResponse = await response.json();
-        alert(`Erro no pagamento: ${errorResponse.message || "Erro desconhecido"}`);
+        navigate("/falha");
       }
     } catch (error) {
-      alert("Erro ao processar o pagamento. Tente novamente.");
+      console.error(error);
+      navigate("/falha");
     }
   };
-
+  
   const handleContinue = async () => {
     if (selectedPaymentMethod === "pix") {
       await generatePixQrCode();
@@ -403,86 +398,73 @@ const cardForm = mpInstance.cardForm({
         </Box>
 
         
-
         {selectedPaymentMethod === "card" && (
-          
-          <form
-          id="form-checkout"
-          ref={formRef}
-          onSubmit={(e) => {
-            e.preventDefault(); // Evitar refresh da página
-            if (validateForm()) {
-              cardFormInstance?.createCardToken().then((formData: any) => {
-                handleCardSubmit(formData); // Submete os dados
-              });
-            } else {
-              console.error("Validação do formulário falhou!");
-            }
-          }}
-        >
-          <input id="form-checkout__cardNumber" placeholder="Número do cartão" />
-          <input id="form-checkout__expirationDate" placeholder="MM/YY" />
-          <input id="form-checkout__securityCode" placeholder="CVC" />
-          <input id="form-checkout__cardholderName" placeholder="Nome do titular" />
-          <input id="form-checkout__cardholderEmail" placeholder="E-mail" />
-          <select id="form-checkout__issuer">
-            <option value="">Selecione o banco emissor</option>
-          </select>
-          <select id="form-checkout__installments">
-            <option value="">Número de parcelas</option>
-          </select>
-          <select id="form-checkout__identificationType">
-            <option value="CPF">CPF</option>
-          </select>
-          <input id="form-checkout__identificationNumber" placeholder="Número do documento" />
-        
-          <Button
-            type="submit"
-            disabled={!isMpReady}
-            sx={{
-              backgroundColor: isMpReady ? "#313926" : "#ccc",
-              color: "#FFF",
-              mt: 2,
-              "&:hover": { backgroundColor: isMpReady ? "#2a2e24" : "#ccc" },
-            }}
-          >
-            {isMpReady ? "Pagar" : "Carregando..."}
-          </Button>
-        </form>
-        
-        )}
-
-        
+  <form
+    id="form-checkout"
+    ref={formRef}
+    onSubmit={(e) => {
+      e.preventDefault(); // Evitar refresh da página
+      if (validateForm()) {
+        cardFormInstance
+          ?.createCardToken()
+          .then((formData: any) => {
+            handleCardSubmit(formData); // Submete os dados de pagamento
+          })
+          .catch((error: any) => {
+            console.error("Erro ao criar token:", JSON.stringify(error, null, 2));
+            alert("Erro ao processar o pagamento. Tente novamente.");
+          });
+      } else {
+        console.error("Validação do formulário falhou!");
+      }
+    }}
+  >
+    <input id="form-checkout__cardNumber" placeholder="Número do cartão" />
+    <input id="form-checkout__expirationDate" placeholder="MM/YY" />
+    <input id="form-checkout__securityCode" placeholder="CVC" />
+    <input id="form-checkout__cardholderName" placeholder="Nome do titular" />
+    <input id="form-checkout__cardholderEmail" placeholder="E-mail" />
+    <select id="form-checkout__issuer">
+      <option value="">Selecione o banco emissor</option>
+    </select>
+    <select id="form-checkout__installments">
+      <option value="">Número de parcelas</option>
+    </select>
+    <select id="form-checkout__identificationType">
+      <option value="CPF">CPF</option>
+    </select>
+    <input id="form-checkout__identificationNumber" placeholder="Número do documento" />
+  </form>
+)}
 
 <Button
-  type="submit"
-  fullWidth
-  disabled={!isMpReady || !formRef.current?.checkValidity()} // Validação extra
+  onClick={async () => {
+    if (selectedPaymentMethod === "card") {
+      if (validateForm() && formRef.current) {
+        try {
+          formRef.current.requestSubmit(); // Submete o form do cartão via botão "Continuar"
+        } catch (err) {
+          console.error("Erro ao submeter formulário:", JSON.stringify(err, null, 2));
+        }
+      } else {
+        console.error("Validação do formulário falhou!");
+      }
+    } else {
+      await handleContinue(); // Chama PIX ou Boleto dependendo
+    }
+  }}
+  disabled={selectedPaymentMethod === "card" && !isMpReady}
   sx={{
-    backgroundColor: isMpReady ? "#313926" : "#ccc",
+    backgroundColor: "#313926",
     color: "#FFF",
     mt: 2,
-    "&:hover": { backgroundColor: isMpReady ? "#2a2e24" : "#ccc" },
+    "&:hover": { backgroundColor: "#2a2e24" },
   }}
 >
-  {isMpReady ? "Pagar" : "Carregando..."}
+  Continuar
 </Button>
 
 
-        {selectedPaymentMethod !== "card" && (
-          <Button
-            onClick={handleContinue}
-            sx={{
-              backgroundColor: "#313926",
-              color: "#FFF",
-              width: "100%",
-              mt: 2,
-              "&:hover": { backgroundColor: "#2a2e24" },
-            }}
-          >
-            Continuar
-          </Button>
-        )}
       </Box>
 
       <Box
