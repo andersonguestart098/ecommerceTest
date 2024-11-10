@@ -42,6 +42,7 @@ interface CartContextType {
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
   clearCart: () => void;
+  handleOrderCompletion: () => void; // Ensure this is always provided
 }
 
 interface CartProviderProps {
@@ -124,6 +125,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     localStorage.removeItem("cart");
   };
 
+  const handleOrderCompletion = () => {
+    console.log("Order completed!");
+    clearCart();
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -135,6 +141,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         increaseQuantity,
         decreaseQuantity,
         clearCart,
+        handleOrderCompletion,
       }}
     >
       {children}
