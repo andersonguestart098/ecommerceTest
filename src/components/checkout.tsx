@@ -91,43 +91,37 @@ const Checkout: React.FC = () => {
   
     const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
   
-    mp.cardForm({
+    const cardFormInstance = mp.cardForm({
       amount: String(parseFloat(checkoutData?.amount.replace(",", ".") || "0")),
       iframe: true,
       form: {
         id: "form-checkout",
-        cardNumber: { 
-          id: "form-checkout__cardNumber", 
-          placeholder: "Número do Cartão" 
+        cardNumber: {
+          id: "form-checkout__cardNumber",
+          placeholder: "Número do Cartão",
         },
-        expirationDate: { 
-          id: "form-checkout__expirationDate", 
-          placeholder: "MM/AA" 
+        expirationDate: {
+          id: "form-checkout__expirationDate",
+          placeholder: "MM/AA",
         },
-        securityCode: { 
-          id: "form-checkout__securityCode", 
-          placeholder: "CVV" 
+        securityCode: {
+          id: "form-checkout__securityCode",
+          placeholder: "CVV",
         },
-        cardholderName: { 
-          id: "form-checkout__cardholderName", 
-          placeholder: "Nome do Titular" 
+        cardholderName: {
+          id: "form-checkout__cardholderName",
+          placeholder: "Nome do Titular",
         },
-        issuer: { 
-          id: "form-checkout__issuer" 
+        issuer: { id: "form-checkout__issuer" },
+        installments: { id: "form-checkout__installments" },
+        identificationType: { id: "form-checkout__identificationType" },
+        identificationNumber: {
+          id: "form-checkout__identificationNumber",
+          placeholder: "Número do Documento (CPF)",
         },
-        installments: { 
-          id: "form-checkout__installments" 
-        },
-        identificationType: { 
-          id: "form-checkout__identificationType" 
-        },
-        identificationNumber: { 
-          id: "form-checkout__identificationNumber", 
-          placeholder: "Número do Documento (CPF)" 
-        },
-        cardholderEmail: { 
-          id: "form-checkout__cardholderEmail", 
-          placeholder: "E-mail para Contato" 
+        cardholderEmail: {
+          id: "form-checkout__cardholderEmail",
+          placeholder: "E-mail para Contato",
         },
       },
       callbacks: {
@@ -140,15 +134,29 @@ const Checkout: React.FC = () => {
         },
         onSubmit: async (event: any) => {
           event.preventDefault();
-          const formData = mp.cardForm().getCardFormData();
-          handleCardPayment(formData);
+          const formData = cardFormInstance.getCardFormData(); // Certifique-se de que cardFormInstance está correto aqui
+          if (formData) {
+            handleCardPayment(formData);
+          } else {
+            console.error("Erro ao obter os dados do formulário.");
+          }
         },
       },
     });
   };
+  
 
   const handleCardPayment = async (formData: any) => {
     try {
+      if (!formData || !formData.token || !formData.paymentMethodId) {
+        throw new Error("Dados do formulário incompletos. Verifique os campos.");
+      }
+  
+      const cardholderName = formData.cardholderName || "";
+      const nameParts = cardholderName.split(" ");
+      const firstName = nameParts[0] || "N/A"; // Evita erros se o nome estiver vazio
+      const lastName = nameParts.slice(1).join(" ") || "N/A";
+  
       const paymentData = {
         token: formData.token,
         issuer_id: formData.issuerId,
@@ -157,23 +165,23 @@ const Checkout: React.FC = () => {
         installments: selectedInstallment,
         description: "Compra em Nato Pisos",
         payer: {
-          email: formData.cardholderEmail,
-          first_name: formData.cardholderName.split(" ")[0],
-          last_name: formData.cardholderName.split(" ").slice(1).join(" "),
+          email: formData.cardholderEmail || "",
+          first_name: firstName,
+          last_name: lastName,
           identification: {
-            type: formData.identificationType,
-            number: formData.identificationNumber,
+            type: formData.identificationType || "CPF",
+            number: formData.identificationNumber || "",
           },
         },
         products: checkoutData.items,
         userId: checkoutData.userId,
       };
-
+  
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData
       );
-
+  
       if (response.data.status === "approved") {
         navigate("/sucesso", { state: { paymentMethod: "card" } });
       } else {
@@ -181,9 +189,10 @@ const Checkout: React.FC = () => {
       }
     } catch (error) {
       console.error("Erro no envio ao backend:", error);
+      alert("Ocorreu um erro ao processar o pagamento.");
     }
   };
-
+  
   const generatePixQrCode = async () => {
     try {
       const response = await axios.post(
