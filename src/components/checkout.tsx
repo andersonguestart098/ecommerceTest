@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -8,9 +9,38 @@ const Checkout: React.FC = () => {
   const [isMpReady, setIsMpReady] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [checkoutData, setCheckoutData] = useState<any>(null);
+  const [formKey, setFormKey] = useState(0);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
+
+    // Função calculateTotal
+    const calculateTotal = () => {
+      if (!checkoutData) return "0.00"; // Verificação adicional
+      const totalAmount =
+        parseFloat(checkoutData.amount || 0) +
+        parseFloat(checkoutData.shippingCost || 0) -
+        parseFloat(checkoutData.discount || 0);
+  
+      return totalAmount.toFixed(2);
+    };
+
+    useEffect(() => {
+      if (paymentMethod === "card") {
+        setIsLoading(true); // Mostra o spinner enquanto monta o formulário
+        setTimeout(() => {
+          loadMercadoPago(); // Carrega novamente o SDK e o formulário
+          setIsLoading(false);
+        }, 500); // Simula um pequeno atraso para o usuário perceber o carregamento
+      }
+    }, [paymentMethod]);
+
+    useEffect(() => {
+      // Incrementa a chave sempre que o método de pagamento mudar
+      setFormKey((prevKey) => prevKey + 1);
+    }, [paymentMethod]);
+    
 
   useEffect(() => {
     const storedCheckoutData = localStorage.getItem("checkoutData");
@@ -22,11 +52,13 @@ const Checkout: React.FC = () => {
     }
   }, [navigate]);
 
+
   useEffect(() => {
-    if (paymentMethod === "card") {
+    if (paymentMethod === "card" && checkoutData) { // Certifique-se de que os dados estejam carregados
       loadMercadoPago();
     }
-  }, [paymentMethod]);
+  }, [paymentMethod, checkoutData]);
+  
 
   const loadMercadoPago = () => {
     if (document.getElementById("mercado-pago-sdk")) {
@@ -55,23 +87,47 @@ const Checkout: React.FC = () => {
       console.error("Chave Pública do Mercado Pago não encontrada!");
       return;
     }
-
+  
     const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
-
+  
     mp.cardForm({
       amount: String(parseFloat(checkoutData?.amount.replace(",", ".") || "0")),
       iframe: true,
       form: {
         id: "form-checkout",
-        cardNumber: { id: "form-checkout__cardNumber" },
-        expirationDate: { id: "form-checkout__expirationDate" },
-        securityCode: { id: "form-checkout__securityCode" },
-        cardholderName: { id: "form-checkout__cardholderName" },
-        issuer: { id: "form-checkout__issuer" },
-        installments: { id: "form-checkout__installments" },
-        identificationType: { id: "form-checkout__identificationType" },
-        identificationNumber: { id: "form-checkout__identificationNumber" },
-        cardholderEmail: { id: "form-checkout__cardholderEmail" },
+        cardNumber: { 
+          id: "form-checkout__cardNumber", 
+          placeholder: "Número do Cartão" 
+        },
+        expirationDate: { 
+          id: "form-checkout__expirationDate", 
+          placeholder: "MM/AA" 
+        },
+        securityCode: { 
+          id: "form-checkout__securityCode", 
+          placeholder: "CVV" 
+        },
+        cardholderName: { 
+          id: "form-checkout__cardholderName", 
+          placeholder: "Nome do Titular" 
+        },
+        issuer: { 
+          id: "form-checkout__issuer" 
+        },
+        installments: { 
+          id: "form-checkout__installments" 
+        },
+        identificationType: { 
+          id: "form-checkout__identificationType" 
+        },
+        identificationNumber: { 
+          id: "form-checkout__identificationNumber", 
+          placeholder: "Número do Documento (CPF)" 
+        },
+        cardholderEmail: { 
+          id: "form-checkout__cardholderEmail", 
+          placeholder: "E-mail para Contato" 
+        },
       },
       callbacks: {
         onFormMounted: (error: any) => {
@@ -244,76 +300,404 @@ const Checkout: React.FC = () => {
   };
   
   
+  const handleContinue = () => {
+    if (paymentMethod === "card") {
+      const form = document.getElementById("form-checkout");
+      if (form) {
+        form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true })); // Submete o formulário do cartão
+      }
+    } else if (paymentMethod === "pix") {
+      generatePixQrCode(); // Gera o QR Code para Pix
+    } else if (paymentMethod === "boleto") {
+      generateBoleto(); // Gera o boleto
+    }
+  };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <h2>Pagamento</h2>
-      <select
-        value={paymentMethod}
-        onChange={(e) => setPaymentMethod(e.target.value)}
+<Box
+  sx={{
+    padding: "20px",
+    maxWidth: "900px",
+    margin: "0 auto",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 2,
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #ddd",
+  }}
+>
+  <Grid container spacing={3}>
+    <Grid item xs={12} md={7}>
+      <Typography
+        variant="h5"
+        sx={{
+          mb: 2,
+          fontWeight: "bold",
+          textAlign: "center",
+          color: "#313926",
+        }}
       >
-        <option value="card">Cartão</option>
-        <option value="pix">Pix</option>
-        <option value="boleto">Boleto</option>
-      </select>
+        Forma de Pagamento
+      </Typography>
+
+      {/* Botões de Seleção de Método de Pagamento */}
+      <Grid container spacing={2} justifyContent="center" sx={{ marginBottom: "15px" }}>
+        <Grid item xs={12} md={4}>
+          <Button
+            variant={paymentMethod === "card" ? "contained" : "outlined"}
+            fullWidth
+            onClick={() => setPaymentMethod("card")}
+            sx={{
+              height: "48px",
+              backgroundColor: paymentMethod === "card" ? "#313926" : "#fff",
+              color: paymentMethod === "card" ? "#fff" : "#313926",
+              borderColor: "#313926",
+              '&:hover': {
+                backgroundColor: paymentMethod === "card" ? "#E6E3DB" : "#f5f5f5",
+                borderColor: "#313926",
+              },
+            }}
+          >
+            Cartão de Crédito
+          </Button>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Button
+            variant={paymentMethod === "pix" ? "contained" : "outlined"}
+            fullWidth
+            onClick={() => setPaymentMethod("pix")}
+            sx={{
+              height: "48px",
+              backgroundColor: paymentMethod === "pix" ? "#313926" : "#fff",
+              color: paymentMethod === "pix" ? "#fff" : "#313926",
+              borderColor: "#313926",
+              '&:hover': {
+                backgroundColor: paymentMethod === "pix" ? "#E6E3DB" : "#f5f5f5",
+                borderColor: "#313926",
+              },
+            }}
+          >
+            Pix
+          </Button>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Button
+            variant={paymentMethod === "boleto" ? "contained" : "outlined"}
+            fullWidth
+            onClick={() => setPaymentMethod("boleto")}
+            sx={{
+              height: "48px",
+              backgroundColor: paymentMethod === "boleto" ? "#313926" : "#fff",
+              color: paymentMethod === "boleto" ? "#fff" : "#313926",
+              borderColor: "#313926",
+              '&:hover': {
+                backgroundColor: paymentMethod === "boleto" ? "#E6E3DB" : "#f5f5f5",
+                borderColor: "#313926",
+              },
+            }}
+          >
+            Boleto Bancário
+          </Button>
+        </Grid>
+      </Grid>
 
       {paymentMethod === "card" && (
-        <form
-          id="form-checkout"
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          <div id="form-checkout__cardNumber"></div>
-          <div id="form-checkout__expirationDate"></div>
-          <div id="form-checkout__securityCode"></div>
-          <input
-            type="text"
-            id="form-checkout__cardholderName"
-            placeholder="Titular do cartão"
-          />
-          <select id="form-checkout__issuer"></select>
-          <select
-            id="form-checkout__installments"
-            value={selectedInstallment}
-            onChange={(e) => setSelectedInstallment(Number(e.target.value))}
-          >
-            <option value={1}>1x</option>
-            <option value={2}>2x</option>
-          </select>
-          <select id="form-checkout__identificationType"></select>
-          <input
-            type="text"
-            id="form-checkout__identificationNumber"
-            placeholder="CPF"
-          />
-          <input
-            type="email"
-            id="form-checkout__cardholderEmail"
-            placeholder="E-mail"
-          />
-          <button type="submit" disabled={!isMpReady}>
-            Pagar
-          </button>
+        <form id="form-checkout" style={{ marginTop: "20px", textAlign: "center" }}>
+          <Grid container spacing={2} justifyContent="center">
+            {/* Número do Cartão */}
+            <Grid item xs={12} md={10}>
+              <div
+                id="form-checkout__cardNumber"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Número do Cartão"
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    outline: "none",
+                    backgroundColor: "transparent",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+            </Grid>
+
+            {/* Expiração e CVV */}
+            <Grid item xs={6} md={5}>
+              <div
+                id="form-checkout__expirationDate"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="MM/AA"
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    outline: "none",
+                    backgroundColor: "transparent",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+            </Grid>
+
+            <Grid item xs={6} md={5}>
+              <div
+                id="form-checkout__securityCode"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="CVV"
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    outline: "none",
+                    backgroundColor: "transparent",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+            </Grid>
+
+            {/* Nome do Titular */}
+            <Grid item xs={12} md={10}>
+              <input
+                type="text"
+                id="form-checkout__cardholderName"
+                placeholder="Nome do Titular (como no cartão)"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              />
+            </Grid>
+
+            {/* Selects */}
+            <Grid item xs={6} md={5}>
+              <select
+                id="form-checkout__issuer"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <option value="">Banco Emissor</option>
+              </select>
+            </Grid>
+
+            <Grid item xs={6} md={5}>
+              <select
+                id="form-checkout__installments"
+                value={selectedInstallment}
+                onChange={(e) => setSelectedInstallment(Number(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <option value={1}>1x sem juros</option>
+                <option value={2}>2x sem juros</option>
+              </select>
+            </Grid>
+
+            {/* Documento e CPF */}
+            <Grid item xs={6} md={5}>
+              <select
+                id="form-checkout__identificationType"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <option value="">Tipo de Documento</option>
+              </select>
+            </Grid>
+
+            <Grid item xs={6} md={5}>
+              <input
+                type="text"
+                id="form-checkout__identificationNumber"
+                placeholder="Número do Documento (CPF)"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              />
+            </Grid>
+
+            {/* Email */}
+            <Grid item xs={12} md={10}>
+              <input
+                type="email"
+                id="form-checkout__cardholderEmail"
+                placeholder="E-mail para Contato"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  marginBottom: "15px",
+                  backgroundColor: "#fff",
+                }}
+              />
+            </Grid>
+
+            {/* Botão Pagar Centralizado */}
+            <Grid item xs={12} md={10} sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+
+</Grid>
+          </Grid>
         </form>
       )}
 
+      {/* Outras Opções de Pagamento */}
       {paymentMethod === "pix" && (
-        <div>
-          <button onClick={generatePixQrCode}>Gerar QR Code Pix</button>
-          {qrCode && <img src={qrCode} alt="QR Code Pix" />}
-        </div>
+        <Box sx={{ textAlign: "center", mt: 3 }}>
+          <Button
+            variant="contained"
+            onClick={generatePixQrCode}
+            sx={{
+              backgroundColor: "#313926",
+              '&:hover': { backgroundColor: "#E6E3DB" },
+            }}
+          >
+            Gerar QR Code Pix
+          </Button>
+        </Box>
       )}
 
       {paymentMethod === "boleto" && (
-        <div>
-          <button onClick={generateBoleto}>Gerar Boleto</button>
-          {boletoUrl && (
-            <a href={boletoUrl} target="_blank" rel="noopener noreferrer">
-              Visualizar Boleto
-            </a>
-          )}
-        </div>
+        <Box sx={{ textAlign: "center", mt: 3 }}>
+          <Button
+            variant="contained"
+            onClick={generateBoleto}
+            sx={{
+              backgroundColor: "#313926",
+              '&:hover': { backgroundColor: "#E6E3DB" },
+            }}
+          >
+            Gerar Boleto
+          </Button>
+        </Box>
       )}
-    </div>
+    </Grid>
+
+    {/* Coluna: Resumo da Compra */}
+    <Grid item xs={12} md={5} sx={{ paddingLeft: "20px" }}>
+      <Typography
+        variant="h6"
+        sx={{
+          mb: 2,
+          fontWeight: "bold",
+          textAlign: "center",
+          color: "#333",
+        }}
+      >
+        Resumo da Compra
+      </Typography>
+      <Box
+        sx={{
+          padding: "15px",
+          backgroundColor: "#fff",
+          borderRadius: 1,
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+          border: "1px solid #ddd",
+        }}
+      >
+        <Typography sx={{ mb: 1 }}>
+          Valor dos Produtos: <strong>R$ {checkoutData?.amount}</strong>
+        </Typography>
+        <Typography sx={{ mb: 1 }}>
+          Descontos: <strong>- R$ {checkoutData?.discount || "0,00"}</strong>
+        </Typography>
+        <Typography sx={{ mb: 1 }}>
+          Frete: <strong>R$ {checkoutData?.shippingCost}</strong>
+        </Typography>
+        <Typography sx={{ mb: 2 }}>
+          Total: <strong>R$ {calculateTotal()}</strong>
+        </Typography>
+        <Button
+  variant="contained"
+  type="button"
+  onClick={handleContinue} // Chama a função com base no método de pagamento
+  disabled={paymentMethod === "card" && !isMpReady}
+  sx={{
+    width: "100%", // Igualando largura do botão
+    backgroundColor: "#313926",
+    '&:hover': { backgroundColor: "#4caf50" },
+    textAlign: "center",
+  }}
+>
+  Continuar
+</Button>
+
+        <Button
+          variant="outlined"
+          sx={{
+            mt: 2,
+            width: "100%",
+            borderColor: "#aaa",
+            '&:hover': { borderColor: "#333" },
+          }}
+        >
+          Voltar
+        </Button>
+      </Box>
+    </Grid>
+  </Grid>
+</Box>
+
+
   );
 };
 
