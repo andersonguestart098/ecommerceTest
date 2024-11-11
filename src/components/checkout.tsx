@@ -603,31 +603,13 @@ const Checkout: React.FC = () => {
       {/* Outras Opções de Pagamento */}
       {paymentMethod === "pix" && (
         <Box sx={{ textAlign: "center", mt: 3 }}>
-          <Button
-            variant="contained"
-            onClick={generatePixQrCode}
-            sx={{
-              backgroundColor: "#313926",
-              '&:hover': { backgroundColor: "#E6E3DB" },
-            }}
-          >
-            Gerar QR Code Pix
-          </Button>
+          
         </Box>
       )}
 
       {paymentMethod === "boleto" && (
         <Box sx={{ textAlign: "center", mt: 3 }}>
-          <Button
-            variant="contained"
-            onClick={generateBoleto}
-            sx={{
-              backgroundColor: "#313926",
-              '&:hover': { backgroundColor: "#E6E3DB" },
-            }}
-          >
-            Gerar Boleto
-          </Button>
+         
         </Box>
       )}
     </Grid>
