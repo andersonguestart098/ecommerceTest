@@ -21,15 +21,13 @@ const SuccessPage: React.FC = () => {
     } else {
       console.log("Dados recebidos no SuccessPage:", state);
     }
-  
+
     if (state?.paymentMethod === "pix" && !state.pixQrCode) {
       console.error("QR Code não encontrado para Pix.");
     } else if (state?.paymentMethod === "boleto" && !state.boletoUrl) {
       console.error("Link do boleto não encontrado.");
     }
   }, [state, navigate]);
-  
-  
 
   const paymentMethod = state?.paymentMethod || "Cartão de Crédito";
   const pixQrCode = state?.pixQrCode;
@@ -50,9 +48,22 @@ const SuccessPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ padding: 4, textAlign: "center", minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+<Box
+  sx={{
+    paddingBottom: 4,
+    textAlign: "center",
+    minHeight: "80vh", // Reduzindo a altura mínima para 80% da tela
+    marginTop: "-100px", // Ajustando a posição para subir o conteúdo
+    backgroundColor: "#f5f5f5",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+
       <CheckCircleIcon sx={{ fontSize: 80, color: "#4caf50", mb: 2 }} />
-      <Typography variant="h4" sx={{ color: "#4caf50", fontWeight: "bold" }}>
+      <Typography variant="h4" sx={{ color: "#4caf50", fontWeight: "bold", mb: 1 }}>
         Pedido Realizado com Sucesso!
       </Typography>
       <Typography variant="body1" sx={{ maxWidth: 600, mt: 2 }}>
@@ -69,29 +80,53 @@ const SuccessPage: React.FC = () => {
           <img src={pixQrCode} alt="QR Code Pix" style={{ width: 200, height: 200, marginTop: 10 }} />
         </Box>
       )}
+
       {paymentMethod === "boleto" && (
-  <Box sx={{ mt: 3 }}>
-    <Typography variant="h6">Acesse seu boleto:</Typography>
-    {boletoUrl ? (
-      <a
-        href={boletoUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: "#007bff" }}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6">Acesse seu boleto:</Typography>
+          {boletoUrl ? (
+            <a
+              href={boletoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#007bff" }}
+            >
+              Visualizar Boleto Bancário
+            </a>
+          ) : (
+            <Typography color="error">
+              O link do boleto não está disponível. Por favor, verifique seus pedidos ou entre em contato com o suporte.
+            </Typography>
+          )}
+        </Box>
+      )}
+
+      <Button
+        variant="contained"
+        onClick={handleContinueShopping}
+        sx={{
+          mt: 3,
+          maxWidth: 300,
+          backgroundColor: "#313926",
+          color: "#fff",
+          '&:hover': { backgroundColor: "#E6E3DB", color: "#313926" },
+        }}
       >
-        Visualizar Boleto Bancário
-      </a>
-    ) : (
-      <Typography color="error">
-        O link do boleto não está disponível. Por favor, verifique seus pedidos ou entre em contato com o suporte.
-      </Typography>
-    )}
-  </Box>
-)}
-
-
-      <Button variant="contained" onClick={handleContinueShopping} sx={{ mt: 3, maxWidth: 300 }}>Continuar Comprando</Button>
-      <Button variant="outlined" onClick={handleMeusPedidos} sx={{ mt: 2, maxWidth: 300 }}>Ir para meus pedidos</Button>
+        Continuar Comprando
+      </Button>
+      <Button
+        variant="outlined"
+        onClick={handleMeusPedidos}
+        sx={{
+          mt: 2,
+          maxWidth: 300,
+          borderColor: "#313926",
+          color: "#313926",
+          '&:hover': { backgroundColor: "#E6E3DB", borderColor: "#E6E3DB" },
+        }}
+      >
+        Ir para meus pedidos
+      </Button>
     </Box>
   );
 };
