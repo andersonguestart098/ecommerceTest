@@ -21,7 +21,15 @@ const SuccessPage: React.FC = () => {
     } else {
       console.log("Dados recebidos no SuccessPage:", state);
     }
+  
+    if (state?.paymentMethod === "pix" && !state.pixQrCode) {
+      console.error("QR Code não encontrado para Pix.");
+    } else if (state?.paymentMethod === "boleto" && !state.boletoUrl) {
+      console.error("Link do boleto não encontrado.");
+    }
   }, [state, navigate]);
+  
+  
 
   const paymentMethod = state?.paymentMethod || "Cartão de Crédito";
   const pixQrCode = state?.pixQrCode;
@@ -61,12 +69,26 @@ const SuccessPage: React.FC = () => {
           <img src={pixQrCode} alt="QR Code Pix" style={{ width: 200, height: 200, marginTop: 10 }} />
         </Box>
       )}
-      {paymentMethod === "boleto" && boletoUrl && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6">Acesse seu boleto:</Typography>
-          <a href={boletoUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff" }}>Visualizar Boleto Bancário</a>
-        </Box>
-      )}
+      {paymentMethod === "boleto" && (
+  <Box sx={{ mt: 3 }}>
+    <Typography variant="h6">Acesse seu boleto:</Typography>
+    {boletoUrl ? (
+      <a
+        href={boletoUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: "#007bff" }}
+      >
+        Visualizar Boleto Bancário
+      </a>
+    ) : (
+      <Typography color="error">
+        O link do boleto não está disponível. Por favor, verifique seus pedidos ou entre em contato com o suporte.
+      </Typography>
+    )}
+  </Box>
+)}
+
 
       <Button variant="contained" onClick={handleContinueShopping} sx={{ mt: 3, maxWidth: 300 }}>Continuar Comprando</Button>
       <Button variant="outlined" onClick={handleMeusPedidos} sx={{ mt: 2, maxWidth: 300 }}>Ir para meus pedidos</Button>

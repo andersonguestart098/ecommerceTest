@@ -21,7 +21,7 @@ import SuccessPage from "../components/mercadoPago/sucesso";
 import FailurePage from "../components/mercadoPago/falha";
 import PendingPage from "../components/mercadoPago/pendente";
 import Management from "../components/gerenciador";
-import MeusDados from "../components/MeusDados"; // Novo componente de perfil do usuário
+import MeusDados from "../components/MeusDados";
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
@@ -114,10 +114,7 @@ const App: React.FC = () => {
                     path="/product-list"
                     element={<ProductList {...filters} />}
                   />
-                  {/* Novo componente de perfil de usuário */}
                   <Route path="/meus-dados" element={<MeusDados />} />
-
-                  {/* Rotas para status de pagamento */}
                   <Route path="/sucesso" element={<SuccessPage />} />
                   <Route path="/falha" element={<FailurePage />} />
                   <Route path="/pendente" element={<PendingPage />} />
