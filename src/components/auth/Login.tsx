@@ -27,29 +27,17 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/login",
-        {
-          email,
-          password,
-        }
+        { email, password }
       );
 
       const { token, user } = response.data;
-
-      // Armazena o token e define o usuário no contexto
       localStorage.setItem("token", token);
       setUser(user);
 
-      // Emite evento de login via socket
-      if (socket) {
-        socket.emit("userLoggedIn", user.name);
-      }
-
-      // Redireciona para a rota de origem ou para a home
-      const redirectPath = location.state?.from || "/";
+      const redirectPath = location.state?.from || "/"; // Define o caminho para onde redirecionar
       navigate(redirectPath);
     } catch (err: any) {
       setError("Credenciais inválidas.");

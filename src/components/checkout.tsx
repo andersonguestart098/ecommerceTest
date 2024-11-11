@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import { useCart } from "../contexts/CartContext"; // Certifique-se de ajustar o caminho
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Checkout: React.FC = () => {
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [formKey, setFormKey] = useState(0);
+  const { handleOrderCompletion } = useCart();
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
     // Função calculateTotal
@@ -204,20 +206,20 @@ const Checkout: React.FC = () => {
           products: checkoutData.items,
         }
       );
-  
+
       const qrCodeBase64 = response.data.qr_code_base64;
-      console.log("QR Code recebido:", qrCodeBase64); // Log para depuração
-  
       if (qrCodeBase64) {
         const qrCode = `data:image/png;base64,${qrCodeBase64}`;
         setQrCode(qrCode);
-  
+
         navigate("/sucesso", {
           state: {
             paymentMethod: "pix",
             pixQrCode: qrCode,
           },
         });
+
+        handleOrderCompletion(); // Limpa o carrinho após sucesso
       } else {
         alert("QR Code não encontrado.");
       }
@@ -225,31 +227,21 @@ const Checkout: React.FC = () => {
       console.error("Erro ao processar pagamento com Pix:", error);
     }
   };
-  
-  
 
   const generateBoleto = async () => {
     try {
       const userId = checkoutData?.userId;
-  
+
       if (!userId) {
         throw new Error("Usuário não encontrado para emissão do boleto.");
       }
-  
-      // Busca os dados do usuário com endereço completo
+
       const response = await axios.get(
         `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
       );
-  
+
       const { email, name, cpf, address } = response.data;
-  
-      if (!address) {
-        throw new Error("Endereço não encontrado para o usuário.");
-      }
-  
-      const [firstName, ...lastNameArray] = name.split(" ");
-      const lastName = lastNameArray.join(" ");
-  
+
       const boletoResponse = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -258,8 +250,8 @@ const Checkout: React.FC = () => {
           description: "Pagamento via Boleto Bancário",
           payer: {
             email,
-            first_name: firstName,
-            last_name: lastName,
+            first_name: name.split(" ")[0],
+            last_name: name.split(" ").slice(1).join(" "),
             identification: {
               type: "CPF",
               number: cpf,
@@ -277,22 +269,22 @@ const Checkout: React.FC = () => {
           products: checkoutData.items,
         }
       );
-  
-      const boletoUrl = boletoResponse.data.boletoUrl; // Aqui está a URL retornada do backend.
-  
+
+      const boletoUrl = boletoResponse.data.boletoUrl;
       if (boletoUrl) {
-        setBoletoUrl(boletoUrl); // Define o link no estado.
+        setBoletoUrl(boletoUrl);
+
+        navigate("/sucesso", {
+          state: {
+            paymentMethod: "boleto",
+            boletoUrl,
+          },
+        });
+
+        handleOrderCompletion(); // Limpa o carrinho após sucesso
       } else {
         console.warn("Link do boleto não encontrado.");
       }
-  
-      navigate("/sucesso", {
-        state: {
-          paymentMethod: "boleto",
-          boletoUrl, // Passa o link para a página de sucesso.
-        },
-      });
-  
     } catch (error: any) {
       console.error("Erro ao processar pagamento com boleto:", error.message || error);
       alert(`Erro ao gerar boleto: ${error.message}`);

@@ -110,24 +110,26 @@ const CartList: React.FC = () => {
 
   const handleCheckout = () => {
     const user = localStorage.getItem("user"); // Verifica se o usuário está logado
+  
     if (!user) {
-      setOpenSnackbar(true); // Exibe o Snackbar
+      setOpenSnackbar(true); // Exibe o Snackbar para informar que precisa logar
       setTimeout(() => {
         navigate("/login", {
-          state: { from: cart.length > 0 ? "/checkout" : "/" },
+          state: { from: cart.length > 0 ? "/checkout" : "/" }, // Define para onde redirecionar após login
         });
       }, 2000);
       return;
     }
-
+  
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
-
+  
+    // Formata os valores do frete e total para uso no checkout
     const formattedFreightPrice = freightPrice.toFixed(2).replace(".", ",");
     const formattedTotalPrice = totalPrice.replace(".", ",");
-
+  
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -136,7 +138,8 @@ const CartList: React.FC = () => {
       description: item.description || "Produto sem descrição",
       category_id: item.category_id || "default",
     }));
-
+  
+    // Salva os dados de checkout no localStorage para reutilização
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
@@ -147,10 +150,10 @@ const CartList: React.FC = () => {
         userId,
       })
     );
-
-    navigate("/checkout");
+  
+    navigate("/checkout"); // Redireciona para a página de checkout
   };
-
+  
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Snackbar
