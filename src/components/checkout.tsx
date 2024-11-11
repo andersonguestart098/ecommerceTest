@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { useCart } from "../contexts/CartContext"; // Certifique-se de ajustar o caminho
 
+
+
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("card");
@@ -14,6 +16,7 @@ const Checkout: React.FC = () => {
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [formKey, setFormKey] = useState(0);
+  const { handleOrderCompletion } = useCart();
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
     // Função calculateTotal
@@ -145,7 +148,6 @@ const Checkout: React.FC = () => {
     });
   };
   
-
   const handleCardPayment = async (formData: any) => {
     try {
       if (!formData || !formData.token || !formData.paymentMethodId) {
@@ -183,6 +185,9 @@ const Checkout: React.FC = () => {
       );
   
       if (response.data.status === "approved") {
+        // Limpa o carrinho antes de redirecionar para a página de sucesso
+        handleOrderCompletion();
+  
         navigate("/sucesso", { state: { paymentMethod: "card" } });
       } else {
         alert("Pagamento não aprovado.");
@@ -193,122 +198,128 @@ const Checkout: React.FC = () => {
     }
   };
   
-  const generatePixQrCode = async () => {
-    try {
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          payment_method_id: "pix",
-          transaction_amount: parseFloat(checkoutData.amount),
-          description: "Pagamento via Pix",
-          payer: {
-            email: checkoutData.email,
-            first_name: checkoutData.firstName,
-            last_name: checkoutData.lastName,
-            identification: {
-              type: "CPF",
-              number: checkoutData.cpf,
-            },
-          },
-          userId: checkoutData.userId,
-          products: checkoutData.items,
-        }
-      );
-  
-      const qrCodeBase64 = response.data.qr_code_base64;
-      console.log("QR Code recebido:", qrCodeBase64); // Log para depuração
-  
-      if (qrCodeBase64) {
-        const qrCode = `data:image/png;base64,${qrCodeBase64}`;
-        setQrCode(qrCode);
-  
-        navigate("/sucesso", {
-          state: {
-            paymentMethod: "pix",
-            pixQrCode: qrCode,
-          },
-        });
-      } else {
-        alert("QR Code não encontrado.");
-      }
-    } catch (error) {
-      console.error("Erro ao processar pagamento com Pix:", error);
-    }
-  };
-  
-  
 
-  const generateBoleto = async () => {
-    try {
-      const userId = checkoutData?.userId;
-  
-      if (!userId) {
-        throw new Error("Usuário não encontrado para emissão do boleto.");
-      }
-  
-      // Busca os dados do usuário com endereço completo
-      const response = await axios.get(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
-      );
-  
-      const { email, name, cpf, address } = response.data;
-  
-      if (!address) {
-        throw new Error("Endereço não encontrado para o usuário.");
-      }
-  
-      const [firstName, ...lastNameArray] = name.split(" ");
-      const lastName = lastNameArray.join(" ");
-  
-      const boletoResponse = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          payment_method_id: "bolbradesco",
-          transaction_amount: parseFloat(checkoutData.amount),
-          description: "Pagamento via Boleto Bancário",
-          payer: {
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            identification: {
-              type: "CPF",
-              number: cpf,
-            },
-            address: {
-              zip_code: address.postalCode,
-              street_name: address.street,
-              street_number: address.number || "SN",
-              neighborhood: address.neighborhood || "Centro",
-              city: address.city,
-              federal_unit: address.state,
-            },
+const generatePixQrCode = async () => {
+  try {
+    const response = await axios.post(
+      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+      {
+        payment_method_id: "pix",
+        transaction_amount: parseFloat(checkoutData.amount),
+        description: "Pagamento via Pix",
+        payer: {
+          email: checkoutData.email,
+          first_name: checkoutData.firstName,
+          last_name: checkoutData.lastName,
+          identification: {
+            type: "CPF",
+            number: checkoutData.cpf,
           },
-          userId,
-          products: checkoutData.items,
-        }
-      );
-  
-      const boletoUrl = boletoResponse.data.boletoUrl; // Aqui está a URL retornada do backend.
-  
-      if (boletoUrl) {
-        setBoletoUrl(boletoUrl); // Define o link no estado.
-      } else {
-        console.warn("Link do boleto não encontrado.");
+        },
+        userId: checkoutData.userId,
+        products: checkoutData.items,
       }
-  
+    );
+
+    const qrCodeBase64 = response.data.qr_code_base64;
+    console.log("QR Code recebido:", qrCodeBase64); // Log para depuração
+
+    if (qrCodeBase64) {
+      const qrCode = `data:image/png;base64,${qrCodeBase64}`;
+      setQrCode(qrCode);
+
+      // Limpa o carrinho antes de redirecionar para a página de sucesso
+      handleOrderCompletion(); 
+
       navigate("/sucesso", {
         state: {
-          paymentMethod: "boleto",
-          boletoUrl, // Passa o link para a página de sucesso.
+          paymentMethod: "pix",
+          pixQrCode: qrCode,
         },
       });
-  
-    } catch (error: any) {
-      console.error("Erro ao processar pagamento com boleto:", error.message || error);
-      alert(`Erro ao gerar boleto: ${error.message}`);
+    } else {
+      alert("QR Code não encontrado.");
     }
-  };
+  } catch (error) {
+    console.error("Erro ao processar pagamento com Pix:", error);
+  }
+};
+
   
+const generateBoleto = async () => {
+  try {
+    const userId = checkoutData?.userId;
+
+    if (!userId) {
+      throw new Error("Usuário não encontrado para emissão do boleto.");
+    }
+
+    // Busca os dados do usuário com endereço completo
+    const response = await axios.get(
+      `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
+    );
+
+    const { email, name, cpf, address } = response.data;
+
+    if (!address) {
+      throw new Error("Endereço não encontrado para o usuário.");
+    }
+
+    const [firstName, ...lastNameArray] = name.split(" ");
+    const lastName = lastNameArray.join(" ");
+
+    const boletoResponse = await axios.post(
+      "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+      {
+        payment_method_id: "bolbradesco",
+        transaction_amount: parseFloat(checkoutData.amount),
+        description: "Pagamento via Boleto Bancário",
+        payer: {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          identification: {
+            type: "CPF",
+            number: cpf,
+          },
+          address: {
+            zip_code: address.postalCode,
+            street_name: address.street,
+            street_number: address.number || "SN",
+            neighborhood: address.neighborhood || "Centro",
+            city: address.city,
+            federal_unit: address.state,
+          },
+        },
+        userId,
+        products: checkoutData.items,
+      }
+    );
+
+    const boletoUrl = boletoResponse.data.boletoUrl; // Aqui está a URL retornada do backend.
+
+    if (boletoUrl) {
+      setBoletoUrl(boletoUrl); // Define o link no estado.
+    } else {
+      console.warn("Link do boleto não encontrado.");
+    }
+
+    // Limpa o carrinho antes de redirecionar para a página de sucesso
+    handleOrderCompletion();
+
+    navigate("/sucesso", {
+      state: {
+        paymentMethod: "boleto",
+        boletoUrl, // Passa o link para a página de sucesso.
+      },
+    });
+
+  } catch (error: any) {
+    console.error("Erro ao processar pagamento com boleto:", error.message || error);
+    alert(`Erro ao gerar boleto: ${error.message}`);
+  }
+};
+
   
   const handleContinue = () => {
     if (paymentMethod === "card") {

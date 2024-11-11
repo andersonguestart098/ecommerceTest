@@ -42,7 +42,7 @@ interface CartContextType {
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
   clearCart: () => void;
-  handleOrderCompletion: () => void; // Ensure this is always provided
+  handleOrderCompletion: () => void;
 }
 
 interface CartProviderProps {
@@ -80,6 +80,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       localStorage.setItem("cepDestino", cepDestino);
     }
   }, [cart, cepDestino]);
+
+  useEffect(() => {
+    console.log("Carrinho atualizado:", cart);
+  }, [cart]);
 
   const addToCart = (product: Product, colorImage?: string) => {
     const cartItem = convertToCartItem(product, colorImage || product.image);
@@ -126,7 +130,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   const handleOrderCompletion = () => {
-    console.log("Order completed!");
+    console.log("Pedido finalizado! Limpando o carrinho...");
     clearCart();
   };
 
