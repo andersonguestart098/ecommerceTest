@@ -21,14 +21,15 @@ const Checkout: React.FC = () => {
 
     // Função calculateTotal
     const calculateTotal = () => {
-      if (!checkoutData) return "0.00"; // Verificação adicional
-      const totalAmount =
-        parseFloat(checkoutData.amount || 0) +
-        parseFloat(checkoutData.shippingCost || 0) -
-        parseFloat(checkoutData.discount || 0);
-  
+      if (!checkoutData) return "0.00"; // Verificação de segurança
+      const amount = parseFloat(checkoutData.amount || "0");
+      const shippingCost = parseFloat(checkoutData.shippingCost || "0");
+      const discount = parseFloat(checkoutData.discount || "0");
+    
+      const totalAmount = amount + shippingCost - discount;
       return totalAmount.toFixed(2);
     };
+    
 
     useEffect(() => {
       if (paymentMethod === "card") {
@@ -163,7 +164,7 @@ const Checkout: React.FC = () => {
         token: formData.token,
         issuer_id: formData.issuerId,
         payment_method_id: formData.paymentMethodId,
-        transaction_amount: parseFloat(checkoutData.amount.replace(",", ".")),
+        transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
         installments: selectedInstallment,
         description: "Compra em Nato Pisos",
         payer: {
@@ -178,6 +179,7 @@ const Checkout: React.FC = () => {
         products: checkoutData.items,
         userId: checkoutData.userId,
       };
+      
   
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
@@ -205,7 +207,7 @@ const generatePixQrCode = async () => {
       "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
       {
         payment_method_id: "pix",
-        transaction_amount: parseFloat(checkoutData.amount),
+        transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
         description: "Pagamento via Pix",
         payer: {
           email: checkoutData.email,
@@ -220,7 +222,7 @@ const generatePixQrCode = async () => {
         products: checkoutData.items,
       }
     );
-
+    
     const qrCodeBase64 = response.data.qr_code_base64;
     console.log("QR Code recebido:", qrCodeBase64); // Log para depuração
 
@@ -272,7 +274,7 @@ const generateBoleto = async () => {
       "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
       {
         payment_method_id: "bolbradesco",
-        transaction_amount: parseFloat(checkoutData.amount),
+        transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
         description: "Pagamento via Boleto Bancário",
         payer: {
           email,
@@ -295,6 +297,7 @@ const generateBoleto = async () => {
         products: checkoutData.items,
       }
     );
+    
 
     const boletoUrl = boletoResponse.data.boletoUrl; // Aqui está a URL retornada do backend.
 
@@ -667,22 +670,23 @@ const generateBoleto = async () => {
           Frete: <strong>R$ {checkoutData?.shippingCost}</strong>
         </Typography>
         <Typography sx={{ mb: 2 }}>
-          Total: <strong>R$ {calculateTotal()}</strong>
-        </Typography>
+        Total: <strong>R$ {calculateTotal()}</strong>
+      </Typography>
+
         <Button
-  variant="contained"
-  type="button"
-  onClick={handleContinue} // Chama a função com base no método de pagamento
-  disabled={paymentMethod === "card" && !isMpReady}
-  sx={{
-    width: "100%", // Igualando largura do botão
-    backgroundColor: "#313926",
-    '&:hover': { backgroundColor: "#4caf50" },
-    textAlign: "center",
-  }}
->
-  Continuar
-</Button>
+          variant="contained"
+          type="button"
+          onClick={handleContinue} // Chama a função com base no método de pagamento
+          disabled={paymentMethod === "card" && !isMpReady}
+          sx={{
+            width: "100%", // Igualando largura do botão
+            backgroundColor: "#313926",
+            '&:hover': { backgroundColor: "#4caf50" },
+            textAlign: "center",
+          }}
+        >
+          Continuar
+        </Button>
 
         <Button
           variant="outlined"

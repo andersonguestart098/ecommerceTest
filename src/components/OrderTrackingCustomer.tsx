@@ -110,8 +110,10 @@ const OrderTracking: React.FC = () => {
             headers: { "x-auth-token": token },
           }
         );
+        console.log("Pedidos carregados:", response.data); // Log dos pedidos recebidos
         setOrders(response.data);
       } catch (error: any) {
+        console.error("Erro ao buscar pedidos:", error); // Log do erro
         if (error.response?.status === 403 || error.response?.status === 401) {
           alert("Por favor, faça login novamente.");
           navigate("/login");
@@ -120,12 +122,13 @@ const OrderTracking: React.FC = () => {
         setLoading(false); // Finaliza o carregamento
       }
     };
-
+  
     fetchOrders();
-
+  
     socket?.on(
       "orderStatusUpdated",
       (update: { orderId: string; status: string }) => {
+        console.log("Atualização recebida do socket:", update); // Log do socket
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order.id === update.orderId || order._id === update.orderId
@@ -139,11 +142,12 @@ const OrderTracking: React.FC = () => {
         setOpenSnackbar(true);
       }
     );
-
+  
     return () => {
       socket?.off("orderStatusUpdated");
     };
   }, [socket, navigate]);
+  
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
@@ -158,7 +162,7 @@ const OrderTracking: React.FC = () => {
 
   const renderProgressTracker = (currentStatus: string) => {
     const isCanceled = currentStatus === "CANCELED";
-
+  
     return (
       <Box
         sx={{
@@ -171,14 +175,20 @@ const OrderTracking: React.FC = () => {
         }}
       >
         {statusSteps.map((step, index) => {
-          const isActive =
-            index <= statusSteps.findIndex((s) => s.key === currentStatus);
+          const activeStepIndex = statusSteps.findIndex(
+            (s) => s.key === currentStatus
+          );
+          const isActive = index <= activeStepIndex;
+          console.log(
+            `Step: ${step.key}, Ativo: ${isActive}, Status Atual: ${currentStatus}`
+          ); // Log para verificar quais etapas estão ativas
+  
           const stepColor = isCanceled
             ? step.highlightColor
             : isActive
             ? "#4CAF50"
             : step.defaultColor;
-
+  
           return (
             <motion.div
               key={step.key}
@@ -219,7 +229,7 @@ const OrderTracking: React.FC = () => {
       </Box>
     );
   };
-
+  
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);

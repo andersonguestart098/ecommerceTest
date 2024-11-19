@@ -23,14 +23,14 @@ const InfoSection: React.FC = () => {
             variant="subtitle1"
             sx={{ fontWeight: "bold", fontSize: 14, color: "#313926" }}
           >
-            Frete Grátis
+            Consultar Região
           </Typography>
           <Typography
             variant="body2"
             color="textSecondary"
             sx={{ fontSize: 12, color: "#313926" }}
           >
-            Consulte o Regulamento
+           Saiba Mais Sobre a Cobertura
           </Typography>
         </Grid>
 
@@ -41,7 +41,7 @@ const InfoSection: React.FC = () => {
             variant="subtitle1"
             sx={{ fontWeight: "bold", fontSize: 14, color: "#313926" }}
           >
-            Parcelamento em até 11x
+            Parcelamento em até 6x
           </Typography>
           <Typography
             variant="body2"
@@ -59,7 +59,7 @@ const InfoSection: React.FC = () => {
             variant="subtitle1"
             sx={{ fontWeight: "bold", fontSize: 14, color: "#313926" }}
           >
-            7% de Desconto
+            5% de Desconto
           </Typography>
           <Typography
             variant="body2"

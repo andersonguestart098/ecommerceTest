@@ -2,9 +2,11 @@ import React from "react";
 import { Box, Typography, Grid, Avatar } from "@mui/material";
 
 const brands = [
-  { name: "Arquitech", logo: "/icones/arquitech.png" },
+  
   { name: "Quickstep", logo: "/icones/quickstep.png" },
+  { name: "VinilForte", logo: "/icones/vinilforte.png" },
   { name: "Eucafloor", logo: "/icones/eucafloor.jpg" },
+  { name: "Mapei", logo: "/icones/mapei.png" },
   { name: "Santa Luzia", logo: "/icones/santaLuzia.png" },
 ];
 

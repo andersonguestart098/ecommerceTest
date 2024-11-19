@@ -100,156 +100,107 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <AppBar
-      position="fixed"
+<AppBar
+  position="fixed"
+  sx={{
+    backgroundColor: "#fff",
+    color: "#000",
+    boxShadow: "none",
+    padding: "0 10px",
+    height: "94px",
+    zIndex: 1300,
+    borderBottom: "2px solid #E6E3DB",
+  }}
+>
+  <Toolbar
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      height: "100%",
+      padding: isMobile ? "0 5px" : "0 20px",
+    }}
+  >
+    {/* Logo */}
+    <Box
       sx={{
-        backgroundColor: "#fff",
-        color: "#000",
-        boxShadow: "none",
-        padding: "0 10px",
-        height: "94px",
-        zIndex: 1300,
-        borderBottom: "2px solid #E6E3DB",
+        display: "flex",
+        alignItems: "center",
+        marginLeft: isMobile ? "0" : "10px",
       }}
     >
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          height: "100%",
-          padding: isMobile ? "0 5px" : "0 20px",
+      <img
+        src="/icones/logo.png"
+        alt="Logo"
+        style={{
+          width: isMobile ? "146px" : "180px",
+          cursor: "pointer",
+          paddingBottom: 5,
         }}
-      >
-        {/* Logo */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            marginLeft: isMobile ? "0" : "10px",
-          }}
-        >
-          <img
-            src="/icones/logo.png"
-            alt="Logo"
-            style={{
-              width: isMobile ? "146px" : "180px",
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          navigate("/");
+        }}
+      />
+    </Box>
+
+    {/* SearchBar fixa no mobile */}
+    <Box
+      sx={{
+        flexGrow: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        maxWidth: isMobile ? "60%" : "50%",
+        position: "relative",
+      }}
+    >
+      <SearchBar
+        onSearch={(term) => {
+          setSearchTerm(term);
+          initiateSearch(term);
+        }}
+      />
+    </Box>
+
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      {user ? (
+        <>
+          <Typography
+            sx={{
+              color: "#313926",
+              fontSize: isMobile ? "1rem" : "1.1rem",
+              marginRight: isMobile ? "5px" : "10px",
               cursor: "pointer",
-              paddingBottom: 5,
             }}
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" }); // Volta ao topo ao clicar
-              navigate("/");
-            }}
-          />
-        </Box>
+          >
+            Olá, {user.name}
+          </Typography>
 
-        {/* SearchBar fixa no mobile */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            maxWidth: isMobile ? "60%" : "50%",
-            position: "relative",
-          }}
-        >
-          <SearchBar
-            onSearch={(term) => {
-              setSearchTerm(term);
-              initiateSearch(term);
-            }}
-          />
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          {user ? (
+          {userType === "admin" ? (
             <>
-              <Typography
-                sx={{
-                  color: "#313926",
-                  fontSize: isMobile ? "1rem" : "1.1rem",
-                  marginRight: isMobile ? "5px" : "10px",
-                  cursor: "pointer",
-                }}
-              >
-                Olá, {user.name}
-              </Typography>
-
-              {/* Ícone de Menu ou Configurações */}
-              <IconButton
-                onClick={handleUserClick}
-                sx={{
-                  padding: "6px",
-                  marginRight: isMobile ? "5px" : "10px",
-                }}
-              >
-                {isMobile ? (
-                  // Badge no ícone de menu no mobile
-                  <Badge badgeContent={cart.length} color="primary">
-                    <MenuIcon
-                      sx={{
-                        color: "#313926",
-                        fontSize: isMobile ? "2rem" : "1.8rem",
-                      }}
-                    />
-                  </Badge>
-                ) : // Ícone de configurações sem Badge no desktop
-                userType === "admin" ? (
-                  <SettingsSuggestIcon
-                    sx={{
-                      color: "#313926",
-                      fontSize: "1.8rem",
-                    }}
-                  />
-                ) : (
-                  <MenuIcon
-                    sx={{
-                      color: "#313926",
-                      fontSize: "1.8rem",
-                    }}
-                  />
-                )}
+              {/* Ícone de engrenagem no desktop e no mobile */}
+              <IconButton onClick={handleUserClick} sx={{ padding: "6px" }}>
+                <SettingsSuggestIcon
+                  sx={{
+                    color: "#313926",
+                    fontSize: isMobile ? "2rem" : "1.8rem",
+                  }}
+                />
               </IconButton>
-
-              {/* Menu dropdown com opções baseadas no tipo de usuário */}
+              
+              {/* Menu para admin */}
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleCloseMenu}
               >
-                {userType === "admin" ? (
-                  <MenuItem onClick={() => handleNavigate("/admin")}>
-                    <IconButton>
-                      <SettingsSuggestIcon />
-                    </IconButton>
-                    Gerenciador
-                  </MenuItem>
-                ) : (
-                  <>
-                    <MenuItem onClick={() => handleNavigate("/my-orders")}>
-                      <IconButton>
-                        <LocalShippingIcon />
-                      </IconButton>
-                      Meus Pedidos
-                    </MenuItem>
-                    <MenuItem onClick={() => handleNavigate("/meus-dados")}>
-                      <IconButton>
-                        <ManageAccountsIcon />
-                      </IconButton>
-                      Meus Dados
-                    </MenuItem>
-                  </>
-                )}
-                {/* Carrinho de compras no dropdown somente para mobile */}
-                {isMobile && (
-                  <MenuItem onClick={() => handleNavigate("/cart")}>
-                    <IconButton>
-                      <ShoppingCartIcon />
-                    </IconButton>
-                    Carrinho
-                  </MenuItem>
-                )}
+                <MenuItem onClick={() => handleNavigate("/admin")}>
+                  <IconButton>
+                    <SettingsSuggestIcon />
+                  </IconButton>
+                  Gerenciador
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <IconButton>
                     <LogoutIcon />
@@ -257,68 +208,166 @@ const Navbar: React.FC<NavbarProps> = ({
                   Logout
                 </MenuItem>
               </Menu>
-
-              {/* Carrinho visível diretamente no Navbar para desktop com Badge */}
-              {!isMobile && (
-                <IconButton
-                  onClick={() => navigate("/cart")}
-                  sx={{ padding: 0 }}
-                >
-                  <Badge badgeContent={cart.length} color="primary">
-                    <ShoppingCartIcon
-                      sx={{ color: "#313926", fontSize: "1.8rem" }}
-                    />
-                  </Badge>
-                </IconButton>
-              )}
             </>
-          ) : (
+          ) : isMobile ? (
             <>
-              <Button
-                onClick={() => navigate("/login")}
+              {/* Menu com Badge no mobile */}
+              <IconButton
+                onClick={handleUserClick}
                 sx={{
-                  color: "#313926",
-                  fontSize: isMobile ? "0.9rem" : "1.1rem",
+                  padding: "6px",
                   marginRight: "5px",
                 }}
               >
-                Entrar
-              </Button>
-              {/* Carrinho visível diretamente no Navbar para desktop com Badge */}
-              {!isMobile && (
-                <IconButton
-                  onClick={() => navigate("/cart")}
-                  sx={{ padding: 0 }}
+                <Badge
+                  badgeContent={cart.length}
+                  color="primary"
                 >
-                  <Badge badgeContent={cart.length} color="primary">
-                    <ShoppingCartIcon
-                      sx={{ color: "#313926", fontSize: "1.8rem" }}
-                    />
-                  </Badge>
-                </IconButton>
-              )}
+                  <MenuIcon
+                    sx={{
+                      color: "#313926",
+                      fontSize: "2rem",
+                    }}
+                  />
+                </Badge>
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleCloseMenu}
+              >
+                <MenuItem onClick={() => handleNavigate("/cart")}>
+                  <IconButton>
+                    <Badge badgeContent={cart.length} color="primary">
+                      <ShoppingCartIcon />
+                    </Badge>
+                  </IconButton>
+                  Carrinho
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/my-orders")}>
+                  <IconButton>
+                    <LocalShippingIcon />
+                  </IconButton>
+                  Meus Pedidos
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+                  <IconButton>
+                    <ManageAccountsIcon />
+                  </IconButton>
+                  Meus Dados
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <IconButton>
+                    <LogoutIcon />
+                  </IconButton>
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <>
+              {/* Carrinho fixo no desktop */}
+              <IconButton
+                onClick={() => navigate("/cart")}
+                sx={{ padding: 0, marginRight: "10px" }}
+              >
+                <Badge badgeContent={cart.length} color="primary">
+                  <ShoppingCartIcon
+                    sx={{ color: "#313926", fontSize: "1.8rem" }}
+                  />
+                </Badge>
+              </IconButton>
+
+              {/* Menu no Desktop */}
+              <IconButton
+                onClick={handleUserClick}
+                sx={{
+                  padding: "6px",
+                }}
+              >
+                <MenuIcon
+                  sx={{
+                    color: "#313926",
+                    fontSize: "1.8rem",
+                  }}
+                />
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleCloseMenu}
+              >
+                {/* Carrinho removido no menu desktop */}
+                <MenuItem onClick={() => handleNavigate("/my-orders")}>
+                  <IconButton>
+                    <LocalShippingIcon />
+                  </IconButton>
+                  Meus Pedidos
+                </MenuItem>
+                <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+                  <IconButton>
+                    <ManageAccountsIcon />
+                  </IconButton>
+                  Meus Dados
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <IconButton>
+                    <LogoutIcon />
+                  </IconButton>
+                  Logout
+                </MenuItem>
+              </Menu>
             </>
           )}
-        </Box>
-      </Toolbar>
+        </>
+      ) : (
+        <>
+          <Button
+            onClick={() => navigate("/login")}
+            sx={{
+              color: "#313926",
+              fontSize: isMobile ? "0.9rem" : "1.1rem",
+              marginRight: "5px",
+            }}
+          >
+            Entrar
+          </Button>
 
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <SnackbarContent
-          style={{
-            backgroundColor: "#fff",
-            color: "#313926",
-            fontFamily: "Arial, sans-serif",
-            fontSize: "1rem",
-          }}
-          message={snackbarMessage}
-        />
-      </Snackbar>
-    </AppBar>
+          {/* Ícone do Carrinho Sempre Visível */}
+          <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
+            <Badge badgeContent={cart.length} color="primary">
+              <ShoppingCartIcon
+                sx={{ color: "#313926", fontSize: "1.8rem" }}
+              />
+            </Badge>
+          </IconButton>
+        </>
+      )}
+    </Box>
+  </Toolbar>
+
+  <Snackbar
+    open={openSnackbar}
+    autoHideDuration={6000}
+    onClose={handleCloseSnackbar}
+    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+  >
+    <SnackbarContent
+      style={{
+        backgroundColor: "#fff",
+        color: "#313926",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "1rem",
+      }}
+      message={snackbarMessage}
+    />
+  </Snackbar>
+</AppBar>
+
+
+
   );
 };
 
