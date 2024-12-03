@@ -66,12 +66,15 @@ const CartList: React.FC = () => {
     setLoadingFreight(true);
     try {
       console.log("Calculating freight...");
+
+      // Obtém o token para autenticação
       const tokenResponse = await axios.get(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
       );
       const token = tokenResponse.data.token;
       console.log("Token received:", token);
 
+      // Dados para cálculo do frete
       const requestData = {
         cepOrigem: "01002001",
         cepDestino,
@@ -83,6 +86,7 @@ const CartList: React.FC = () => {
 
       console.log("Requesting freight calculation with data:", requestData);
 
+      // Chamada à API de cálculo de frete
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
         requestData,
@@ -94,15 +98,27 @@ const CartList: React.FC = () => {
         }
       );
 
-      const jadlogOptions = response.data.filter(
-        (option: any) => option.company.name === "Jadlog"
-      );
+      console.log("Freight calculation response:", response.data);
 
-      console.log("Freight options received:", jadlogOptions);
-      setFreightOptions(jadlogOptions);
-    } catch (error) {
-      console.error("Erro ao calcular frete:", error);
-      alert("Erro ao calcular frete. Verifique o console para mais detalhes.");
+      // Verifica se a resposta contém a propriedade shippingCost
+      if (response.data && typeof response.data.shippingCost === "number") {
+        const shippingCost = response.data.shippingCost;
+        setFreightOptions([{ name: "Jadlog", price: shippingCost.toFixed(2) }]);
+        console.log("Freight options set:", [
+          { name: "Jadlog", price: shippingCost.toFixed(2) },
+        ]);
+      } else {
+        console.error("Unexpected response format:", response.data);
+        alert("O cálculo de frete retornou dados inesperados. Verifique.");
+      }
+    } catch (error: any) {
+      console.error(
+        "Erro ao calcular frete:",
+        error.response?.data || error.message || error
+      );
+      alert(
+        "Erro ao calcular frete. Por favor, verifique o console ou tente novamente mais tarde."
+      );
     } finally {
       setLoadingFreight(false);
     }
@@ -110,7 +126,7 @@ const CartList: React.FC = () => {
 
   const handleCheckout = () => {
     const user = localStorage.getItem("user"); // Verifica se o usuário está logado
-  
+
     if (!user) {
       setOpenSnackbar(true); // Exibe o Snackbar para informar que precisa logar
       setTimeout(() => {
@@ -120,16 +136,16 @@ const CartList: React.FC = () => {
       }, 2000);
       return;
     }
-  
+
     if (!selectedFreightOption) {
       alert("Por favor, selecione uma opção de frete antes de continuar.");
       return;
     }
-  
+
     // Formata os valores do frete e total para uso no checkout
     const formattedFreightPrice = freightPrice.toFixed(2).replace(".", ",");
     const formattedTotalPrice = totalPrice.replace(".", ",");
-  
+
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -138,7 +154,7 @@ const CartList: React.FC = () => {
       description: item.description || "Produto sem descrição",
       category_id: item.category_id || "default",
     }));
-  
+
     // Salva os dados de checkout no localStorage para reutilização
     localStorage.setItem(
       "checkoutData",
@@ -150,10 +166,10 @@ const CartList: React.FC = () => {
         userId,
       })
     );
-  
+
     navigate("/checkout"); // Redireciona para a página de checkout
   };
-  
+
   return (
     <Box sx={{ padding: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Snackbar

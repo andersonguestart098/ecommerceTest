@@ -27,7 +27,7 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-  
+
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/login",
@@ -36,15 +36,15 @@ const Login: React.FC = () => {
           password,
         }
       );
-  
+
       const { token, user } = response.data;
-  
+
       // Salva o token e os dados do usuário
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-  
+
       setUser(user); // Atualiza o contexto global de usuário, se existir
-  
+
       // Redireciona o usuário
       const redirectPath = location.state?.from || "/";
       navigate(redirectPath);
@@ -55,7 +55,6 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
-  
 
   const handleRegisterClick = () => {
     navigate("/register");

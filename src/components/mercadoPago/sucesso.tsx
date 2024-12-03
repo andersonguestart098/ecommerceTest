@@ -16,7 +16,9 @@ const SuccessPage: React.FC = () => {
 
   useEffect(() => {
     if (!state) {
-      alert("Nenhuma informação de pagamento foi encontrada. Redirecionando para o checkout.");
+      alert(
+        "Nenhuma informação de pagamento foi encontrada. Redirecionando para o checkout."
+      );
       navigate("/checkout");
     } else {
       console.log("Dados recebidos no SuccessPage:", state);
@@ -48,36 +50,50 @@ const SuccessPage: React.FC = () => {
   };
 
   return (
-<Box
-  sx={{
-    paddingBottom: 4,
-    textAlign: "center",
-    minHeight: "80vh", // Reduzindo a altura mínima para 80% da tela
-    marginTop: "-100px", // Ajustando a posição para subir o conteúdo
-    backgroundColor: "#f5f5f5",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-
+    <Box
+      sx={{
+        paddingTop: "120px",
+        textAlign: "center",
+        minHeight: "80vh", // Reduzindo a altura mínima para 80% da tela
+        marginTop: "-100px", // Ajustando a posição para subir o conteúdo
+        backgroundColor: "#f5f5f5",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <CheckCircleIcon sx={{ fontSize: 80, color: "#4caf50", mb: 2 }} />
-      <Typography variant="h4" sx={{ color: "#4caf50", fontWeight: "bold", mb: 1 }}>
+      <Typography
+        variant="h4"
+        sx={{ color: "#4caf50", fontWeight: "bold", mb: 1 }}
+      >
         Pedido Realizado com Sucesso!
       </Typography>
       <Typography variant="body1" sx={{ maxWidth: 600, mt: 2 }}>
-        Obrigado por confiar na <strong>Nato Pisos</strong>! Acompanhe seu pedido em <b>MEUS PEDIDOS</b>.
+        Obrigado por confiar na <strong>Nato Pisos</strong>! Acompanhe seu
+        pedido em <b>MEUS PEDIDOS</b>.
       </Typography>
       <Typography variant="h6" sx={{ mt: 2, color: "#555" }}>
-        Método de Pagamento: {paymentMethod === "pix" ? "Pix" : paymentMethod === "boleto" ? "Boleto Bancário" : "Cartão de Crédito"}
+        Método de Pagamento:{" "}
+        {paymentMethod === "pix"
+          ? "Pix"
+          : paymentMethod === "boleto"
+          ? "Boleto Bancário"
+          : "Cartão de Crédito"}
       </Typography>
-      <Typography variant="body2" sx={{ maxWidth: 600, mt: 2 }}>{getPaymentMessage()}</Typography>
+      <Typography variant="body2" sx={{ maxWidth: 600, mt: 2 }}>
+        {getPaymentMessage()}
+      </Typography>
 
       {paymentMethod === "pix" && pixQrCode && (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6">QR Code para Pagamento via Pix</Typography>
-          <img src={pixQrCode} alt="QR Code Pix" style={{ width: 200, height: 200, marginTop: 10 }} />
+          <img
+            src={pixQrCode}
+            alt="QR Code Pix"
+            style={{ width: 200, height: 200, marginTop: 10 }}
+          />
         </Box>
       )}
 
@@ -95,7 +111,8 @@ const SuccessPage: React.FC = () => {
             </a>
           ) : (
             <Typography color="error">
-              O link do boleto não está disponível. Por favor, verifique seus pedidos ou entre em contato com o suporte.
+              O link do boleto não está disponível. Por favor, verifique seus
+              pedidos ou entre em contato com o suporte.
             </Typography>
           )}
         </Box>
@@ -109,7 +126,7 @@ const SuccessPage: React.FC = () => {
           maxWidth: 300,
           backgroundColor: "#313926",
           color: "#fff",
-          '&:hover': { backgroundColor: "#E6E3DB", color: "#313926" },
+          "&:hover": { backgroundColor: "#E6E3DB", color: "#313926" },
         }}
       >
         Continuar Comprando
@@ -122,7 +139,7 @@ const SuccessPage: React.FC = () => {
           maxWidth: 300,
           borderColor: "#313926",
           color: "#313926",
-          '&:hover': { backgroundColor: "#E6E3DB", borderColor: "#E6E3DB" },
+          "&:hover": { backgroundColor: "#E6E3DB", borderColor: "#E6E3DB" },
         }}
       >
         Ir para meus pedidos

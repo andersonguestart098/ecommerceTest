@@ -76,10 +76,16 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleUserClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+    // Abre o menu apenas se ele estiver fechado
+    if (anchorEl !== event.currentTarget) {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
-  const handleCloseMenu = () => setAnchorEl(null);
+  const handleCloseMenu = () => {
+    // Fecha o menu
+    setAnchorEl(null);
+  };
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -100,274 +106,268 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-<AppBar
-  position="fixed"
-  sx={{
-    backgroundColor: "#fff",
-    color: "#000",
-    boxShadow: "none",
-    padding: "0 10px",
-    height: "94px",
-    zIndex: 1300,
-    borderBottom: "2px solid #E6E3DB",
-  }}
->
-  <Toolbar
-    sx={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      height: "100%",
-      padding: isMobile ? "0 5px" : "0 20px",
-    }}
-  >
-    {/* Logo */}
-    <Box
+    <AppBar
+      position="fixed"
       sx={{
-        display: "flex",
-        alignItems: "center",
-        marginLeft: isMobile ? "0" : "10px",
+        backgroundColor: "#fff",
+        color: "#000",
+        boxShadow: "none",
+        padding: "0 10px",
+        height: "94px",
+        zIndex: 1300,
+        borderBottom: "2px solid #E6E3DB",
       }}
     >
-      <img
-        src="/icones/logo.png"
-        alt="Logo"
-        style={{
-          width: isMobile ? "146px" : "180px",
-          cursor: "pointer",
-          paddingBottom: 5,
+      <Toolbar
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          height: "100%",
+          padding: isMobile ? "0 5px" : "0 20px",
         }}
-        onClick={() => {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          navigate("/");
-        }}
-      />
-    </Box>
-
-    {/* SearchBar fixa no mobile */}
-    <Box
-      sx={{
-        flexGrow: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        maxWidth: isMobile ? "60%" : "50%",
-        position: "relative",
-      }}
-    >
-      <SearchBar
-        onSearch={(term) => {
-          setSearchTerm(term);
-          initiateSearch(term);
-        }}
-      />
-    </Box>
-
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      {user ? (
-        <>
-          <Typography
-            sx={{
-              color: "#313926",
-              fontSize: isMobile ? "1rem" : "1.1rem",
-              marginRight: isMobile ? "5px" : "10px",
+      >
+        {/* Logo */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            marginLeft: isMobile ? "0" : "10px",
+          }}
+        >
+          <img
+            src="/icones/logo.png"
+            alt="Logo"
+            style={{
+              width: isMobile ? "146px" : "180px",
               cursor: "pointer",
+              paddingBottom: 5,
             }}
-          >
-            Olá, {user.name}
-          </Typography>
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              navigate("/");
+            }}
+          />
+        </Box>
 
-          {userType === "admin" ? (
+        {/* SearchBar fixa no mobile */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            maxWidth: isMobile ? "60%" : "50%",
+            position: "relative",
+          }}
+        >
+          <SearchBar
+            onSearch={(term) => {
+              setSearchTerm(term);
+              initiateSearch(term);
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          {user ? (
             <>
-              {/* Ícone de engrenagem no desktop e no mobile */}
-              <IconButton onClick={handleUserClick} sx={{ padding: "6px" }}>
-                <SettingsSuggestIcon
-                  sx={{
-                    color: "#313926",
-                    fontSize: isMobile ? "2rem" : "1.8rem",
-                  }}
-                />
-              </IconButton>
-              
-              {/* Menu para admin */}
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleCloseMenu}
-              >
-                <MenuItem onClick={() => handleNavigate("/admin")}>
-                  <IconButton>
-                    <SettingsSuggestIcon />
-                  </IconButton>
-                  Gerenciador
-                </MenuItem>
-                <MenuItem onClick={handleLogout}>
-                  <IconButton>
-                    <LogoutIcon />
-                  </IconButton>
-                  Logout
-                </MenuItem>
-              </Menu>
-            </>
-          ) : isMobile ? (
-            <>
-              {/* Menu com Badge no mobile */}
-              <IconButton
-                onClick={handleUserClick}
+              <Typography
                 sx={{
-                  padding: "6px",
-                  marginRight: "5px",
+                  color: "#313926",
+                  fontSize: isMobile ? "1rem" : "1.1rem",
+                  marginRight: isMobile ? "5px" : "10px",
+                  cursor: "pointer",
                 }}
               >
-                <Badge
-                  badgeContent={cart.length}
-                  color="primary"
-                >
-                  <MenuIcon
-                    sx={{
-                      color: "#313926",
-                      fontSize: "2rem",
-                    }}
-                  />
-                </Badge>
-              </IconButton>
+                Olá, {user.name}
+              </Typography>
 
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleCloseMenu}
-              >
-                <MenuItem onClick={() => handleNavigate("/cart")}>
-                  <IconButton>
+              {userType === "admin" ? (
+                <>
+                  {/* Ícone de engrenagem no desktop e no mobile */}
+                  <IconButton onClick={handleUserClick} sx={{ padding: "6px" }}>
+                    <SettingsSuggestIcon
+                      sx={{
+                        color: "#313926",
+                        fontSize: isMobile ? "2rem" : "1.8rem",
+                      }}
+                    />
+                  </IconButton>
+
+                  {/* Menu para admin */}
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                  >
+                    <MenuItem onClick={() => handleNavigate("/admin")}>
+                      <IconButton>
+                        <SettingsSuggestIcon />
+                      </IconButton>
+                      Gerenciador
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>
+                      <IconButton>
+                        <LogoutIcon />
+                      </IconButton>
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : isMobile ? (
+                <>
+                  {/* Menu com Badge no mobile */}
+                  <IconButton
+                    onClick={handleUserClick}
+                    sx={{
+                      padding: "6px",
+                      marginRight: "5px",
+                    }}
+                  >
                     <Badge badgeContent={cart.length} color="primary">
-                      <ShoppingCartIcon />
+                      <MenuIcon
+                        sx={{
+                          color: "#313926",
+                          fontSize: "2rem",
+                        }}
+                      />
                     </Badge>
                   </IconButton>
-                  Carrinho
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigate("/my-orders")}>
-                  <IconButton>
-                    <LocalShippingIcon />
+
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                  >
+                    <MenuItem onClick={() => handleNavigate("/cart")}>
+                      <IconButton>
+                        <Badge badgeContent={cart.length} color="primary">
+                          <ShoppingCartIcon />
+                        </Badge>
+                      </IconButton>
+                      Carrinho
+                    </MenuItem>
+                    <MenuItem onClick={() => handleNavigate("/my-orders")}>
+                      <IconButton>
+                        <LocalShippingIcon />
+                      </IconButton>
+                      Meus Pedidos
+                    </MenuItem>
+                    <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+                      <IconButton>
+                        <ManageAccountsIcon />
+                      </IconButton>
+                      Meus Dados
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>
+                      <IconButton>
+                        <LogoutIcon />
+                      </IconButton>
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <>
+                  {/* Carrinho fixo no desktop */}
+                  <IconButton
+                    onClick={() => navigate("/cart")}
+                    sx={{ padding: 0, marginRight: "10px" }}
+                  >
+                    <Badge badgeContent={cart.length} color="primary">
+                      <ShoppingCartIcon
+                        sx={{ color: "#313926", fontSize: "1.8rem" }}
+                      />
+                    </Badge>
                   </IconButton>
-                  Meus Pedidos
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigate("/meus-dados")}>
-                  <IconButton>
-                    <ManageAccountsIcon />
+
+                  {/* Menu no Desktop */}
+                  <IconButton
+                    onClick={handleUserClick}
+                    sx={{
+                      padding: "6px",
+                    }}
+                  >
+                    <MenuIcon
+                      sx={{
+                        color: "#313926",
+                        fontSize: "1.8rem",
+                      }}
+                    />
                   </IconButton>
-                  Meus Dados
-                </MenuItem>
-                <MenuItem onClick={handleLogout}>
-                  <IconButton>
-                    <LogoutIcon />
-                  </IconButton>
-                  Logout
-                </MenuItem>
-              </Menu>
+
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                  >
+                    {/* Carrinho removido no menu desktop */}
+                    <MenuItem onClick={() => handleNavigate("/my-orders")}>
+                      <IconButton>
+                        <LocalShippingIcon />
+                      </IconButton>
+                      Meus Pedidos
+                    </MenuItem>
+                    <MenuItem onClick={() => handleNavigate("/meus-dados")}>
+                      <IconButton>
+                        <ManageAccountsIcon />
+                      </IconButton>
+                      Meus Dados
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout}>
+                      <IconButton>
+                        <LogoutIcon />
+                      </IconButton>
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
             </>
           ) : (
             <>
-              {/* Carrinho fixo no desktop */}
-              <IconButton
-                onClick={() => navigate("/cart")}
-                sx={{ padding: 0, marginRight: "10px" }}
+              <Button
+                onClick={() => navigate("/login")}
+                sx={{
+                  color: "#313926",
+                  fontSize: isMobile ? "0.9rem" : "1.1rem",
+                  marginRight: "5px",
+                }}
               >
+                Entrar
+              </Button>
+
+              {/* Ícone do Carrinho Sempre Visível */}
+              <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
                 <Badge badgeContent={cart.length} color="primary">
                   <ShoppingCartIcon
                     sx={{ color: "#313926", fontSize: "1.8rem" }}
                   />
                 </Badge>
               </IconButton>
-
-              {/* Menu no Desktop */}
-              <IconButton
-                onClick={handleUserClick}
-                sx={{
-                  padding: "6px",
-                }}
-              >
-                <MenuIcon
-                  sx={{
-                    color: "#313926",
-                    fontSize: "1.8rem",
-                  }}
-                />
-              </IconButton>
-
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleCloseMenu}
-              >
-                {/* Carrinho removido no menu desktop */}
-                <MenuItem onClick={() => handleNavigate("/my-orders")}>
-                  <IconButton>
-                    <LocalShippingIcon />
-                  </IconButton>
-                  Meus Pedidos
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigate("/meus-dados")}>
-                  <IconButton>
-                    <ManageAccountsIcon />
-                  </IconButton>
-                  Meus Dados
-                </MenuItem>
-                <MenuItem onClick={handleLogout}>
-                  <IconButton>
-                    <LogoutIcon />
-                  </IconButton>
-                  Logout
-                </MenuItem>
-              </Menu>
             </>
           )}
-        </>
-      ) : (
-        <>
-          <Button
-            onClick={() => navigate("/login")}
-            sx={{
-              color: "#313926",
-              fontSize: isMobile ? "0.9rem" : "1.1rem",
-              marginRight: "5px",
-            }}
-          >
-            Entrar
-          </Button>
+        </Box>
+      </Toolbar>
 
-          {/* Ícone do Carrinho Sempre Visível */}
-          <IconButton onClick={() => navigate("/cart")} sx={{ padding: 0 }}>
-            <Badge badgeContent={cart.length} color="primary">
-              <ShoppingCartIcon
-                sx={{ color: "#313926", fontSize: "1.8rem" }}
-              />
-            </Badge>
-          </IconButton>
-        </>
-      )}
-    </Box>
-  </Toolbar>
-
-  <Snackbar
-    open={openSnackbar}
-    autoHideDuration={6000}
-    onClose={handleCloseSnackbar}
-    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-  >
-    <SnackbarContent
-      style={{
-        backgroundColor: "#fff",
-        color: "#313926",
-        fontFamily: "Arial, sans-serif",
-        fontSize: "1rem",
-      }}
-      message={snackbarMessage}
-    />
-  </Snackbar>
-</AppBar>
-
-
-
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <SnackbarContent
+          style={{
+            backgroundColor: "#fff",
+            color: "#313926",
+            fontFamily: "Arial, sans-serif",
+            fontSize: "1rem",
+          }}
+          message={snackbarMessage}
+        />
+      </Snackbar>
+    </AppBar>
   );
 };
 
