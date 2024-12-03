@@ -26,18 +26,99 @@ const Checkout: React.FC = () => {
   const { handleOrderCompletion } = useCart();
   const [userAddress, setUserAddress] = useState<any>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
+  const [freightCost, setFreightCost] = useState<number>(0);
+  const [isLoadingFreight, setIsLoadingFreight] = useState(false);
 
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
-  // Função calculateTotal
+  // Função para calcular o total do pedido
   const calculateTotal = () => {
-    if (!checkoutData) return "0.00"; // Verificação de segurança
-    const amount = parseFloat(checkoutData.amount || "0");
-    const shippingCost = parseFloat(checkoutData.shippingCost || "0");
-    const discount = parseFloat(checkoutData.discount || "0");
+    if (!checkoutData) {
+      console.warn("Dados de checkout não encontrados.");
+      return "0.00";
+    }
+
+    const amount = parseFloat(checkoutData.amount || "0") || 0;
+    const shippingCost = freightCost || 0; // Usa o valor atualizado do frete
+    const discount = parseFloat(checkoutData.discount || "0") || 0;
 
     const totalAmount = amount + shippingCost - discount;
-    return totalAmount.toFixed(2);
+
+    return Math.max(totalAmount, 0).toFixed(2); // Garante que o valor nunca seja negativo
+  };
+
+  // Buscar endereço do usuário e calcular o frete
+  const fetchUserAndCalculateFreight = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Você precisa estar logado para finalizar o pedido.");
+        navigate("/login");
+        return;
+      }
+
+      // Busca o perfil do usuário
+      const response = await axios.get(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const user = response.data;
+      if (user.address) {
+        setUserAddress(user.address);
+
+        // Calcula o frete com base no CEP do usuário
+        setIsLoadingFreight(true);
+        const freightResponse = await axios.post(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+          {
+            cepOrigem: "90200290", // CEP de origem fixo
+            cepDestino: user.address.postalCode,
+            weight:
+              checkoutData?.items?.reduce(
+                (total: number, item: any) => total + (item.weight || 0),
+                0
+              ) || 1, // Peso total dos itens ou valor padrão
+            height: 10, // Altura fixa ou calculada
+            width: 30, // Largura fixa ou calculada
+            length: 40, // Comprimento fixo ou calculado
+          }
+        );
+
+        if (freightResponse.data && freightResponse.data.shippingCost) {
+          setFreightCost(freightResponse.data.shippingCost);
+        } else {
+          console.warn(
+            "Frete não calculado corretamente:",
+            freightResponse.data
+          );
+          setFreightCost(0); // Define frete como zero em caso de falha
+        }
+      } else {
+        alert("Nenhum endereço cadastrado. Atualize seus dados.");
+        navigate("/meus-dados");
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao buscar dados do usuário ou calcular frete:",
+        error
+      );
+      alert("Erro ao buscar endereço ou calcular o frete. Tente novamente.");
+    } finally {
+      setIsLoadingFreight(false);
+    }
+  };
+
+  // Carregar dados do usuário e calcular frete ao montar o componente
+  useEffect(() => {
+    fetchUserAndCalculateFreight();
+  }, []);
+
+  const handleFinalizeOrder = () => {
+    handleOrderCompletion(); // Limpa o carrinho
+    navigate("/sucesso", { state: { paymentMethod: "boleto" } }); // Redireciona para a página de sucesso
   };
 
   useEffect(() => {
@@ -425,21 +506,6 @@ const Checkout: React.FC = () => {
             ) : (
               <Typography>Carregando endereço cadastrado...</Typography>
             )}
-
-            <Typography>
-              <strong>Endereço de Entrega:</strong>
-            </Typography>
-            {deliveryAddress ? (
-              <Typography>
-                {deliveryAddress.street}, {deliveryAddress.number} -{" "}
-                {deliveryAddress.neighborhood}
-                <br />
-                {deliveryAddress.city} - {deliveryAddress.state},{" "}
-                {deliveryAddress.postalCode}
-              </Typography>
-            ) : (
-              <Typography>Carregando endereço de entrega...</Typography>
-            )}
           </Box>
 
           <Typography
@@ -449,6 +515,7 @@ const Checkout: React.FC = () => {
               fontWeight: "bold",
               textAlign: "center",
               color: "#313926",
+              paddingTop: 2,
             }}
           >
             Forma de Pagamento

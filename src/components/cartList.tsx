@@ -28,12 +28,8 @@ const CartList: React.FC = () => {
   const { cart, removeFromCart, increaseQuantity, decreaseQuantity } =
     useCart();
   const navigate = useNavigate();
-  const [cepDestino, setCepDestino] = useState<string>("");
-  const [freightOptions, setFreightOptions] = useState<any[]>([]);
-  const [loadingFreight, setLoadingFreight] = useState<boolean>(false);
-  const [selectedFreightOption, setSelectedFreightOption] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false); // Adiciona estado para Snackbar
+  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -52,77 +48,7 @@ const CartList: React.FC = () => {
 
   console.log("Total product amount:", totalProductAmount);
 
-  // Converte o preço do frete, se existir, para um número
-  const freightPrice = selectedFreightOption?.price
-    ? parseFloat(selectedFreightOption.price.replace(",", "."))
-    : 0;
-
-  // Calcula o preço total somando o total dos produtos e o frete
-  const totalPrice = (totalProductAmount + freightPrice).toFixed(2);
-  console.log("Freight price:", freightPrice);
-  console.log("Total price:", totalPrice);
-
-  const handleCalculateFreight = async () => {
-    setLoadingFreight(true);
-    try {
-      console.log("Calculating freight...");
-
-      // Obtém o token para autenticação
-      const tokenResponse = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/token"
-      );
-      const token = tokenResponse.data.token;
-      console.log("Token received:", token);
-
-      // Dados para cálculo do frete
-      const requestData = {
-        cepOrigem: "01002001",
-        cepDestino,
-        height: 4,
-        width: 12,
-        length: 17,
-        weight: 0.3,
-      };
-
-      console.log("Requesting freight calculation with data:", requestData);
-
-      // Chamada à API de cálculo de frete
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      console.log("Freight calculation response:", response.data);
-
-      // Verifica se a resposta contém a propriedade shippingCost
-      if (response.data && typeof response.data.shippingCost === "number") {
-        const shippingCost = response.data.shippingCost;
-        setFreightOptions([{ name: "Jadlog", price: shippingCost.toFixed(2) }]);
-        console.log("Freight options set:", [
-          { name: "Jadlog", price: shippingCost.toFixed(2) },
-        ]);
-      } else {
-        console.error("Unexpected response format:", response.data);
-        alert("O cálculo de frete retornou dados inesperados. Verifique.");
-      }
-    } catch (error: any) {
-      console.error(
-        "Erro ao calcular frete:",
-        error.response?.data || error.message || error
-      );
-      alert(
-        "Erro ao calcular frete. Por favor, verifique o console ou tente novamente mais tarde."
-      );
-    } finally {
-      setLoadingFreight(false);
-    }
-  };
+  const totalPrice = totalProductAmount.toFixed(2);
 
   const handleCheckout = () => {
     const user = localStorage.getItem("user"); // Verifica se o usuário está logado
@@ -137,15 +63,6 @@ const CartList: React.FC = () => {
       return;
     }
 
-    if (!selectedFreightOption) {
-      alert("Por favor, selecione uma opção de frete antes de continuar.");
-      return;
-    }
-
-    // Formata os valores do frete e total para uso no checkout
-    const formattedFreightPrice = freightPrice.toFixed(2).replace(".", ",");
-    const formattedTotalPrice = totalPrice.replace(".", ",");
-
     const items = cart.map((item) => ({
       productId: String(item.id),
       title: item.name,
@@ -159,9 +76,9 @@ const CartList: React.FC = () => {
     localStorage.setItem(
       "checkoutData",
       JSON.stringify({
-        amount: totalProductAmount.toFixed(2).replace(".", ","),
-        shippingCost: formattedFreightPrice,
-        totalPrice: formattedTotalPrice,
+        amount: totalProductAmount.toFixed(2).replace(".", ","), // Apenas total dos produtos
+        shippingCost: "0.00", // Frete será calculado no checkout
+        totalPrice: totalPrice.replace(".", ","),
         items,
         userId,
       })
@@ -315,79 +232,6 @@ const CartList: React.FC = () => {
               borderRadius: "10px",
             }}
           >
-            <TextField
-              label="Insira seu CEP"
-              value={cepDestino}
-              onChange={(e) => setCepDestino(e.target.value)}
-              variant="outlined"
-              fullWidth
-              sx={{ mb: 2, backgroundColor: "#fff" }}
-            />
-            <Button
-              variant="contained"
-              onClick={handleCalculateFreight}
-              fullWidth
-              sx={{
-                backgroundColor: "#313926",
-                "&:hover": { backgroundColor: "#282a2a" },
-              }}
-              disabled={loadingFreight}
-            >
-              {loadingFreight ? "Calculando..." : "Calcular Frete"}
-            </Button>
-            {freightOptions.length > 0 && (
-              <Box
-                sx={{
-                  mt: 2,
-                  maxHeight: 150,
-                  overflowY: "auto",
-                  borderRadius: "8px",
-                  padding: 1,
-                  backgroundColor: "#f1f1f1",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <img
-                    src="/icones/logoJadlog.png"
-                    alt="Jadlog Logo"
-                    style={{ width: 110, height: 110, marginRight: "8px" }}
-                  />
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#313926" }}
-                  >
-                    Escolha a melhor opção de envio:
-                  </Typography>
-                </Box>
-                <List>
-                  {freightOptions.map((option) => (
-                    <ListItem key={option.id}>
-                      <ListItemButton
-                        onClick={() => setSelectedFreightOption(option)}
-                        selected={selectedFreightOption?.id === option.id}
-                        sx={{
-                          borderRadius: "8px",
-                          "&.Mui-selected": {
-                            backgroundColor: "#313926",
-                            color: "#fff",
-                            "& .MuiListItemText-primary": { color: "#fff" },
-                            "& .MuiListItemText-secondary": { color: "#fff" },
-                          },
-                        }}
-                      >
-                        <ListItemText
-                          primary={`${option.name} - R$ ${option.price.replace(
-                            ".",
-                            ","
-                          )}`}
-                          secondary={`Prazo: ${option.delivery_time} dias úteis`}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
             <Typography
               variant="h6"
               sx={{
