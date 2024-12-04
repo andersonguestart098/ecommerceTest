@@ -76,21 +76,22 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleUserClick = (event: React.MouseEvent<HTMLElement>) => {
-    // Abre o menu apenas se ele estiver fechado
-    if (anchorEl !== event.currentTarget) {
-      setAnchorEl(event.currentTarget);
-    }
+    setAnchorEl(event.currentTarget); // Abre o menu apenas no clique
   };
 
   const handleCloseMenu = () => {
-    // Fecha o menu
-    setAnchorEl(null);
+    setAnchorEl(null); // Fecha o menu
   };
 
   const handleNavigate = (path: string) => {
+    setAnchorEl(null); // Fecha o menu ao navegar
     navigate(path);
-    handleCloseMenu();
   };
+
+  // Resete o menu ao logar/navegar
+  useEffect(() => {
+    setAnchorEl(null); // Garante que o menu não esteja aberto após o login
+  }, [user]); // Ou outro estado de navegação/login
 
   const handleClearSearch = () => {
     setSearchTerm("");
