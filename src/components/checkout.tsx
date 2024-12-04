@@ -496,13 +496,30 @@ const Checkout: React.FC = () => {
               <strong>Endereço Cadastrado:</strong>
             </Typography>
             {userAddress ? (
-              <Typography>
-                {userAddress.street}, {userAddress.number} -{" "}
-                {userAddress.neighborhood}
-                <br />
-                {userAddress.city} - {userAddress.state},{" "}
-                {userAddress.postalCode}
-              </Typography>
+              <>
+                <Typography>
+                  {userAddress.street}, {userAddress.number} -{" "}
+                  {userAddress.neighborhood}
+                  <br />
+                  {userAddress.city} - {userAddress.state},{" "}
+                  {userAddress.postalCode}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  sx={{
+                    mt: 1,
+                    color: "#313926",
+                    borderColor: "#313926",
+                    "&:hover": {
+                      backgroundColor: "#E6E3DB", // Cor de fundo ao passar o mouse (opcional)
+                      borderColor: "#313926",
+                    },
+                  }}
+                  onClick={() => navigate("/meus-dados")}
+                >
+                  Alterar
+                </Button>
+              </>
             ) : (
               <Typography>Carregando endereço cadastrado...</Typography>
             )}
@@ -839,9 +856,17 @@ const Checkout: React.FC = () => {
               Descontos:{" "}
               <strong>- R$ {checkoutData?.discount || "0,00"}</strong>
             </Typography>
-            <Typography sx={{ mb: 1 }}>
-              Frete: <strong>R$ {checkoutData?.shippingCost}</strong>
+            <Typography
+              sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+            >
+              Frete: <strong>R$ {freightCost.toFixed(2)}</strong>
+              <img
+                src="/icones/logo_jadlog.png" // Substitua pelo caminho correto da imagem
+                alt="Jadlog"
+                style={{ width: "80px", height: "30px" }}
+              />
             </Typography>
+
             <Typography sx={{ mb: 2 }}>
               Total: <strong>R$ {calculateTotal()}</strong>
             </Typography>
