@@ -8,9 +8,11 @@ import {
   Box,
   TextField,
   Avatar,
+  IconButton,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { motion } from "framer-motion";
+import { ArrowBackIosNew } from "@mui/icons-material";
 
 interface Product {
   id: string;
@@ -44,6 +46,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageArray, setImageArray] = useState<string[]>([]);
   const [showClone, setShowClone] = useState<boolean>(false);
+  const [startIndex, setStartIndex] = useState(0);
+
   const [cloneStyles, setCloneStyles] = useState<{
     top: number;
     left: number;
@@ -172,33 +176,78 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
             R$ {product.price.toFixed(2).replace(".", ",")} m<sup>2</sup>
           </Typography>
 
-          {/* Seção de cores */}
+          {/* Seção de cores com carrossel */}
           <Box
-            sx={{ display: "flex", justifyContent: "center", gap: 1, mt: 2 }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mt: 2,
+              position: "relative",
+            }}
           >
-            {product.colors.map((color, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 1 }}
-              >
-                <Avatar
-                  src={color.image}
-                  alt={color.name}
-                  sx={{
-                    width: 55,
-                    height: 55,
-                    border:
-                      currentImageIndex === index
-                        ? "2px solid #E6E3DB"
-                        : "1px solid #E6E3DB",
-                    cursor: "pointer",
-                    transition: "border-color 0.3s",
-                  }}
-                  onClick={() => handleColorClick(index)}
-                />
-              </motion.div>
-            ))}
+            {/* Botão de voltar */}
+            <IconButton
+              onClick={() => setStartIndex(startIndex - 1)}
+              disabled={startIndex === 0}
+              sx={{
+                position: "absolute",
+                left: "-40px",
+                visibility: startIndex > 0 ? "visible" : "hidden",
+              }}
+            >
+              <ArrowBackIosNew />
+            </IconButton>
+
+            {/* Container de cores */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                overflow: "hidden",
+                width: "calc(55px * 3 + 16px)", // Espaço para exibir 3 avatares
+              }}
+            >
+              {product.colors
+                .slice(startIndex, startIndex + 3)
+                .map((color, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 1 }}
+                  >
+                    <Avatar
+                      src={color.image}
+                      alt={color.name}
+                      sx={{
+                        width: 55,
+                        height: 55,
+                        border:
+                          currentImageIndex === index + startIndex
+                            ? "2px solid #E6E3DB"
+                            : "1px solid #E6E3DB",
+                        cursor: "pointer",
+                        transition: "border-color 0.3s",
+                      }}
+                      onClick={() => handleColorClick(index + startIndex)}
+                    />
+                  </motion.div>
+                ))}
+            </Box>
+
+            {/* Botão de avançar */}
+            <IconButton
+              onClick={() => setStartIndex(startIndex + 1)}
+              disabled={startIndex + 3 >= product.colors.length}
+              sx={{
+                position: "absolute",
+                right: "-40px",
+                visibility:
+                  startIndex + 3 < product.colors.length ? "visible" : "hidden",
+              }}
+            >
+              <ArrowBackIosNew />
+            </IconButton>
           </Box>
 
           {/* Inputs de Comprimento e Largura */}

@@ -25,14 +25,10 @@ const ProductForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      colorData.some(
-        (color) =>
-          !color.colorFile || !color.colorName || color.imageRefIndex === null
-      )
-    ) {
+    // Validação para garantir que todos os campos obrigatórios estejam preenchidos
+    if (colorData.some((color) => !color.colorName || !color.colorFile)) {
       alert(
-        "Todos os campos de nome, imagem das cores e referência da imagem principal devem ser preenchidos."
+        "Certifique-se de preencher todos os campos de nome e imagem para as cores."
       );
       return;
     }
@@ -42,24 +38,27 @@ const ProductForm: React.FC = () => {
     formData.append("description", description);
     formData.append("price", price as string);
     formData.append("discount", discount as string);
-    formData.append("paymentOptions", paymentOptions);
+    formData.append(
+      "paymentOptions",
+      JSON.stringify(paymentOptions.split(","))
+    ); // Enviar como array de strings
     formData.append("metersPerBox", metersPerBox as string);
     formData.append("weightPerBox", weightPerBox as string);
     formData.append("boxDimensions", boxDimensions);
     formData.append("materialType", materialType);
     formData.append("freightClass", freightClass as string);
 
-    // Adicionando várias imagens principais
+    // Adicionando imagens principais
     imageFiles.forEach((file) => {
       formData.append("images", file);
     });
 
     // Adicionando imagens de cores e seus respectivos nomes e referências
-    colorData.forEach(({ colorName, colorFile, imageRefIndex }) => {
-      formData.append("colorNames", colorName);
-      formData.append("imageRefIndexes", String(imageRefIndex));
+    colorData.forEach(({ colorName, colorFile }, index) => {
+      formData.append("colorNames", colorName); // Nome da cor
+      formData.append("imageRefIndexes", String(index)); // Índice da imagem principal
       if (colorFile) {
-        formData.append("colors", colorFile);
+        formData.append("colors", colorFile); // Arquivo da cor
       }
     });
 
@@ -73,8 +72,9 @@ const ProductForm: React.FC = () => {
           },
         }
       );
+
       alert("Produto criado com sucesso!");
-      console.log("Resposta do backend: ", response.data);
+      console.log("Resposta do backend:", response.data);
 
       // Resetar campos do formulário
       setTitle("");
@@ -91,6 +91,11 @@ const ProductForm: React.FC = () => {
       setFreightClass("");
     } catch (error: any) {
       console.error("Erro ao criar produto:", error.response?.data || error);
+      alert(
+        `Erro ao criar produto: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
   };
 
