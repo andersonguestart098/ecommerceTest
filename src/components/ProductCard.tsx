@@ -11,6 +11,9 @@ import {
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { motion } from "framer-motion";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+
 
 interface Product {
   id: string;
@@ -45,6 +48,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const [startIndex, setStartIndex] = useState(0);
   const [imageArray, setImageArray] = useState<string[]>([]);
   const [showClone, setShowClone] = useState<boolean>(false);
+  
   const [cloneStyles, setCloneStyles] = useState<{
     top: number;
     left: number;
@@ -157,17 +161,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           borderRadius: "8px",
         }}
       >
-        <CardMedia
-          component="img"
-          height="275"
-          image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
-          alt={product.name}
-          onMouseEnter={handleMouseEnter}
-          sx={{
-            transition: "0.3s ease-in-out",
-            objectFit: "cover",
-          }}
-        />
+<CardMedia
+  component="img"
+  image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
+  alt={product.name}
+  sx={{
+    objectFit: "cover", // Ajusta a imagem para preencher o espaço definido, mantendo proporções
+    width: "350", // Largura menor
+    height: "350", // Altura menor para manter o tamanho compacto
+    margin: "0 auto", // Centraliza horizontalmente
+    backgroundColor: "#f9f9f9", // Fundo neutro para garantir um design consistente
+    borderRadius: "8px", // Mantém o estilo arredondado uniforme
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)", // Adiciona um leve sombreamento para destacar
+  }}
+/>
+
+
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
             {product.name}
@@ -191,18 +200,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 >
   {/* Botão de voltar no carrossel */}
   <Button
-    onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
-    disabled={startIndex === 0}
-    sx={{
-      position: "absolute",
-      left: "-30px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      visibility: startIndex > 0 ? "visible" : "hidden",
-    }}
-  >
-    {"<"}
-  </Button>
+  onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
+  disabled={startIndex === 0}
+  sx={{
+    position: "absolute",
+    left: "-30px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    visibility: startIndex > 0 ? "visible" : "hidden",
+    minWidth: 0, // Remove largura extra
+    padding: 0, // Remove espaçamento extra
+  }}
+>
+  <ArrowBackIosIcon fontSize="small" sx={{ color: "#313926" }} />
+</Button>
 
   {/* Ícones de cores exibidos */}
   <Box
@@ -243,23 +254,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   {/* Botão de avançar no carrossel */}
   <Button
-    onClick={() =>
-      setStartIndex((prev) =>
-        Math.min(prev + 1, product.colors.length - 3)
-      )
-    }
-    disabled={startIndex + 3 >= product.colors.length}
-    sx={{
-      position: "absolute",
-      right: "-30px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      visibility:
-        startIndex + 3 < product.colors.length ? "visible" : "hidden",
-    }}
-  >
-    {">"}
-  </Button>
+  onClick={() =>
+    setStartIndex((prev) =>
+      Math.min(prev + 1, product.colors.length - 3)
+    )
+  }
+  disabled={startIndex + 3 >= product.colors.length}
+  sx={{
+    position: "absolute",
+    right: "-30px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    visibility:
+      startIndex + 3 < product.colors.length ? "visible" : "hidden",
+    minWidth: 0, // Remove largura extra
+    padding: 0, // Remove espaçamento extra
+  }}
+>
+  <ArrowForwardIosIcon fontSize="small" sx={{ color: "#313926" }} />
+</Button>
 
   {/* Nome da cor selecionada */}
   <Typography

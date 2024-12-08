@@ -24,44 +24,59 @@ const ProductForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validação para garantir que todos os campos obrigatórios estejam preenchidos
+  
+    // Validação dos dados de cores
+    if (colorData.length === 0) {
+      alert("Adicione pelo menos uma cor.");
+      return;
+    }
+  
     if (colorData.some((color) => !color.colorName || !color.colorFile)) {
       alert(
         "Certifique-se de preencher todos os campos de nome e imagem para as cores."
       );
       return;
     }
-
+  
+    // Validação de imagens principais
+    if (imageFiles.length === 0) {
+      alert("Adicione pelo menos uma imagem principal.");
+      return;
+    }
+  
+    if (colorData.some((color) => color.imageRefIndex === null)) {
+      alert("Certifique-se de associar cada cor a uma imagem principal.");
+      return;
+    }
+  
+    // Preparar FormData
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
     formData.append("price", price as string);
     formData.append("discount", discount as string);
-    formData.append(
-      "paymentOptions",
-      JSON.stringify(paymentOptions.split(","))
-    ); // Enviar como array de strings
+    formData.append("paymentOptions", JSON.stringify(paymentOptions.split(",")));
     formData.append("metersPerBox", metersPerBox as string);
     formData.append("weightPerBox", weightPerBox as string);
     formData.append("boxDimensions", boxDimensions);
     formData.append("materialType", materialType);
     formData.append("freightClass", freightClass as string);
-
-    // Adicionando imagens principais
+  
+    // Adicionar imagens principais
     imageFiles.forEach((file) => {
       formData.append("images", file);
     });
-
-    // Adicionando imagens de cores e seus respectivos nomes e referências
-    colorData.forEach(({ colorName, colorFile }, index) => {
+  
+    // Adicionar imagens de cores, nomes e índices de referência
+    colorData.forEach(({ colorName, colorFile, imageRefIndex }) => {
       formData.append("colorNames", colorName); // Nome da cor
-      formData.append("imageRefIndexes", String(index)); // Índice da imagem principal
+      formData.append("imageRefIndexes", String(imageRefIndex)); // Índice da imagem principal
       if (colorFile) {
         formData.append("colors", colorFile); // Arquivo da cor
       }
     });
-
+  
+    // Enviar dados para o backend
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
@@ -72,23 +87,12 @@ const ProductForm: React.FC = () => {
           },
         }
       );
-
+  
       alert("Produto criado com sucesso!");
       console.log("Resposta do backend:", response.data);
-
+  
       // Resetar campos do formulário
-      setTitle("");
-      setDescription("");
-      setPrice("");
-      setDiscount("");
-      setPaymentOptions("");
-      setImageFiles([]);
-      setColorData([]);
-      setMetersPerBox("");
-      setWeightPerBox("");
-      setBoxDimensions("");
-      setMaterialType("");
-      setFreightClass("");
+      resetForm();
     } catch (error: any) {
       console.error("Erro ao criar produto:", error.response?.data || error);
       alert(
@@ -98,6 +102,24 @@ const ProductForm: React.FC = () => {
       );
     }
   };
+  
+  // Função para resetar os campos do formulário
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setPrice("");
+    setDiscount("");
+    setPaymentOptions("");
+    setImageFiles([]);
+    setColorData([]);
+    setMetersPerBox("");
+    setWeightPerBox("");
+    setBoxDimensions("");
+    setMaterialType("");
+    setFreightClass("");
+  };
+
+  
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -108,9 +130,14 @@ const ProductForm: React.FC = () => {
   const handleAddColor = () => {
     setColorData([
       ...colorData,
-      { colorName: "", colorFile: null, imageRefIndex: null },
+      {
+        colorName: "",
+        colorFile: null,
+        imageRefIndex: imageFiles.length > 0 ? 0 : null, // Define um índice padrão se imagens principais existirem
+      },
     ]);
   };
+  
 
   const handleColorNameChange = (index: number, value: string) => {
     const updatedColors = [...colorData];
@@ -285,12 +312,33 @@ const ProductForm: React.FC = () => {
               </option>
             ))}
           </TextField>
+          <Typography sx={{ mt: 2 }}>
+  Cores adicionadas: {colorData.length} / Imagens principais: {imageFiles.length}
+</Typography>
+
         </Box>
       ))}
 
-      <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
-        Criar Produto
-      </Button>
+<Button
+  type="submit"
+  variant="contained"
+  color="primary"
+  sx={{ mt: 3 }}
+  disabled={
+    !name ||
+    !description ||
+    !price ||
+    !metersPerBox ||
+    !weightPerBox ||
+    !boxDimensions ||
+    !materialType ||
+    imageFiles.length === 0 ||
+    colorData.some((color) => !color.colorName || !color.colorFile || color.imageRefIndex === null)
+  }
+>
+  Criar Produto
+</Button>
+
     </Box>
   );
 };
