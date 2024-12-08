@@ -154,208 +154,202 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   return (
     <>
-    <Card
-      ref={cardRef}
+  <Card
+  ref={cardRef}
+  sx={{
+    padding: "16px",
+    backgroundColor: "#f9f9f9",
+    border: "1px solid #E6E3DB",
+    borderRadius: "8px",
+  }}
+>
+  {/* Imagem principal */}
+  <CardMedia
+    component="img"
+    image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
+    alt={product.name}
+    sx={{
+      objectFit: "cover",
+      width: "100%",
+      height: "250px",
+      margin: "0 auto",
+      backgroundColor: "#f9f9f9",
+      borderRadius: "8px",
+      boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+    }}
+  />
+
+  <CardContent>
+    <Typography gutterBottom variant="h5" component="div">
+      {product.name}
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      {product.description}
+    </Typography>
+    <Typography variant="h6" color="#313926">
+      R$ {product.price.toFixed(2).replace(".", ",")} m<sup>2</sup>
+    </Typography>
+
+    {/* Seção de cores */}
+    <Box
       sx={{
-        padding: "16px",
-        backgroundColor: "#f9f9f9",
-        border: "1px solid #E6E3DB",
-        borderRadius: "8px",
+        display: "flex",
+        alignItems: "center",
+        flexDirection: "column",
+        position: "relative",
+        mt: 2,
       }}
     >
-      {/* Imagem principal */}
-      <CardMedia
-        component="img"
-        image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
-        alt={product.name}
+      {/* Botão de voltar no carrossel */}
+      <Button
+        onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
+        disabled={startIndex === 0}
         sx={{
-          objectFit: "cover",
-          width: "100%",
-          height: "250px",
-          margin: "0 auto",
-          backgroundColor: "#f9f9f9",
-          borderRadius: "8px",
-          boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+          position: "absolute",
+          left: "-30px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          visibility: startIndex > 0 ? "visible" : "hidden",
+          minWidth: 0,
+          padding: 0,
         }}
+      >
+        <ArrowBackIosIcon fontSize="small" sx={{ color: "#313926" }} />
+      </Button>
+
+      {/* Ícones de cores exibidos */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1.5,
+          overflow: "hidden", // Esconde ícones extras
+          alignItems: "center",
+          justifyContent: "center",
+          width: "calc(65px * 3 + 16px)", // Espaço para 3 ícones no carrossel
+          height: 80,
+        }}
+      >
+        {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
+          <motion.div
+            key={index}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 1 }}
+          >
+            <Avatar
+              src={color.image}
+              alt={color.name}
+              sx={{
+                width: 60,
+                height: 60,
+                border:
+                  currentImageIndex === index + startIndex
+                    ? "3px solid #E6E3DB"
+                    : "1px solid #E6E3DB",
+                cursor: "pointer",
+                transition: "border-color 0.3s",
+              }}
+              onClick={() => setCurrentImageIndex(index + startIndex)}
+            />
+          </motion.div>
+        ))}
+      </Box>
+
+      {/* Botão de avançar no carrossel */}
+      <Button
+        onClick={() =>
+          setStartIndex((prev) =>
+            Math.min(prev + 1, product.colors.length - 3)
+          )
+        }
+        disabled={startIndex + 3 >= product.colors.length}
+        sx={{
+          position: "absolute",
+          right: "-30px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          visibility: startIndex + 3 < product.colors.length ? "visible" : "hidden",
+          minWidth: 0,
+          padding: 0,
+        }}
+      >
+        <ArrowForwardIosIcon fontSize="small" sx={{ color: "#313926" }} />
+      </Button>
+
+      {/* Nome da cor selecionada */}
+      <Typography
+        variant="body2"
+        sx={{
+          mt: 1,
+          textAlign: "center",
+          color: "#313926",
+          fontWeight: "bold",
+        }}
+      >
+        Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
+      </Typography>
+    </Box>
+
+    {/* Inputs de Comprimento e Largura */}
+    <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+      <TextField
+        label="Comprimento (m)"
+        type="number"
+        value={length || ""}
+        onChange={(e) => setLength(parseFloat(e.target.value))}
+        size="small"
+        sx={{ width: "100%" }}
       />
+      <TextField
+        label="Largura (m)"
+        type="number"
+        value={width || ""}
+        onChange={(e) => setWidth(parseFloat(e.target.value))}
+        size="small"
+        sx={{ width: "100%" }}
+      />
+    </Box>
 
-      <CardContent>
-        <Typography gutterBottom variant="h5" component="div">
-          {product.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {product.description}
-        </Typography>
-        <Typography variant="h6" color="#313926">
-          R$ {product.price.toFixed(2).replace(".", ",")} m<sup>2</sup>
-        </Typography>
+    {/* Botões lado a lado */}
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: "16px",
+      }}
+    >
+      <Button
+        variant="outlined"
+        onClick={handleCalculateArea}
+        sx={{ width: "48%", borderColor: "#313926", color: "#313926" }}
+      >
+        Calcular
+      </Button>
+      <Button
+        onClick={handleAddToCart}
+        variant="contained"
+        sx={{
+          backgroundColor: "#313926",
+          color: "#fff",
+          width: "48%",
+          "&:hover": { backgroundColor: "#3d403a" },
+        }}
+      >
+        <ShoppingCartIcon />
+        <Typography sx={{ ml: 1 }}>Adicionar</Typography>
+      </Button>
+    </Box>
 
-        {/* Seção de cores */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flexDirection: "column",
-            position: "relative",
-            mt: 2,
-          }}
-        >
-          {!isMobile && (
-            <>
-              {/* Botão de voltar no carrossel */}
-              <Button
-                onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
-                disabled={startIndex === 0}
-                sx={{
-                  position: "absolute",
-                  left: "-30px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  visibility: startIndex > 0 ? "visible" : "hidden",
-                  minWidth: 0,
-                  padding: 0,
-                }}
-              >
-                <ArrowBackIosIcon fontSize="small" sx={{ color: "#313926" }} />
-              </Button>
-            </>
-          )}
+    {/* Resultado do Cálculo */}
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      sx={{ mt: 2, textAlign: "center" }}
+    >
+      Área Total: {area.toFixed(2)} m² - Caixas Necessárias: {boxesNeeded}
+    </Typography>
+  </CardContent>
+</Card>
 
-          {/* Ícones de cores exibidos */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: 1.5,
-              overflow: isMobile ? "auto" : "visible", // Mobile usa scroll
-              alignItems: "center",
-              width: isMobile ? "100%" : "calc(65px * 3 + 16px)", // Mobile ocupa a largura
-              height: 80,
-            }}
-          >
-            {product.colors.slice(startIndex, isMobile ? undefined : startIndex + 3).map((color, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 1 }}
-              >
-                <Avatar
-                  src={color.image}
-                  alt={color.name}
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    border:
-                      currentImageIndex === index + startIndex
-                        ? "3px solid #E6E3DB"
-                        : "1px solid #E6E3DB",
-                    cursor: "pointer",
-                    transition: "border-color 0.3s",
-                  }}
-                  onClick={() => setCurrentImageIndex(index + startIndex)}
-                />
-              </motion.div>
-            ))}
-          </Box>
-
-          {!isMobile && (
-            <>
-              {/* Botão de avançar no carrossel */}
-              <Button
-                onClick={() =>
-                  setStartIndex((prev) =>
-                    Math.min(prev + 1, product.colors.length - 3)
-                  )
-                }
-                disabled={startIndex + 3 >= product.colors.length}
-                sx={{
-                  position: "absolute",
-                  right: "-30px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  visibility: startIndex + 3 < product.colors.length ? "visible" : "hidden",
-                  minWidth: 0,
-                  padding: 0,
-                }}
-              >
-                <ArrowForwardIosIcon fontSize="small" sx={{ color: "#313926" }} />
-              </Button>
-            </>
-          )}
-
-          {/* Nome da cor selecionada */}
-          <Typography
-            variant="body2"
-            sx={{
-              mt: 1,
-              textAlign: "center",
-              color: "#313926",
-              fontWeight: "bold",
-            }}
-          >
-            Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
-          </Typography>
-        </Box>
-
-        {/* Inputs de Comprimento e Largura */}
-        <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
-          <TextField
-            label="Comprimento (m)"
-            type="number"
-            value={length || ""}
-            onChange={(e) => setLength(parseFloat(e.target.value))}
-            size="small"
-            sx={{ width: "100%" }}
-          />
-          <TextField
-            label="Largura (m)"
-            type="number"
-            value={width || ""}
-            onChange={(e) => setWidth(parseFloat(e.target.value))}
-            size="small"
-            sx={{ width: "100%" }}
-          />
-        </Box>
-
-        {/* Botões lado a lado */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: "16px",
-          }}
-        >
-          <Button
-            variant="outlined"
-            onClick={handleCalculateArea}
-            sx={{ width: "48%", borderColor: "#313926", color: "#313926" }}
-          >
-            Calcular
-          </Button>
-          <Button
-            onClick={handleAddToCart}
-            variant="contained"
-            sx={{
-              backgroundColor: "#313926",
-              color: "#fff",
-              width: "48%",
-              "&:hover": { backgroundColor: "#3d403a" },
-            }}
-          >
-            <ShoppingCartIcon />
-            <Typography sx={{ ml: 1 }}>Adicionar</Typography>
-          </Button>
-        </Box>
-
-        {/* Resultado do Cálculo */}
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 2, textAlign: "center" }}
-        >
-          Área Total: {area.toFixed(2)} m² - Caixas Necessárias: {boxesNeeded}
-        </Typography>
-      </CardContent>
-    </Card>
 
       {/* Clone para a animação de fly-to-cart */}
       {showClone && (
