@@ -154,7 +154,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   return (
     <>
-  <Card
+<Card
   ref={cardRef}
   sx={{
     padding: "16px",
@@ -195,99 +195,48 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
       sx={{
         display: "flex",
         alignItems: "center",
-        flexDirection: "column",
-        position: "relative",
+        justifyContent: "center",
+        gap: 1.5,
         mt: 2,
       }}
     >
-      {/* Botão de voltar no carrossel */}
-      <Button
-        onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
-        disabled={startIndex === 0}
-        sx={{
-          position: "absolute",
-          left: "-30px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          visibility: startIndex > 0 ? "visible" : "hidden",
-          minWidth: 0,
-          padding: 0,
-        }}
-      >
-        <ArrowBackIosIcon fontSize="small" sx={{ color: "#313926" }} />
-      </Button>
-
-      {/* Ícones de cores exibidos */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1.5,
-          overflow: "hidden", // Esconde ícones extras
-          alignItems: "center",
-          justifyContent: "center",
-          width: "calc(65px * 3 + 16px)", // Espaço para 3 ícones no carrossel
-          height: 80,
-        }}
-      >
-        {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 1 }}
-          >
-            <Avatar
-              src={color.image}
-              alt={color.name}
-              sx={{
-                width: 60,
-                height: 60,
-                border:
-                  currentImageIndex === index + startIndex
-                    ? "3px solid #E6E3DB"
-                    : "1px solid #E6E3DB",
-                cursor: "pointer",
-                transition: "border-color 0.3s",
-              }}
-              onClick={() => setCurrentImageIndex(index + startIndex)}
-            />
-          </motion.div>
-        ))}
-      </Box>
-
-      {/* Botão de avançar no carrossel */}
-      <Button
-        onClick={() =>
-          setStartIndex((prev) =>
-            Math.min(prev + 1, product.colors.length - 3)
-          )
-        }
-        disabled={startIndex + 3 >= product.colors.length}
-        sx={{
-          position: "absolute",
-          right: "-30px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          visibility: startIndex + 3 < product.colors.length ? "visible" : "hidden",
-          minWidth: 0,
-          padding: 0,
-        }}
-      >
-        <ArrowForwardIosIcon fontSize="small" sx={{ color: "#313926" }} />
-      </Button>
-
-      {/* Nome da cor selecionada */}
-      <Typography
-        variant="body2"
-        sx={{
-          mt: 1,
-          textAlign: "center",
-          color: "#313926",
-          fontWeight: "bold",
-        }}
-      >
-        Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
-      </Typography>
+      {product.colors.slice(0, 3).map((color, index) => (
+        <motion.div
+          key={index}
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 1 }}
+        >
+          <Avatar
+            src={color.image}
+            alt={color.name}
+            sx={{
+              width: 60,
+              height: 60,
+              border:
+                currentImageIndex === index
+                  ? "3px solid #E6E3DB"
+                  : "1px solid #E6E3DB",
+              cursor: "pointer",
+              transition: "border-color 0.3s",
+            }}
+            onClick={() => setCurrentImageIndex(index)}
+          />
+        </motion.div>
+      ))}
     </Box>
+
+    {/* Nome da cor selecionada */}
+    <Typography
+      variant="body2"
+      sx={{
+        mt: 1,
+        textAlign: "center",
+        color: "#313926",
+        fontWeight: "bold",
+      }}
+    >
+      Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
+    </Typography>
 
     {/* Inputs de Comprimento e Largura */}
     <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
