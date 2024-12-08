@@ -21,7 +21,7 @@ interface Product {
   paymentOptions: string[];
   image: string[] | string;
   metersPerBox: number;
-  colors: { name: string; image: string }[];
+  colors: { name: string; image: string; imageRefIndex: number }[];
 }
 
 interface ProductCardProps {
@@ -42,6 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const [area, setArea] = useState<number>(0);
   const [boxesNeeded, setBoxesNeeded] = useState<number>(1);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [startIndex, setStartIndex] = useState(0);
   const [imageArray, setImageArray] = useState<string[]>([]);
   const [showClone, setShowClone] = useState<boolean>(false);
   const [cloneStyles, setCloneStyles] = useState<{
@@ -129,9 +130,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   const handleColorClick = (index: number) => {
     if (product.colors[index]) {
-      setCurrentImageIndex(index);
+      const color = product.colors[index];
+      if (color && color.imageRefIndex !== null && imageArray[color.imageRefIndex]) {
+        setCurrentImageIndex(color.imageRefIndex); // Usa o índice da imagem principal associada à cor
+      } else {
+        console.error("Imagem principal correspondente não encontrada.");
+      }
     }
   };
+  
 
   const handleMouseEnter = () => {
     if (imageArray && imageArray.length > 1) {
@@ -145,7 +152,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
         ref={cardRef}
         sx={{
           padding: "16px",
-          backgroundColor: "#f9f9f9",
+          backgroundColor: "#f9f9f9", 
           border: "1px solid #E6E3DB",
           borderRadius: "8px",
         }}
@@ -174,32 +181,100 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
           {/* Seção de cores */}
           <Box
-            sx={{ display: "flex", justifyContent: "center", gap: 1, mt: 2 }}
-          >
-            {product.colors.map((color, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 1 }}
-              >
-                <Avatar
-                  src={color.image}
-                  alt={color.name}
-                  sx={{
-                    width: 55,
-                    height: 55,
-                    border:
-                      currentImageIndex === index
-                        ? "2px solid #E6E3DB"
-                        : "1px solid #E6E3DB",
-                    cursor: "pointer",
-                    transition: "border-color 0.3s",
-                  }}
-                  onClick={() => handleColorClick(index)}
-                />
-              </motion.div>
-            ))}
-          </Box>
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    flexDirection: "column",
+    position: "relative",
+    mt: 2,
+  }}
+>
+  {/* Botão de voltar no carrossel */}
+  <Button
+    onClick={() => setStartIndex((prev) => Math.max(prev - 1, 0))}
+    disabled={startIndex === 0}
+    sx={{
+      position: "absolute",
+      left: "-30px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      visibility: startIndex > 0 ? "visible" : "hidden",
+    }}
+  >
+    {"<"}
+  </Button>
+
+  {/* Ícones de cores exibidos */}
+  <Box
+  sx={{
+    display: "flex",
+    gap: 1.5, // Espaçamento entre os ícones
+    overflow: "visible", // Permite que o ícone ampliado não seja cortado
+    alignItems: "center", // Centraliza os ícones no eixo vertical
+    width: "calc(65px * 3 + 16px)", // Espaço suficiente para 3 ícones
+    height: 80, // Altura maior para acomodar o efeito de hover
+  }}
+>
+  {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
+    <motion.div
+      key={index}
+      whileHover={{ scale: 1.2 }} // Efeito de hover
+      whileTap={{ scale: 1 }}
+    >
+      <Avatar
+        src={color.image}
+        alt={color.name}
+        sx={{
+          width: 60, // Tamanho padrão dos ícones
+          height: 60, // Tamanho padrão dos ícones
+          border:
+            currentImageIndex === index + startIndex
+              ? "3px solid #E6E3DB" // Destaque mais espesso para o ícone selecionado
+              : "1px solid #E6E3DB",
+          cursor: "pointer",
+          transition: "border-color 0.3s",
+        }}
+        onClick={() => handleColorClick(index + startIndex)}
+      />
+    </motion.div>
+  ))}
+</Box>
+
+
+  {/* Botão de avançar no carrossel */}
+  <Button
+    onClick={() =>
+      setStartIndex((prev) =>
+        Math.min(prev + 1, product.colors.length - 3)
+      )
+    }
+    disabled={startIndex + 3 >= product.colors.length}
+    sx={{
+      position: "absolute",
+      right: "-30px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      visibility:
+        startIndex + 3 < product.colors.length ? "visible" : "hidden",
+    }}
+  >
+    {">"}
+  </Button>
+
+  {/* Nome da cor selecionada */}
+  <Typography
+    variant="body2"
+    sx={{
+      mt: 1, // Margem ajustada
+      textAlign: "center",
+      color: "#313926",
+      fontWeight: "bold",
+    }}
+  >
+    Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
+  </Typography>
+</Box>
+
 
           {/* Inputs de Comprimento e Largura */}
           <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
