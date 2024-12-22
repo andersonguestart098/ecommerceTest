@@ -59,7 +59,7 @@ const Checkout: React.FC = () => {
 
       // Busca o perfil do usuário
       const response = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/profile",
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/profile",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -182,7 +182,7 @@ const Checkout: React.FC = () => {
         }
       } catch (error) {
         console.error("Erro ao buscar perfil do usuário:", error);
-        alert("Erro ao carregar os dados do usuário.");
+        
       }
     };
 
