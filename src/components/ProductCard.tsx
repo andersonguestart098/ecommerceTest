@@ -9,11 +9,13 @@ import {
   TextField,
   Avatar,
   useMediaQuery,
+  Dialog,
 } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { motion } from "framer-motion";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+
 
 
 interface Product {
@@ -50,7 +52,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   const [imageArray, setImageArray] = useState<string[]>([]);
   const [showClone, setShowClone] = useState<boolean>(false);
   const isMobile = useMediaQuery("(max-width:600px)"); // Verifica se é mobile
-  
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+
+
+  const openFullscreen = () => setIsFullscreenOpen(true);
+  const closeFullscreen = () => setIsFullscreenOpen(false);
+
+
+
   const [cloneStyles, setCloneStyles] = useState<{
     top: number;
     left: number;
@@ -135,15 +144,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   };
 
   const handleColorClick = (index: number) => {
-    if (product.colors[index]) {
-      const color = product.colors[index];
-      if (color && color.imageRefIndex !== null && imageArray[color.imageRefIndex]) {
-        setCurrentImageIndex(color.imageRefIndex); // Usa o índice da imagem principal associada à cor
-      } else {
-        console.error("Imagem principal correspondente não encontrada.");
-      }
+    const selectedColor = product.colors[index];
+    if (selectedColor && selectedColor.imageRefIndex !== null) {
+      setCurrentImageIndex(selectedColor.imageRefIndex); // Atualiza a imagem principal para a associada à cor
+    } else {
+      console.error("Cor selecionada não possui imagem associada.");
     }
   };
+  
   
 
   const handleMouseEnter = () => {
@@ -154,7 +162,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   return (
     <>
-<Card
+    
+    <Card
   ref={cardRef}
   sx={{
     padding: "16px",
@@ -168,6 +177,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     component="img"
     image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
     alt={product.name}
+    onClick={openFullscreen} // Adicionado aqui para abrir o fullscreen
     sx={{
       objectFit: "cover",
       width: "100%",
@@ -176,6 +186,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
       backgroundColor: "#f9f9f9",
       borderRadius: "8px",
       boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+      cursor: "pointer", // Cursor indicando que é clicável
     }}
   />
 
@@ -213,13 +224,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
               width: 60,
               height: 60,
               border:
-                currentImageIndex === index
+                product.colors[currentImageIndex]?.image === color.image
                   ? "3px solid #E6E3DB"
                   : "1px solid #E6E3DB",
               cursor: "pointer",
               transition: "border-color 0.3s",
             }}
-            onClick={() => setCurrentImageIndex(index)}
+            onClick={() => handleColorClick(index)}
           />
         </motion.div>
       ))}
@@ -235,7 +246,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
         fontWeight: "bold",
       }}
     >
-      Cor selecionada: {product.colors[currentImageIndex]?.name || "Nenhuma"}
+      Cor selecionada:{" "}
+      {product.colors.find(
+        (color) => color.imageRefIndex === currentImageIndex
+      )?.name || "Nenhuma"}
     </Typography>
 
     {/* Inputs de Comprimento e Largura */}
@@ -300,6 +314,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 </Card>
 
 
+
       {/* Clone para a animação de fly-to-cart */}
       {showClone && (
         <motion.div
@@ -333,6 +348,60 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           />
         </motion.div>
       )}
+      {/* Modal Fullscreen */}
+{isFullscreenOpen && (
+ <Dialog
+ open={isFullscreenOpen}
+ onClose={closeFullscreen}
+ fullWidth
+ maxWidth="lg"
+ PaperProps={{
+   style: {
+     backgroundColor: "rgba(0, 0, 0, 0.9)",
+     boxShadow: "none",
+     ...(isMobile
+       ? { width: "100vw", height: "100vh", margin: 0 } // Preenche toda a tela no mobile
+       : {}),
+   },
+ }}
+>
+ <Box
+   sx={{
+     position: "relative",
+     width: "100%",
+     height: isMobile ? "100%" : "auto", // Ajusta altura no mobile
+     display: "flex",
+     justifyContent: "center",
+     alignItems: "center",
+   }}
+ >
+   <CardMedia
+     component="img"
+     image={imageArray[currentImageIndex]}
+     alt={product.name}
+     sx={{
+       maxWidth: isMobile ? "100%" : "90%", // Preenche largura no mobile
+       maxHeight: isMobile ? "100%" : "90%", // Preenche altura no mobile
+       objectFit: "contain",
+     }}
+   />
+   <Button
+     onClick={closeFullscreen}
+     sx={{
+       position: "absolute",
+       top: 16,
+       right: 16,
+       color: "#fff",
+       fontSize: "1.5rem",
+     }}
+   >
+     Fechar
+   </Button>
+ </Box>
+</Dialog>
+
+)}
+
     </>
   );
 };
