@@ -37,15 +37,22 @@ const Checkout: React.FC = () => {
       console.warn("Dados de checkout não encontrados.");
       return "0.00";
     }
-
+  
     const amount = parseFloat(checkoutData.amount || "0") || 0;
     const shippingCost = freightCost || 0; // Usa o valor atualizado do frete
     const discount = parseFloat(checkoutData.discount || "0") || 0;
-
-    const totalAmount = amount + shippingCost - discount;
-
+  
+    let totalAmount = amount + shippingCost - discount;
+  
+    // Aplica desconto de 5% se o método de pagamento for Pix
+    if (paymentMethod === "pix") {
+      const pixDiscount = totalAmount * 0.05;
+      totalAmount -= pixDiscount;
+    }
+  
     return Math.max(totalAmount, 0).toFixed(2); // Garante que o valor nunca seja negativo
   };
+  
 
   // Buscar endereço do usuário e calcular o frete
   const fetchUserAndCalculateFreight = async () => {
@@ -854,8 +861,14 @@ const Checkout: React.FC = () => {
             </Typography>
             <Typography sx={{ mb: 1 }}>
               Descontos:{" "}
-              <strong>- R$ {checkoutData?.discount || "0,00"}</strong>
+              <strong>
+                - R${" "}
+                {paymentMethod === "pix"
+                  ? ((parseFloat(checkoutData?.amount || "0") + freightCost) * 0.05).toFixed(2) // Calcula 5% do valor total + frete
+                  : (checkoutData?.discount || "0.00")}
+              </strong>
             </Typography>
+
             <Typography
               sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}
             >

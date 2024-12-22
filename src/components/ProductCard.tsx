@@ -203,38 +203,58 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
     {/* Seção de cores */}
     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 1.5,
-        mt: 2,
-      }}
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 1.5,
+    mt: 2,
+  }}
+>
+  <Button
+    onClick={() =>
+      setStartIndex((prevIndex) => Math.max(prevIndex - 1, 0))
+    }
+    disabled={startIndex === 0}
+    sx={{ minWidth: "auto", padding: 0 }}
+  >
+    <ArrowBackIosIcon />
+  </Button>
+  {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
+    <motion.div
+      key={index}
+      whileHover={{ scale: 1.2 }}
+      whileTap={{ scale: 1 }}
     >
-      {product.colors.slice(0, 3).map((color, index) => (
-        <motion.div
-          key={index}
-          whileHover={{ scale: 1.2 }}
-          whileTap={{ scale: 1 }}
-        >
-          <Avatar
-            src={color.image}
-            alt={color.name}
-            sx={{
-              width: 60,
-              height: 60,
-              border:
-                product.colors[currentImageIndex]?.image === color.image
-                  ? "3px solid #E6E3DB"
-                  : "1px solid #E6E3DB",
-              cursor: "pointer",
-              transition: "border-color 0.3s",
-            }}
-            onClick={() => handleColorClick(index)}
-          />
-        </motion.div>
-      ))}
-    </Box>
+      <Avatar
+        src={color.image}
+        alt={color.name}
+        sx={{
+          width: 60,
+          height: 60,
+          border:
+            product.colors[currentImageIndex]?.image === color.image
+              ? "3px solid #E6E3DB"
+              : "1px solid #E6E3DB",
+          cursor: "pointer",
+          transition: "border-color 0.3s",
+        }}
+        onClick={() => handleColorClick(index + startIndex)}
+      />
+    </motion.div>
+  ))}
+  <Button
+    onClick={() =>
+      setStartIndex((prevIndex) =>
+        Math.min(prevIndex + 1, product.colors.length - 3)
+      )
+    }
+    disabled={startIndex + 3 >= product.colors.length}
+    sx={{ minWidth: "auto", padding: 0 }}
+  >
+    <ArrowForwardIosIcon />
+  </Button>
+</Box>
 
     {/* Nome da cor selecionada */}
     <Typography
