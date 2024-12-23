@@ -25,59 +25,60 @@ const ProductForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    // Validação dos dados de cores
-    if (colorData.length === 0) {
-      alert("Adicione pelo menos uma cor.");
-      return;
-    }
-  
-    if (colorData.some((color) => !color.colorName || !color.colorFile)) {
-      alert(
-        "Certifique-se de preencher todos os campos de nome e imagem para as cores."
-      );
-      return;
-    }
-  
-    // Validação de imagens principais
-    if (imageFiles.length === 0) {
-      alert("Adicione pelo menos uma imagem principal.");
-      return;
-    }
-  
-    if (colorData.some((color) => color.imageRefIndex === null)) {
-      alert("Certifique-se de associar cada cor a uma imagem principal.");
-      return;
-    }
-  
-    // Preparar FormData
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    formData.append("price", price as string);
-    formData.append("discount", discount as string);
-    formData.append("paymentOptions", JSON.stringify(paymentOptions.split(",")));
-    formData.append("metersPerBox", metersPerBox as string);
-    formData.append("weightPerBox", weightPerBox as string);
-    formData.append("boxDimensions", boxDimensions);
-    formData.append("materialType", materialType);
-    formData.append("freightClass", freightClass as string);
-  
-    // Adicionar imagens principais
-    imageFiles.forEach((file) => {
-      formData.append("images", file);
-    });
-  
-    // Adicionar imagens de cores, nomes e índices de referência
-    colorData.forEach(({ colorName, colorFile, imageRefIndex }) => {
-      formData.append("colorNames", colorName); // Nome da cor
-      formData.append("imageRefIndexes", String(imageRefIndex)); // Índice da imagem principal
-      if (colorFile) {
-        formData.append("colors", colorFile); // Arquivo da cor
-      }
-    });
-  
-    // Enviar dados para o backend
     try {
+      // Validação dos dados de cores
+      if (colorData.length === 0) {
+        throw new Error("Adicione pelo menos uma cor.");
+      }
+  
+      if (colorData.some((color) => !color.colorName || !color.colorFile)) {
+        throw new Error(
+          "Certifique-se de preencher todos os campos de nome e imagem para as cores."
+        );
+      }
+  
+      // Validação de imagens principais
+      if (imageFiles.length === 0) {
+        throw new Error("Adicione pelo menos uma imagem principal.");
+      }
+  
+      if (colorData.some((color) => color.imageRefIndex === null)) {
+        throw new Error(
+          "Certifique-se de associar cada cor a uma imagem principal."
+        );
+      }
+  
+      // Preparar FormData
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("price", price as string);
+      formData.append("discount", discount as string);
+      formData.append(
+        "paymentOptions",
+        JSON.stringify(paymentOptions.split(","))
+      );
+      formData.append("metersPerBox", metersPerBox as string);
+      formData.append("weightPerBox", weightPerBox as string);
+      formData.append("boxDimensions", boxDimensions);
+      formData.append("materialType", materialType);
+      formData.append("freightClass", freightClass as string);
+  
+      // Adicionar imagens principais
+      imageFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+  
+      // Adicionar imagens de cores, nomes e índices de referência
+      colorData.forEach(({ colorName, colorFile, imageRefIndex }) => {
+        formData.append("colorNames", colorName); // Nome da cor
+        formData.append("imageRefIndexes", String(imageRefIndex)); // Índice da imagem principal
+        if (colorFile) {
+          formData.append("colors", colorFile); // Arquivo da cor
+        }
+      });
+  
+      // Enviar dados para o backend
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
         formData,
@@ -94,14 +95,16 @@ const ProductForm: React.FC = () => {
       // Resetar campos do formulário
       resetForm();
     } catch (error: any) {
-      console.error("Erro ao criar produto:", error.response?.data || error);
+      // Exibir mensagem de erro clara para o usuário
+      console.error("Erro ao criar produto:", error);
       alert(
         `Erro ao criar produto: ${
-          error.response?.data?.message || error.message
+          error.response?.data?.message || error.message || "Erro desconhecido"
         }`
       );
     }
   };
+  
   
   // Função para resetar os campos do formulário
   const resetForm = () => {
@@ -128,15 +131,20 @@ const ProductForm: React.FC = () => {
   };
 
   const handleAddColor = () => {
+    if (imageFiles.length === 0) {
+      alert("Adicione pelo menos uma imagem principal antes de adicionar uma cor.");
+      return;
+    }
     setColorData([
       ...colorData,
       {
         colorName: "",
         colorFile: null,
-        imageRefIndex: imageFiles.length > 0 ? 0 : null, // Define um índice padrão se imagens principais existirem
+        imageRefIndex: 0, // Define a primeira imagem como referência padrão
       },
     ]);
   };
+  
   
 
   const handleColorNameChange = (index: number, value: string) => {
@@ -297,24 +305,26 @@ const ProductForm: React.FC = () => {
             }
             required
           />
-          <TextField
-            select
-            label="Imagem Principal Referente"
-            value={color.imageRefIndex ?? ""}
-            onChange={(e) => handleImageRefChange(index, e.target.value)}
-            SelectProps={{ native: true }}
-            required
-          >
-            <option value="">Selecione uma imagem</option>
-            {imageFiles.map((_, imgIndex) => (
-              <option key={imgIndex} value={imgIndex}>
-                Imagem {imgIndex + 1}
-              </option>
-            ))}
-          </TextField>
-          <Typography sx={{ mt: 2 }}>
-  Cores adicionadas: {colorData.length} / Imagens principais: {imageFiles.length}
-</Typography>
+         <TextField
+          select
+          label="Imagem Principal Referente"
+          value={color.imageRefIndex ?? ""}
+          onChange={(e) => handleImageRefChange(index, e.target.value)}
+          SelectProps={{ native: true }}
+          required
+        >
+          <option value="">Selecione uma imagem</option>
+          {imageFiles.map((file, imgIndex) => (
+            <option key={imgIndex} value={imgIndex}>
+              {file.name} (Imagem {imgIndex + 1})
+            </option>
+          ))}
+        </TextField>
+
+        <Typography sx={{ mt: 2 }}>
+          Cores adicionadas: {colorData.length} / Imagens principais: {imageFiles.length}
+        </Typography>
+
 
         </Box>
       ))}
