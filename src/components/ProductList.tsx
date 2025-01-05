@@ -11,9 +11,9 @@ interface Product {
   price: number;
   discount: number;
   paymentOptions: string[];
-  image: string[] | string; // Aceita string ou array de strings
+  image: string[] | string;
   metersPerBox: number;
-  colors: { name: string; image: string; imageRefIndex: number }[]; // Inclui imageRefIndex
+  colors: { name: string; image: string; imageRefIndex: number }[];
 }
 
 interface ProductListProps {
@@ -21,7 +21,7 @@ interface ProductListProps {
   color: string;
   minPrice: string;
   maxPrice: string;
-  showAll?: boolean; // Nova prop para controlar se todos os produtos devem ser exibidos
+  showAll?: boolean; // Tornando opcional
 }
 
 const ProductList: React.FC<ProductListProps> = ({
@@ -29,73 +29,34 @@ const ProductList: React.FC<ProductListProps> = ({
   color,
   minPrice,
   maxPrice,
-  showAll,
+  showAll = false,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
-        {
-          params: {
-            search: searchTerm,
-            color,
-            minPrice: minPrice || undefined,
-            maxPrice: maxPrice || undefined,
-          },
-        }
-      );
-
-      const processedProducts = response.data.map((product: any) => ({
-        ...product,
-        image:
-          typeof product.image === "string"
-            ? JSON.parse(product.image)
-            : product.image,
-        colors: product.colors.map((color: any, index: number) => ({
-          ...color,
-          imageRefIndex: color.imageRefIndex ?? index,
-        })),
-      }));
-
-      setProducts(processedProducts || []);
-    } catch (error) {
-      setError("Erro ao carregar produtos. Tente novamente mais tarde.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       setError(null);
-  
+
       try {
-        const params = {
-          search: searchTerm,
+        const params: Record<string, string | undefined> = {
           color,
           minPrice: minPrice || undefined,
           maxPrice: maxPrice || undefined,
         };
-  
-        // Se `showAll` for true, remova `search` dos parâmetros
-        const requestParams = showAll
-          ? { color, minPrice: minPrice || undefined, maxPrice: maxPrice || undefined }
-          : params;
-  
+
+        if (!showAll) {
+          params.search = searchTerm; // Apenas adiciona `search` se não for para mostrar tudo
+        }
+
         const response = await axios.get(
           "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/products",
-          { params: requestParams }
+          { params }
         );
-  
+
         const processedProducts = response.data.map((product: any) => ({
           ...product,
           image:
@@ -107,7 +68,7 @@ const ProductList: React.FC<ProductListProps> = ({
             imageRefIndex: color.imageRefIndex ?? index,
           })),
         }));
-  
+
         setProducts(processedProducts || []);
       } catch (error) {
         console.error("Erro ao buscar produtos:", error);
@@ -116,28 +77,40 @@ const ProductList: React.FC<ProductListProps> = ({
         setLoading(false);
       }
     };
-  
+
     fetchProducts();
   }, [searchTerm, color, minPrice, maxPrice, showAll]);
-  
 
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "200px",
+        }}
+      >
+        <CircularProgress color="inherit" />
+      </Box>
+    );
   }
 
   if (error) {
     return <Typography color="error">{error}</Typography>;
   }
 
-  // Exibir todos os produtos ou apenas os filtrados
-  const filteredProducts = showAll
-    ? products
-    : products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  
   if (filteredProducts.length === 0) {
-    return <Typography>Nenhum produto encontrado.</Typography>;
+    return (
+      <Typography sx={{ textAlign: "center", marginTop: 4 }}>
+        Nenhum produto encontrado.
+      </Typography>
+    );
   }
 
   return (

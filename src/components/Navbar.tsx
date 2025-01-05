@@ -99,12 +99,15 @@ const Navbar: React.FC<NavbarProps> = ({
 
   // Função para iniciar a busca e dar o scroll para baixo
   const initiateSearch = (term: string) => {
-    onSearch(term, "", "", ""); // Chama a função de busca
+    setSearchTerm(term);
+    onSearch(term, "", "", ""); // Passa o termo para a função de busca
+    navigate("/"); // Redireciona para a página inicial se necessário
     window.scrollTo({
-      top: 500, // Ajuste esse valor para controlar o quão para baixo será o scroll
+      top: 500, // Controla o scroll para exibir os resultados da pesquisa
       behavior: "smooth",
     });
   };
+  
 
   return (
     <AppBar

@@ -31,6 +31,11 @@ const HomePage: React.FC<HomePageProps> = ({ images, filters }) => {
     setSelectedBrand("");
   };
 
+  // Combina os filtros de marca e barra de pesquisa
+  const combinedSearchTerm = selectedBrand
+    ? `${filters.searchTerm} ${selectedBrand}`.trim()
+    : filters.searchTerm;
+
   return (
     <div className="home-page">
       {images.length > 0 ? <Banner images={images} /> : <div></div>}
@@ -72,11 +77,10 @@ const HomePage: React.FC<HomePageProps> = ({ images, filters }) => {
       {/* Lista de Produtos */}
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <ProductList
-          searchTerm={selectedBrand} // Usa o filtro de marca como termo de busca
+          searchTerm={combinedSearchTerm}
           color={filters.color}
           minPrice={filters.minPrice}
           maxPrice={filters.maxPrice}
-          showAll={!selectedBrand} // Mostra todos os produtos se nenhuma marca for selecionada
         />
       </Container>
 
