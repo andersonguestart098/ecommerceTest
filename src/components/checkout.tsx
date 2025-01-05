@@ -54,6 +54,29 @@ const Checkout: React.FC = () => {
   
     return Math.max(totalAmount, 0).toFixed(2); // Garante que o valor nunca seja negativo
   };
+
+  useEffect(() => {
+    const initializeCheckout = async () => {
+      try {
+        const storedCheckoutData = localStorage.getItem("checkoutData");
+        if (!storedCheckoutData) {
+          alert("Dados do pedido não encontrados.");
+          navigate("/cart");
+          return;
+        }
+  
+        const parsedCheckoutData = JSON.parse(storedCheckoutData);
+        setCheckoutData(parsedCheckoutData);
+  
+        await fetchUserAndCalculateFreight(parsedCheckoutData);
+      } catch (error) {
+        console.error("Erro ao inicializar checkout:", error);
+      }
+    };
+  
+    initializeCheckout();
+  }, [navigate]);
+  
   
 
   useEffect(() => {
@@ -130,6 +153,23 @@ const Checkout: React.FC = () => {
     }
   };
   
+  // Atualize o estado ao buscar o frete
+useEffect(() => {
+  const fetchFreight = async () => {
+    if (!checkoutData) return;
+
+    try {
+      setIsLoadingFreight(true); // Inicia o loader
+      await fetchUserAndCalculateFreight(checkoutData);
+    } catch (error) {
+      console.error("Erro ao calcular frete:", error);
+    } finally {
+      setIsLoadingFreight(false); // Finaliza o loader
+    }
+  };
+
+  fetchFreight();
+}, [checkoutData]);
   
   useEffect(() => {
     const storedCheckoutData = localStorage.getItem("checkoutData");
@@ -493,6 +533,8 @@ const Checkout: React.FC = () => {
       generateBoleto(); // Gera o boleto
     }
   };
+
+  
 
   return (
     <Box
@@ -882,61 +924,56 @@ const Checkout: React.FC = () => {
             Opção de Frete
           </Typography>
 
-          <Box
-            sx={{
-              padding: "15px",
-              backgroundColor: "#fff",
-              borderRadius: 1,
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-              border: "1px solid #ddd",
-            }}
-          >
-            {freightOptions.length > 0 ? (
-              (() => {
-                // Filtra para pegar a modalidade mais adequada da Jadlog
-                const selectedFreight = freightOptions.find(option =>
-                  option.name.toLowerCase().includes("package") // Ajuste para a modalidade mais adequada
-                ) || freightOptions[0]; // Fallback para a primeira opção caso não encontre
+          <Box>
+  {isLoadingFreight ? (
+    <Typography sx={{ textAlign: "center", mt: 2 }}>Carregando opções de frete...</Typography>
+  ) : freightOptions.length > 0 ? (
+    (() => {
+      const selectedFreight =
+        freightOptions.find((option) =>
+          option.name.toLowerCase().includes("package") // Ajuste para a modalidade mais adequada
+        ) || freightOptions[0]; // Fallback para a primeira opção caso não encontre
 
-                // Atualiza o custo de frete no estado (apenas na primeira renderização)
-                if (selectedFreight && freightCost !== Number(selectedFreight.price)) {
-                  setFreightCost(Number(selectedFreight.price));
-                }
+      // Atualiza o custo de frete no estado (apenas na primeira renderização)
+      if (selectedFreight && freightCost !== Number(selectedFreight.price)) {
+        setFreightCost(Number(selectedFreight.price));
+      }
 
-                return (
-                  <Box
-                    sx={{
-                      mb: 2,
-                      borderBottom: "none",
-                      paddingBottom: 2,
-                    }}
-                  >
-                    {/* Espaço para a logo da transportadora */}
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <img
-                        src="/jadlog.png" // Substitua pelo caminho correto da logo
-                        alt="Logo da Transportadora"
-                        style={{ width: "88px", height: "88px", marginRight: "10px" }}
-                      />
-                      <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
-                        {selectedFreight.company?.name || "Transportadora"}
-                      </Typography>
-                    </Box>
-
-                    <Typography sx={{ mb: 1 }}>
-                      <strong>Modalidade:</strong> {selectedFreight.name || "Indisponível"}
-                    </Typography>
-                    <Typography sx={{ mb: 1 }}>
-                      <strong>Valor:</strong> R$ {Number(selectedFreight.price || 0).toFixed(2)}
-                    </Typography>
-                  </Box>
-                );
-              })()
-            ) : (
-              <Typography>Nenhuma opção de frete disponível.</Typography>
-            )}
+      return (
+        <Box
+          sx={{
+            mb: 2,
+            borderBottom: "none",
+            paddingBottom: 2,
+          }}
+        >
+          {/* Espaço para a logo da transportadora */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <img
+              src="/jadlog.png" // Substitua pelo caminho correto da logo
+              alt="Logo da Transportadora"
+              style={{ width: "88px", height: "88px", marginRight: "10px" }}
+            />
+            <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
+              {selectedFreight.company?.name || "Transportadora"}
+            </Typography>
           </Box>
 
+          <Typography sx={{ mb: 1 }}>
+            <strong>Modalidade:</strong> {selectedFreight.name || "Indisponível"}
+          </Typography>
+          <Typography sx={{ mb: 1 }}>
+            <strong>Valor:</strong> R$ {Number(selectedFreight.price || 0).toFixed(2)}
+          </Typography>
+        </Box>
+      );
+    })()
+  ) : (
+    <Typography sx={{ textAlign: "center", mt: 2 }}>
+      Nenhuma opção de frete disponível.
+    </Typography>
+  )}
+</Box>
 
 
 
@@ -945,20 +982,21 @@ const Checkout: React.FC = () => {
           </Typography>
 
 
-            <Button
-              variant="contained"
-              type="button"
-              onClick={handleContinue} // Chama a função com base no método de pagamento
-              disabled={paymentMethod === "card" && !isMpReady}
-              sx={{
-                width: "100%", // Igualando largura do botão
-                backgroundColor: "#313926",
-                "&:hover": { backgroundColor: "#4caf50" },
-                textAlign: "center",
-              }}
-            >
-              Continuar
-            </Button>
+          <Button
+            variant="contained"
+            type="button"
+            onClick={handleContinue}
+            disabled={isLoadingFreight || !freightCost || (paymentMethod === "card" && !isMpReady)}
+            sx={{
+              width: "100%",
+              backgroundColor: isLoadingFreight ? "#aaa" : "#313926",
+              "&:hover": { backgroundColor: isLoadingFreight ? "#aaa" : "#4caf50" },
+              textAlign: "center",
+            }}
+          >
+            {isLoadingFreight ? "Carregando..." : "Continuar"}
+          </Button>
+
 
             <Button
               variant="outlined"
