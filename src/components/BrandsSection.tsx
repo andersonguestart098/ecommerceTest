@@ -2,7 +2,6 @@ import React from "react";
 import { Box, Typography, Grid, Avatar } from "@mui/material";
 
 const brands = [
-  
   { name: "Quickstep", logo: "/icones/quickstep.png" },
   { name: "VinilForte", logo: "/icones/vinilforte.png" },
   { name: "Eucafloor", logo: "/icones/eucafloor.jpg" },
@@ -10,7 +9,12 @@ const brands = [
   { name: "Santa Luzia", logo: "/icones/santaLuzia.png" },
 ];
 
-const BrandsSection = () => {
+interface BrandsSectionProps {
+  onBrandClick: (brandName: string) => void;
+}
+
+
+const BrandsSection: React.FC<BrandsSectionProps> = ({ onBrandClick }) => {
   return (
     <Box sx={{ py: 5 }}>
       <Typography
@@ -24,27 +28,32 @@ const BrandsSection = () => {
       <Grid container spacing={4} justifyContent="center">
         {brands.map((brand, index) => (
           <Grid item key={index} xs={6} sm={4} md={3} lg={2}>
-            <Box display="flex" flexDirection="column" alignItems="center">
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              onClick={() => onBrandClick(brand.name)} // Chama a função ao clicar
+              sx={{ cursor: "pointer" }}
+            >
               <Avatar
                 alt={brand.name}
                 src={brand.logo}
                 sx={{
                   width: 125,
                   height: 125,
-                  backgroundColor: 'white',
+                  backgroundColor: "white",
                   mb: 2,
-                  border: "2px solid #E6E3DB", // Borda leve
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease", // Animação suave
-                  boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)", // Sombra inicial
+                  border: "2px solid #E6E3DB",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)",
                   "&:hover": {
-                    transform: "translateY(-10px)", // Efeito de elevação
+                    transform: "translateY(-10px)",
                     boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
-                     // Sombra mais intensa no hover
                   },
                 }}
                 imgProps={{
                   style: {
-                    objectFit: "contain", // Mantém a imagem com as proporções originais
+                    objectFit: "contain",
                   },
                 }}
               />
