@@ -68,14 +68,63 @@ const Checkout: React.FC = () => {
         const parsedCheckoutData = JSON.parse(storedCheckoutData);
         setCheckoutData(parsedCheckoutData);
   
-        await fetchUserAndCalculateFreight(parsedCheckoutData);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Você precisa estar logado para finalizar o pedido.");
+          navigate("/login");
+          return;
+        }
+  
+        const userResponse = await axios.get(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/profile",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+  
+        const user = userResponse.data;
+        if (!user.address || !user.address.postalCode) {
+          alert("Nenhum endereço cadastrado. Atualize seus dados.");
+          navigate("/meus-dados");
+          return;
+        }
+  
+        setUserAddress(user.address);
+  
+        const freightPayload = {
+          cepOrigem: "90200290",
+          cepDestino: user.address.postalCode.replace(/\s+/g, ""),
+          products: parsedCheckoutData.items.map((item: any) => ({
+            productId: item.productId.split("-")[0],
+            quantity: item.quantity,
+          })),
+        };
+  
+        setIsLoadingFreight(true);
+        const freightResponse = await axios.post(
+          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+          freightPayload
+        );
+  
+        const jadlogOptions = freightResponse.data.shippingOptions.filter(
+          (option: any) => option.company.name.toLowerCase().includes("jadlog")
+        );
+  
+        if (jadlogOptions.length > 0) {
+          setFreightOptions(jadlogOptions);
+          setFreightCost(Number(jadlogOptions[0].price));
+        } else {
+          setFreightOptions([]);
+          setFreightCost(0);
+        }
       } catch (error) {
         console.error("Erro ao inicializar checkout:", error);
+      } finally {
+        setIsLoadingFreight(false);
       }
     };
   
     initializeCheckout();
   }, [navigate]);
+  
   
   
 
