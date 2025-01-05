@@ -1045,19 +1045,6 @@ useEffect(() => {
           >
             {isLoadingFreight ? "Carregando..." : "Continuar"}
           </Button>
-
-
-            <Button
-              variant="outlined"
-              sx={{
-                mt: 2,
-                width: "100%",
-                borderColor: "#aaa",
-                "&:hover": { borderColor: "#333" },
-              }}
-            >
-              Voltar
-            </Button>
           </Box>
         </Grid>
       </Grid>
