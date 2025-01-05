@@ -18,7 +18,10 @@ const ProductForm: React.FC = () => {
   >([]);
   const [metersPerBox, setMetersPerBox] = useState<number | string>("");
   const [weightPerBox, setWeightPerBox] = useState<number | string>("");
-  const [boxDimensions, setBoxDimensions] = useState("");
+  const [height, setHeight] = useState<number | string>("");
+  const [width, setWidth] = useState<number | string>("");
+  const [length, setLength] = useState<number | string>("");
+
   const [materialType, setMaterialType] = useState("");
   const [freightClass, setFreightClass] = useState<number | string>("");
 
@@ -60,7 +63,10 @@ const ProductForm: React.FC = () => {
       );
       formData.append("metersPerBox", metersPerBox as string);
       formData.append("weightPerBox", weightPerBox as string);
-      formData.append("boxDimensions", boxDimensions);
+      formData.append("height", height as string);
+      formData.append("width", width as string);
+      formData.append("length", length as string);
+
       formData.append("materialType", materialType);
       formData.append("freightClass", freightClass as string);
   
@@ -117,7 +123,9 @@ const ProductForm: React.FC = () => {
     setColorData([]);
     setMetersPerBox("");
     setWeightPerBox("");
-    setBoxDimensions("");
+    setHeight("");
+    setWidth("");
+    setLength("");
     setMaterialType("");
     setFreightClass("");
   };
@@ -227,12 +235,28 @@ const ProductForm: React.FC = () => {
         onChange={(e) => setWeightPerBox(e.target.value)}
         required
       />
-      <TextField
-        label="Dimensões da Caixa (LxAxC)"
-        value={boxDimensions}
-        onChange={(e) => setBoxDimensions(e.target.value)}
-        required
-      />
+     <TextField
+      label="Altura (cm)"
+      type="number"
+      value={height}
+      onChange={(e) => setHeight(e.target.value)}
+      required
+    />
+    <TextField
+      label="Largura (cm)"
+      type="number"
+      value={width}
+      onChange={(e) => setWidth(e.target.value)}
+      required
+    />
+    <TextField
+      label="Comprimento (cm)"
+      type="number"
+      value={length}
+      onChange={(e) => setLength(e.target.value)}
+      required
+    />
+
       <TextField
         label="Tipo de Material"
         value={materialType}
@@ -329,25 +353,27 @@ const ProductForm: React.FC = () => {
         </Box>
       ))}
 
-<Button
-  type="submit"
-  variant="contained"
-  color="primary"
-  sx={{ mt: 3 }}
-  disabled={
-    !name ||
-    !description ||
-    !price ||
-    !metersPerBox ||
-    !weightPerBox ||
-    !boxDimensions ||
-    !materialType ||
-    imageFiles.length === 0 ||
-    colorData.some((color) => !color.colorName || !color.colorFile || color.imageRefIndex === null)
-  }
->
-  Criar Produto
-</Button>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+          disabled={
+            !name ||
+            !description ||
+            !price ||
+            !metersPerBox ||
+            !weightPerBox ||
+            !height ||
+            !width ||
+            !length ||
+            !materialType ||
+            imageFiles.length === 0 ||
+            colorData.some((color) => !color.colorName || !color.colorFile || color.imageRefIndex === null)
+          }
+        >
+          Criar Produto
+        </Button>
 
     </Box>
   );

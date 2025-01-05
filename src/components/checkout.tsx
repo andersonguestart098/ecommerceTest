@@ -28,6 +28,8 @@ const Checkout: React.FC = () => {
   const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
   const [freightCost, setFreightCost] = useState<number>(0);
   const [isLoadingFreight, setIsLoadingFreight] = useState(false);
+  const [freightOptions, setFreightOptions] = useState<any[]>([]); // Armazena todas as opções de frete
+
 
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
@@ -54,8 +56,28 @@ const Checkout: React.FC = () => {
   };
   
 
-  // Buscar endereço do usuário e calcular o frete
-  const fetchUserAndCalculateFreight = async () => {
+  useEffect(() => {
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      try {
+        const parsedCheckoutData = JSON.parse(storedCheckoutData);
+        setCheckoutData(parsedCheckoutData);
+        console.log("CheckoutData carregado com sucesso:", parsedCheckoutData);
+      } catch (error) {
+        console.error("Erro ao carregar checkoutData:", error);
+        alert("Erro ao carregar os dados do pedido.");
+        navigate("/cart");
+      }
+    } else {
+      console.error("CheckoutData não encontrado no localStorage.");
+      alert("Dados do pedido não encontrados.");
+      navigate("/cart");
+    }
+  }, [navigate]);
+  
+  
+
+  const fetchUserAndCalculateFreight = async (checkoutData: any) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -63,65 +85,65 @@ const Checkout: React.FC = () => {
         navigate("/login");
         return;
       }
-
-      // Busca o perfil do usuário
-      const response = await axios.get(
+  
+      const userResponse = await axios.get(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/profile",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      const user = response.data;
-      if (user.address) {
-        setUserAddress(user.address);
-
-        // Calcula o frete com base no CEP do usuário
-        setIsLoadingFreight(true);
-        const freightResponse = await axios.post(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
-          {
-            cepOrigem: "90200290", // CEP de origem fixo
-            cepDestino: user.address.postalCode,
-            weight:
-              checkoutData?.items?.reduce(
-                (total: number, item: any) => total + (item.weight || 0),
-                0
-              ) || 1, // Peso total dos itens ou valor padrão
-            height: 10, // Altura fixa ou calculada
-            width: 30, // Largura fixa ou calculada
-            length: 40, // Comprimento fixo ou calculado
-          }
-        );
-
-        if (freightResponse.data && freightResponse.data.shippingCost) {
-          setFreightCost(freightResponse.data.shippingCost);
-        } else {
-          console.warn(
-            "Frete não calculado corretamente:",
-            freightResponse.data
-          );
-          setFreightCost(0); // Define frete como zero em caso de falha
-        }
-      } else {
+  
+      const user = userResponse.data;
+      if (!user.address || !user.address.postalCode) {
         alert("Nenhum endereço cadastrado. Atualize seus dados.");
         navigate("/meus-dados");
+        return;
+      }
+      setUserAddress(user.address);
+  
+      // Corrigir os IDs dos produtos para remover sufixos
+      const productIds = checkoutData.items.map((item: any) =>
+        item.productId.split("-")[0]
+      );
+  
+      const freightPayload = {
+        cepOrigem: "90200290",
+        cepDestino: user.address.postalCode.replace(/\s+/g, ""), // Remover espaços
+        productIds,
+      };
+  
+      const freightResponse = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
+        freightPayload
+      );
+  
+      const jadlogOptions = freightResponse.data.shippingOptions.filter(
+        (option: any) => option.company.name.toLowerCase().includes("jadlog")
+      );
+  
+      if (jadlogOptions.length > 0) {
+        setFreightOptions(jadlogOptions);
+      } else {
+        setFreightOptions([]);
       }
     } catch (error) {
-      console.error(
-        "Erro ao buscar dados do usuário ou calcular frete:",
-        error
-      );
-      alert("Erro ao buscar endereço ou calcular o frete. Tente novamente.");
-    } finally {
-      setIsLoadingFreight(false);
+      console.error("Erro ao buscar dados do usuário ou calcular frete:", error);
     }
   };
-
-  // Carregar dados do usuário e calcular frete ao montar o componente
+  
+  
   useEffect(() => {
-    fetchUserAndCalculateFreight();
-  }, []);
+    const storedCheckoutData = localStorage.getItem("checkoutData");
+    if (storedCheckoutData) {
+      const parsedCheckoutData = JSON.parse(storedCheckoutData);
+      console.log("Dados de checkout carregados:", parsedCheckoutData);
+      setCheckoutData(parsedCheckoutData);
+      fetchUserAndCalculateFreight(parsedCheckoutData);
+    } else {
+      console.error("Dados de checkout não encontrados.");
+      alert("Erro: Dados de checkout não encontrados.");
+      navigate("/cart");
+    }
+  }, [navigate]);
+   
 
   const handleFinalizeOrder = () => {
     handleOrderCompletion(); // Limpa o carrinho
@@ -143,21 +165,8 @@ const Checkout: React.FC = () => {
     setFormKey((prevKey) => prevKey + 1);
   }, [paymentMethod]);
 
-  useEffect(() => {
-    console.log("Verificando dados de checkout no localStorage...");
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      console.log(
-        "Dados de checkout encontrados no localStorage:",
-        storedCheckoutData
-      );
-      setCheckoutData(JSON.parse(storedCheckoutData));
-    } else {
-      console.error("Erro: Dados de checkout não encontrados.");
-      alert("Erro: Dados de checkout não encontrados.");
-      navigate("/cart");
-    }
-  }, [navigate]);
+
+  
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -302,17 +311,17 @@ const Checkout: React.FC = () => {
           "Dados do formulário incompletos. Verifique os campos."
         );
       }
-
+  
       const cardholderName = formData.cardholderName || "";
       const nameParts = cardholderName.split(" ");
-      const firstName = nameParts[0] || "N/A"; // Evita erros se o nome estiver vazio
+      const firstName = nameParts[0] || "N/A";
       const lastName = nameParts.slice(1).join(" ") || "N/A";
-
+  
       const paymentData = {
         token: formData.token,
         issuer_id: formData.issuerId,
         payment_method_id: formData.paymentMethodId,
-        transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
+        transaction_amount: parseFloat(calculateTotal()),
         installments: selectedInstallment,
         description: "Compra em Nato Pisos",
         payer: {
@@ -324,19 +333,21 @@ const Checkout: React.FC = () => {
             number: formData.identificationNumber || "",
           },
         },
-        products: checkoutData.items,
+        // Ajusta os IDs dos produtos
+        products: checkoutData.items.map((item: any) => ({
+          ...item,
+          productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+        })),
         userId: checkoutData.userId,
       };
-
+  
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData
       );
-
+  
       if (response.data.status === "approved") {
-        // Limpa o carrinho antes de redirecionar para a página de sucesso
-        handleOrderCompletion();
-
+        handleOrderCompletion(); // Limpa o carrinho
         navigate("/sucesso", { state: { paymentMethod: "card" } });
       } else {
         alert("Pagamento não aprovado.");
@@ -346,14 +357,14 @@ const Checkout: React.FC = () => {
       alert("Ocorreu um erro ao processar o pagamento.");
     }
   };
-
+  
   const generatePixQrCode = async () => {
     try {
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           payment_method_id: "pix",
-          transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
+          transaction_amount: parseFloat(calculateTotal()),
           description: "Pagamento via Pix",
           payer: {
             email: checkoutData.email,
@@ -365,20 +376,19 @@ const Checkout: React.FC = () => {
             },
           },
           userId: checkoutData.userId,
-          products: checkoutData.items,
+          // Ajusta os IDs dos produtos
+          products: checkoutData.items.map((item: any) => ({
+            ...item,
+            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+          })),
         }
       );
-
+  
       const qrCodeBase64 = response.data.qr_code_base64;
-      console.log("QR Code recebido:", qrCodeBase64); // Log para depuração
-
       if (qrCodeBase64) {
         const qrCode = `data:image/png;base64,${qrCodeBase64}`;
         setQrCode(qrCode);
-
-        // Limpa o carrinho antes de redirecionar para a página de sucesso
-        handleOrderCompletion();
-
+        handleOrderCompletion(); // Limpa o carrinho
         navigate("/sucesso", {
           state: {
             paymentMethod: "pix",
@@ -392,34 +402,33 @@ const Checkout: React.FC = () => {
       console.error("Erro ao processar pagamento com Pix:", error);
     }
   };
-
+  
   const generateBoleto = async () => {
     try {
       const userId = checkoutData?.userId;
-
+  
       if (!userId) {
         throw new Error("Usuário não encontrado para emissão do boleto.");
       }
-
-      // Busca os dados do usuário com endereço completo
+  
       const response = await axios.get(
         `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
       );
-
+  
       const { email, name, cpf, address } = response.data;
-
+  
       if (!address) {
         throw new Error("Endereço não encontrado para o usuário.");
       }
-
+  
       const [firstName, ...lastNameArray] = name.split(" ");
       const lastName = lastNameArray.join(" ");
-
+  
       const boletoResponse = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           payment_method_id: "bolbradesco",
-          transaction_amount: parseFloat(calculateTotal()), // Usar o valor total correto
+          transaction_amount: parseFloat(calculateTotal()),
           description: "Pagamento via Boleto Bancário",
           payer: {
             email,
@@ -439,35 +448,34 @@ const Checkout: React.FC = () => {
             },
           },
           userId,
-          products: checkoutData.items,
+          // Ajusta os IDs dos produtos
+          products: checkoutData.items.map((item: any) => ({
+            ...item,
+            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+          })),
         }
       );
-
-      const boletoUrl = boletoResponse.data.boletoUrl; // Aqui está a URL retornada do backend.
-
+  
+      const boletoUrl = boletoResponse.data.boletoUrl;
+  
       if (boletoUrl) {
-        setBoletoUrl(boletoUrl); // Define o link no estado.
+        setBoletoUrl(boletoUrl);
+        handleOrderCompletion(); // Limpa o carrinho
+        navigate("/sucesso", {
+          state: {
+            paymentMethod: "boleto",
+            boletoUrl,
+          },
+        });
       } else {
         console.warn("Link do boleto não encontrado.");
       }
-
-      // Limpa o carrinho antes de redirecionar para a página de sucesso
-      handleOrderCompletion();
-
-      navigate("/sucesso", {
-        state: {
-          paymentMethod: "boleto",
-          boletoUrl, // Passa o link para a página de sucesso.
-        },
-      });
     } catch (error: any) {
-      console.error(
-        "Erro ao processar pagamento com boleto:",
-        error.message || error
-      );
+      console.error("Erro ao processar pagamento com boleto:", error.message || error);
       alert(`Erro ao gerar boleto: ${error.message}`);
     }
   };
+  
 
   const handleContinue = () => {
     if (paymentMethod === "card") {
@@ -499,37 +507,36 @@ const Checkout: React.FC = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={7}>
           <Box>
-            <Typography>
-              <strong>Endereço Cadastrado:</strong>
-            </Typography>
-            {userAddress ? (
-              <>
-                <Typography>
-                  {userAddress.street}, {userAddress.number} -{" "}
-                  {userAddress.neighborhood}
-                  <br />
-                  {userAddress.city} - {userAddress.state},{" "}
-                  {userAddress.postalCode}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  sx={{
-                    mt: 1,
-                    color: "#313926",
-                    borderColor: "#313926",
-                    "&:hover": {
-                      backgroundColor: "#E6E3DB", // Cor de fundo ao passar o mouse (opcional)
-                      borderColor: "#313926",
-                    },
-                  }}
-                  onClick={() => navigate("/meus-dados")}
-                >
-                  Alterar
-                </Button>
-              </>
-            ) : (
-              <Typography>Carregando endereço cadastrado...</Typography>
-            )}
+          <Typography>
+  <strong>Endereço Cadastrado:</strong>
+</Typography>
+{userAddress ? (
+  <>
+    <Typography>
+      {userAddress.street}, {userAddress.number || "SN"} - {userAddress.neighborhood}
+      <br />
+      {userAddress.city} - {userAddress.state}, {userAddress.postalCode}
+    </Typography>
+    <Button
+      variant="outlined"
+      sx={{
+        mt: 1,
+        color: "#313926",
+        borderColor: "#313926",
+        "&:hover": {
+          backgroundColor: "#E6E3DB",
+          borderColor: "#313926",
+        },
+      }}
+      onClick={() => navigate("/meus-dados")}
+    >
+      Alterar
+    </Button>
+  </>
+) : (
+  <Typography>Carregando endereço cadastrado...</Typography>
+)}
+
           </Box>
 
           <Typography
@@ -869,20 +876,72 @@ const Checkout: React.FC = () => {
               </strong>
             </Typography>
 
-            <Typography
-              sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}
-            >
-              Frete: <strong>R$ {freightCost.toFixed(2)}</strong>
-              <img
-                src="/icones/logo_jadlog.png" // Substitua pelo caminho correto da imagem
-                alt="Jadlog"
-                style={{ width: "80px", height: "30px" }}
-              />
-            </Typography>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", textAlign: "center", color: "#333" }}>
+            Opção de Frete
+          </Typography>
 
-            <Typography sx={{ mb: 2 }}>
-              Total: <strong>R$ {calculateTotal()}</strong>
-            </Typography>
+          <Box
+            sx={{
+              padding: "15px",
+              backgroundColor: "#fff",
+              borderRadius: 1,
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #ddd",
+            }}
+          >
+            {freightOptions.length > 0 ? (
+              (() => {
+                // Filtra para pegar a modalidade mais adequada da Jadlog
+                const selectedFreight = freightOptions.find(option =>
+                  option.name.toLowerCase().includes("package") // Ajuste para a modalidade mais adequada
+                ) || freightOptions[0]; // Fallback para a primeira opção caso não encontre
+
+                // Atualiza o custo de frete no estado (apenas na primeira renderização)
+                if (selectedFreight && freightCost !== Number(selectedFreight.price)) {
+                  setFreightCost(Number(selectedFreight.price));
+                }
+
+                return (
+                  <Box
+                    sx={{
+                      mb: 2,
+                      borderBottom: "none",
+                      paddingBottom: 2,
+                    }}
+                  >
+                    {/* Espaço para a logo da transportadora */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <img
+                        src="/jadlog.png" // Substitua pelo caminho correto da logo
+                        alt="Logo da Transportadora"
+                        style={{ width: "88px", height: "88px", marginRight: "10px" }}
+                      />
+                      <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
+                        {selectedFreight.company?.name || "Transportadora"}
+                      </Typography>
+                    </Box>
+
+                    <Typography sx={{ mb: 1 }}>
+                      <strong>Modalidade:</strong> {selectedFreight.name || "Indisponível"}
+                    </Typography>
+                    <Typography sx={{ mb: 1 }}>
+                      <strong>Valor:</strong> R$ {Number(selectedFreight.price || 0).toFixed(2)}
+                    </Typography>
+                  </Box>
+                );
+              })()
+            ) : (
+              <Typography>Nenhuma opção de frete disponível.</Typography>
+            )}
+          </Box>
+
+
+
+
+          <Typography sx={{ mb: 2 }}>
+            Total: <strong>R$ {calculateTotal()}</strong>
+          </Typography>
+
 
             <Button
               variant="contained"
