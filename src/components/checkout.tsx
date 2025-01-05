@@ -99,15 +99,16 @@ const Checkout: React.FC = () => {
       }
       setUserAddress(user.address);
   
-      // Corrigir os IDs dos produtos para remover sufixos
-      const productIds = checkoutData.items.map((item: any) =>
-        item.productId.split("-")[0]
-      );
+      // Ajuste para incluir a quantidade de cada produto
+      const productsWithQuantities = checkoutData.items.map((item: any) => ({
+        productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+        quantity: item.quantity, // Inclui a quantidade de caixas
+      }));
   
       const freightPayload = {
         cepOrigem: "90200290",
-        cepDestino: user.address.postalCode.replace(/\s+/g, ""), // Remover espaços
-        productIds,
+        cepDestino: user.address.postalCode.replace(/\s+/g, ""), // Remove espaços
+        products: productsWithQuantities, // Envia o array de produtos com IDs e quantidades
       };
   
       const freightResponse = await axios.post(
@@ -379,6 +380,7 @@ const Checkout: React.FC = () => {
           // Ajusta os IDs dos produtos
           products: checkoutData.items.map((item: any) => ({
             ...item,
+
             productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
           })),
         }
