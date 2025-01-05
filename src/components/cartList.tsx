@@ -244,39 +244,40 @@ const CartList: React.FC = () => {
               Valor Total do Pedido: R$ {totalPrice.replace(".", ",")}
             </Typography>
             <Button
-              variant="outlined"
-              onClick={handleCheckout}
-              fullWidth
-              sx={{
-                mt: 2,
-                color: "#313926",
+            variant="outlined"
+            onClick={handleCheckout}
+            fullWidth
+            sx={{
+              mt: 2,
+              color: "#313926",
+              borderColor: "#313926",
+              "&:hover": {
+                backgroundColor: "#00b300",
+                borderColor: "#00b300",
+                color: "#fff",
+              },
+            }}
+          >
+            Finalizar Compra
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/")} // Atualizado para redirecionar à página inicial
+            fullWidth
+            sx={{
+              mt: 2,
+              color: "#313926",
+              borderColor: "#313926",
+              "&:hover": {
+                backgroundColor: "#313926",
                 borderColor: "#313926",
-                "&:hover": {
-                  backgroundColor: "#00b300",
-                  borderColor: "#00b300",
-                  color: "#fff",
-                },
-              }}
-            >
-              Finalizar Compra
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={handleCheckout}
-              fullWidth
-              sx={{
-                mt: 2,
-                color: "#313926",
-                borderColor: "#313926",
-                "&:hover": {
-                  backgroundColor: "#313926",
-                  borderColor: "#313926",
-                  color: "#fff",
-                },
-              }}
-            >
-              Continuar Comprando
-            </Button>
+                color: "#fff",
+              },
+            }}
+          >
+            Continuar Comprando
+          </Button>
+
           </Box>
         </Paper>
       )}
