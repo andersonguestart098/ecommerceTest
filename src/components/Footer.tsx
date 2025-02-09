@@ -44,7 +44,7 @@ const Footer: React.FC = () => {
             </Typography>
             <Typography variant="body1">
               <PhoneIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-              +55 11 91234-6687
+              +55 51 9868-8559
             </Typography>
           </Box>
         </Grid>
@@ -85,6 +85,46 @@ const Footer: React.FC = () => {
 
       <Divider sx={{ my: 3, backgroundColor: "#E6E3DB" }} />
 
+      {/* Selos de Verificação */}
+      <Box
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    gap: 3,
+    mb: 3,
+    flexWrap: "wrap",
+  }}
+>
+  {/* Selo do Google Safe Browsing */}
+  <a
+    href="https://transparencyreport.google.com/safe-browsing/search?url=seusite.com"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <img
+      src="/seloGoogle2.png"
+      alt="Google Safe Browsing"
+      style={{ width: "150px", height: "auto" }} // Aumentado para 150px
+    />
+  </a>
+
+  {/* Selo do Mercado Pago */}
+  <a
+    href="https://www.mercadopago.com.br"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <img
+      src="/seloMercadoPago.png"
+      alt="Mercado Pago"
+      style={{ width: "150px", height: "auto" }} // Aumentado para 150px
+    />
+  </a>
+</Box>
+
+
+
+      {/* Direitos Autorais */}
       <Box>
         <Typography variant="body2" color="#E6E3DB">
           © {new Date().getFullYear()} Nato Pisos - Todos os direitos reservados
