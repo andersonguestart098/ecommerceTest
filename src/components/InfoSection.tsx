@@ -41,7 +41,7 @@ const InfoSection: React.FC = () => {
             variant="subtitle1"
             sx={{ fontWeight: "bold", fontSize: 14, color: "#313926" }}
           >
-            Parcelamento em até 6x
+            Parcelamento em até 3x
           </Typography>
           <Typography
             variant="body2"
