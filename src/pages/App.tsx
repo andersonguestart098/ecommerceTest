@@ -117,18 +117,19 @@ const App: React.FC = () => {
     Agende a visita do nosso instalador
   </Typography>
   <Fab
-    color="primary"
-    aria-label="whatsapp"
-    onClick={() => window.open("https://wa.me/SEU_NUMERO_AQUI", "_blank")} // Substitua SEU_NUMERO_AQUI pelo número de WhatsApp
-    sx={{
-      backgroundColor: "#25D366", // Cor do WhatsApp
-      width: 56, // Aumentei o tamanho do botão
-      height: 56, // Aumentei o tamanho do botão
-      "&:hover": {
-        backgroundColor: "#128C7E", // Cor do WhatsApp ao passar o mouse
-      },
-    }}
-  >
+  color="primary"
+  aria-label="whatsapp"
+  onClick={() => window.open("https://wa.me/555198688559", "_blank")} // Número de WhatsApp formatado corretamente
+  sx={{
+    backgroundColor: "#25D366", // Cor do WhatsApp
+    width: 56, // Tamanho do botão
+    height: 56, // Tamanho do botão
+    "&:hover": {
+      backgroundColor: "#128C7E", // Cor ao passar o mouse
+    },
+  }}
+>
+
     <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} /> {/* Aumentei o tamanho do ícone */}
   </Fab>
 </Box>
