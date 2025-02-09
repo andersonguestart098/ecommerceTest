@@ -22,6 +22,9 @@ import FailurePage from "../components/mercadoPago/falha";
 import PendingPage from "../components/mercadoPago/pendente";
 import Management from "../components/gerenciador";
 import MeusDados from "../components/MeusDados";
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'; // Importe o ícone do WhatsApp
+import { Fab, Typography } from '@mui/material'; // Importe os componentes do Material-UI
+
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
@@ -88,6 +91,47 @@ const App: React.FC = () => {
           }}
         >
           <Router>
+          <Box
+  sx={{
+    position: "fixed",
+    bottom: 20,
+    right: 20,
+    zIndex: 1000,
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+  }}
+>
+  <Typography
+    variant="body2"
+    sx={{
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      color: "#fff",
+      padding: "12px 16px", // Aumentei o padding para destacar mais
+      borderRadius: "20px",
+      boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+      fontSize: "0.90rem", // Aumentei o tamanho da fonte
+      fontWeight: "bold", // Deixei o texto em negrito
+    }}
+  >
+    Agende a visita do nosso instalador
+  </Typography>
+  <Fab
+    color="primary"
+    aria-label="whatsapp"
+    onClick={() => window.open("https://wa.me/SEU_NUMERO_AQUI", "_blank")} // Substitua SEU_NUMERO_AQUI pelo número de WhatsApp
+    sx={{
+      backgroundColor: "#25D366", // Cor do WhatsApp
+      width: 56, // Aumentei o tamanho do botão
+      height: 56, // Aumentei o tamanho do botão
+      "&:hover": {
+        backgroundColor: "#128C7E", // Cor do WhatsApp ao passar o mouse
+      },
+    }}
+  >
+    <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} /> {/* Aumentei o tamanho do ícone */}
+  </Fab>
+</Box>
             <CartProvider>
               <Navbar
                 onSearch={handleSearch}

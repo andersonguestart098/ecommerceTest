@@ -974,57 +974,55 @@ useEffect(() => {
           </Typography>
 
           <Box>
-  {isLoadingFreight ? (
-    <Typography sx={{ textAlign: "center", mt: 2 }}>Carregando opções de frete...</Typography>
-  ) : freightOptions.length > 0 ? (
-    (() => {
-      const selectedFreight =
-        freightOptions.find((option) =>
-          option.name.toLowerCase().includes("package") // Ajuste para a modalidade mais adequada
-        ) || freightOptions[0]; // Fallback para a primeira opção caso não encontre
+            {isLoadingFreight ? (
+              <Typography sx={{ textAlign: "center", mt: 2 }}>Carregando opções de frete...</Typography>
+            ) : freightOptions.length > 0 ? (
+              (() => {
+                const selectedFreight =
+                  freightOptions.find((option) =>
+                    option.name.toLowerCase().includes("package") // Ajuste para a modalidade mais adequada
+                  ) || freightOptions[0]; // Fallback para a primeira opção caso não encontre
 
-      // Atualiza o custo de frete no estado (apenas na primeira renderização)
-      if (selectedFreight && freightCost !== Number(selectedFreight.price)) {
-        setFreightCost(Number(selectedFreight.price));
-      }
+                // Atualiza o custo de frete no estado (apenas na primeira renderização)
+                if (selectedFreight && freightCost !== Number(selectedFreight.price)) {
+                  setFreightCost(Number(selectedFreight.price));
+                }
 
-      return (
-        <Box
-          sx={{
-            mb: 2,
-            borderBottom: "none",
-            paddingBottom: 2,
-          }}
-        >
-          {/* Espaço para a logo da transportadora */}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <img
-              src="/jadlog.png" // Substitua pelo caminho correto da logo
-              alt="Logo da Transportadora"
-              style={{ width: "88px", height: "88px", marginRight: "10px" }}
-            />
-            <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
-              {selectedFreight.company?.name || "Transportadora"}
-            </Typography>
+                return (
+                  <Box
+                    sx={{
+                      mb: 2,
+                      borderBottom: "none",
+                      paddingBottom: 2,
+                    }}
+                  >
+                    {/* Espaço para a logo da transportadora */}
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <img
+                        src="/jadlog.png" // Substitua pelo caminho correto da logo
+                        alt="Logo da Transportadora"
+                        style={{ width: "88px", height: "88px", marginRight: "10px" }}
+                      />
+                      <Typography sx={{ fontWeight: "bold", fontSize: "16px" }}>
+                        {selectedFreight.company?.name || "Transportadora"}
+                      </Typography>
+                    </Box>
+
+                    <Typography sx={{ mb: 1 }}>
+                      <strong>Modalidade:</strong> {selectedFreight.name || "Indisponível"}
+                    </Typography>
+                    <Typography sx={{ mb: 1 }}>
+                      <strong>Valor:</strong> R$ {Number(selectedFreight.price || 0).toFixed(2)}
+                    </Typography>
+                  </Box>
+                );
+              })()
+            ) : (
+              <Typography sx={{ textAlign: "center", mt: 2 }}>
+                Nenhuma opção de frete disponível.
+              </Typography>
+            )}
           </Box>
-
-          <Typography sx={{ mb: 1 }}>
-            <strong>Modalidade:</strong> {selectedFreight.name || "Indisponível"}
-          </Typography>
-          <Typography sx={{ mb: 1 }}>
-            <strong>Valor:</strong> R$ {Number(selectedFreight.price || 0).toFixed(2)}
-          </Typography>
-        </Box>
-      );
-    })()
-  ) : (
-    <Typography sx={{ textAlign: "center", mt: 2 }}>
-      Nenhuma opção de frete disponível.
-    </Typography>
-  )}
-</Box>
-
-
 
           <Typography sx={{ mb: 2 }}>
             Total: <strong>R$ {calculateTotal()}</strong>
