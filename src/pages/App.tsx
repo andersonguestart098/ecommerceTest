@@ -100,7 +100,7 @@ const App: React.FC = () => {
     display: "flex",
     alignItems: "center",
     gap: 1,
-    paddingBottom: 10,
+    paddingBottom:15,
   }}
 >
   <Typography
