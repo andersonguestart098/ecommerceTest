@@ -448,51 +448,70 @@ useEffect(() => {
     }
   };
   
+
   const generatePixQrCode = async () => {
     try {
-      const response = await axios.post(
-        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-        {
-          payment_method_id: "pix",
-          transaction_amount: parseFloat(calculateTotal()),
-          description: "Pagamento via Pix",
-          payer: {
-            email: checkoutData.email,
-            first_name: checkoutData.firstName,
-            last_name: checkoutData.lastName,
-            identification: {
-              type: "CPF",
-              number: checkoutData.cpf,
-            },
-          },
-          userId: checkoutData.userId,
-          // Ajusta os IDs dos produtos
-          products: checkoutData.items.map((item: any) => ({
-            ...item,
+        console.log("🔄 Iniciando geração do QR Code Pix...");
 
-            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
-          })),
+        const response = await axios.post(
+            "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+            {
+                payment_method_id: "pix",
+                transaction_amount: parseFloat(calculateTotal()),
+                description: "Pagamento via Pix",
+                payer: {
+                    email: checkoutData.email,
+                    first_name: checkoutData.firstName,
+                    last_name: checkoutData.lastName,
+                    identification: {
+                        type: "CPF",
+                        number: checkoutData.cpf,
+                    },
+                },
+                userId: checkoutData.userId,
+                products: checkoutData.items.map((item: any) => ({
+                    ...item,
+                    productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+                })),
+            }
+        );
+
+        console.log("✅ Resposta completa do servidor:", response.data);
+
+        const paymentResponse = response.data;
+
+        // Captura diretamente os valores enviados pelo backend
+        const qrCodeBase64 = paymentResponse.qr_code_base64;
+        const pixCopiaCola = paymentResponse.qr_code;
+
+        if (!qrCodeBase64 || !pixCopiaCola) {
+            console.warn("⚠️ Dados do Pix ausentes. Verifique a resposta:", paymentResponse);
+            alert("Erro ao obter os dados do Pix. Tente novamente.");
+            return;
         }
-      );
-  
-      const qrCodeBase64 = response.data.qr_code_base64;
-      if (qrCodeBase64) {
+
+        // Monta a imagem do QR Code em base64
         const qrCode = `data:image/png;base64,${qrCodeBase64}`;
+
+        // Atualiza o estado e navega para a tela de sucesso
         setQrCode(qrCode);
         handleOrderCompletion(); // Limpa o carrinho
+
         navigate("/sucesso", {
-          state: {
-            paymentMethod: "pix",
-            pixQrCode: qrCode,
-          },
+            state: {
+                paymentMethod: "pix",
+                pixQrCode: qrCode,
+                pixCopiaCola: pixCopiaCola,
+            },
         });
-      } else {
-        alert("QR Code não encontrado.");
-      }
+
+        console.log("✅ Pagamento via Pix gerado com sucesso!");
     } catch (error) {
-      console.error("Erro ao processar pagamento com Pix:", error);
+        console.error("❌ Erro ao processar pagamento com Pix:", error);
+        alert("Erro ao processar o pagamento. Tente novamente mais tarde.");
     }
-  };
+};
+
   
   const generateBoleto = async () => {
     try {
