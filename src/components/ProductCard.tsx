@@ -68,6 +68,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     if (productName.includes("Mapei Ultrabond")) return "Balde";
     if (productName.includes("Perfil Incizo")) return "Peça";
     if (productName.includes("Hydrokit")) return "Peça";
+    if (productName.includes("Selante Kisafix")) return "Peça";
     if (productName.includes("Mapei Triblock")) return "Balde";
     if (productName.includes("Ultrabond Mapei")) return "Balde";
     if (productName.includes("Mapei Profas")) return "Lt";
