@@ -61,21 +61,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
 
   // Função para determinar a unidade de medida
   const getPriceUnit = (productName: string): string => {
-    if (productName.includes("rodapé")) return "Pc";
-    if (productName.includes("Rodapé")) return "Pc";
-    if (productName.includes("massa")) return "Tubp";
-    if (productName.includes("Mapei Planiseal")) return "Bd";
-    if (productName.includes("Mapei Ultrabond")) return "Bd";
-    if (productName.includes("Perfil Incizo")) return "Pc";
-    if (productName.includes("Hydrokit")) return "Pc";
-    if (productName.includes("Mapei Triblock")) return "Bd";
-    if (productName.includes("Ultrabond Mapei")) return "Bd";
+    if (productName.includes("rodapé")) return "Peça";
+    if (productName.includes("Rodapé")) return "Peça";
+    if (productName.includes("massa")) return "Tubo";
+    if (productName.includes("Mapei Planiseal")) return "Balde";
+    if (productName.includes("Mapei Ultrabond")) return "Balde";
+    if (productName.includes("Perfil Incizo")) return "Peça";
+    if (productName.includes("Hydrokit")) return "Peça";
+    if (productName.includes("Mapei Triblock")) return "Balde";
+    if (productName.includes("Ultrabond Mapei")) return "Balde";
     if (productName.includes("Mapei Profas")) return "Lt";
     if (productName.includes("Mapei Primer")) return "Lt";
     if (productName.includes("Autonivelante Mapei")) return "Sc";
     if (productName.includes("Mapei Planiprep")) return "Sc";
     if (productName.includes("Tarucel")) return "M";
-    if (productName.includes("Massa para Acabamento Flex")) return "Tb";
+    if (productName.includes("Massa para Acabamento Flex")) return "Tubo";
+    if (productName.includes("Piso")) return "Caixa";
     return "m²"; // Unidade padrão
   };
 
