@@ -296,11 +296,53 @@ useEffect(() => {
   }, [navigate]);
 
   useEffect(() => {
-    if (paymentMethod === "card" && checkoutData) {
-      // Certifique-se de que os dados estejam carregados
-      loadMercadoPago();
-    }
-  }, [paymentMethod, checkoutData]);
+    console.log("Atualizando SDK do Mercado Pago devido a mudanças em paymentMethod ou checkoutData...");
+  
+    // Função para remover o script existente, se houver
+    const removeMercadoPagoScript = () => {
+      const existingScript = document.getElementById("mercado-pago-sdk");
+      if (existingScript) {
+        existingScript.remove();
+        console.log("Script existente do Mercado Pago removido.");
+      }
+    };
+  
+    // Função para carregar ou recarregar o SDK do Mercado Pago
+    const loadOrReloadMercadoPago = () => {
+      if (!publicKey) {
+        console.error("Chave Pública do Mercado Pago não encontrada!");
+        return;
+      }
+  
+      if (paymentMethod === "card" && checkoutData) {
+        setIsLoading(true); // Mostra o spinner enquanto carrega
+        removeMercadoPagoScript(); // Remove o script antigo antes de carregar novo
+  
+        const script = document.createElement("script");
+        script.id = "mercado-pago-sdk";
+        script.src = "https://sdk.mercadopago.com/js/v2";
+        script.async = true;
+        script.onload = () => {
+          console.log("SDK do Mercado Pago carregado com sucesso.");
+          initializeCardForm(); // Inicializa o formulário após carregar o SDK
+          setIsLoading(false); // Esconde o spinner após carregar
+          setIsMpReady(true); // Define que o SDK está pronto
+        };
+        script.onerror = () => {
+          console.error("Erro ao carregar o SDK do Mercado Pago.");
+          setIsLoading(false); // Esconde o spinner em caso de erro
+          setIsMpReady(false); // Define que o SDK não está pronto
+        };
+        document.body.appendChild(script);
+      } else {
+        setIsMpReady(false); // Reseta o estado se não for cartão de crédito
+        removeMercadoPagoScript(); // Remove o script se não for necessário
+      }
+    };
+  
+    loadOrReloadMercadoPago();
+  }, [paymentMethod, checkoutData, publicKey]); // Observa mudanças em paymentMethod, checkoutData e publicKey
+
 
   const loadMercadoPago = () => {
     console.log("Carregando SDK do Mercado Pago...");
@@ -451,67 +493,73 @@ useEffect(() => {
 
   const generatePixQrCode = async () => {
     try {
-        console.log("🔄 Iniciando geração do QR Code Pix...");
-
-        const response = await axios.post(
-            "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
-            {
-                payment_method_id: "pix",
-                transaction_amount: parseFloat(calculateTotal()),
-                description: "Pagamento via Pix",
-                payer: {
-                    email: checkoutData.email,
-                    first_name: checkoutData.firstName,
-                    last_name: checkoutData.lastName,
-                    identification: {
-                        type: "CPF",
-                        number: checkoutData.cpf,
-                    },
-                },
-                userId: checkoutData.userId,
-                products: checkoutData.items.map((item: any) => ({
-                    ...item,
-                    productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
-                })),
-            }
-        );
-
-        console.log("✅ Resposta completa do servidor:", response.data);
-
-        const paymentResponse = response.data;
-
-        // Captura diretamente os valores enviados pelo backend
-        const qrCodeBase64 = paymentResponse.qr_code_base64;
-        const pixCopiaCola = paymentResponse.qr_code;
-
-        if (!qrCodeBase64 || !pixCopiaCola) {
-            console.warn("⚠️ Dados do Pix ausentes. Verifique a resposta:", paymentResponse);
-            alert("Erro ao obter os dados do Pix. Tente novamente.");
-            return;
-        }
-
-        // Monta a imagem do QR Code em base64
-        const qrCode = `data:image/png;base64,${qrCodeBase64}`;
-
-        // Atualiza o estado e navega para a tela de sucesso
-        setQrCode(qrCode);
-        handleOrderCompletion(); // Limpa o carrinho
-
-        navigate("/sucesso", {
-            state: {
-                paymentMethod: "pix",
-                pixQrCode: qrCode,
-                pixCopiaCola: pixCopiaCola,
+      console.log("🔄 Iniciando geração do QR Code Pix...");
+      console.log("🔍 Dados de checkout para Pix:", JSON.stringify(checkoutData, null, 2));
+  
+      const response = await axios.post(
+        "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
+        {
+          payment_method_id: "pix",
+          transaction_amount: parseFloat(calculateTotal()),
+          description: "Pagamento via Pix",
+          payer: {
+            email: checkoutData.email,
+            first_name: checkoutData.firstName,
+            last_name: checkoutData.lastName,
+            identification: {
+              type: "CPF",
+              number: checkoutData.cpf,
             },
-        });
-
-        console.log("✅ Pagamento via Pix gerado com sucesso!");
+          },
+          userId: checkoutData.userId,
+          products: checkoutData.items.map((item: any) => ({
+            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+            title: item.title || `Produto ${item.productId}`,
+            quantity: item.quantity,
+            unit_price: item.unit_price || 0, // Adiciona unit_price como fallback
+            description: item.description || `Descrição do produto ${item.productId}`,
+            category_id: "default", // Adiciona category_id para consistência com o backend
+          })),
+          device_id: "default_device_id", // Adiciona device_id para consistência
+        }
+      );
+  
+      console.log("✅ Resposta completa do servidor:", JSON.stringify(response.data, null, 2));
+  
+      const paymentResponse = response.data;
+  
+      // Captura diretamente os valores enviados pelo backend
+      const qrCodeBase64 = paymentResponse.qr_code_base64;
+      const pixCopiaCola = paymentResponse.qr_code;
+  
+      if (!qrCodeBase64 || !pixCopiaCola) {
+        console.warn("⚠️ Dados do Pix ausentes. Verifique a resposta:", JSON.stringify(paymentResponse, null, 2));
+        alert("Erro ao obter os dados do Pix. Tente novamente.");
+        return;
+      }
+  
+      // Monta a imagem do QR Code em base64
+      const qrCode = `data:image/png;base64,${qrCodeBase64}`;
+  
+      // Atualiza o estado e navega para a tela de sucesso
+      setQrCode(qrCode);
+      handleOrderCompletion(); // Limpa o carrinho
+  
+      navigate("/sucesso", {
+        state: {
+          paymentMethod: "pix",
+          pixQrCode: qrCode,
+          pixCopiaCola: pixCopiaCola,
+        },
+      });
+  
+      console.log("✅ Pagamento via Pix gerado com sucesso!");
     } catch (error) {
-        console.error("❌ Erro ao processar pagamento com Pix:", error);
-        alert("Erro ao processar o pagamento. Tente novamente mais tarde.");
+      console.error("❌ Erro ao processar pagamento com Pix:", error);
+      console.error("🔍 Detalhes do erro:", JSON.stringify(error, null, 2));
+      alert("Erro ao processar o pagamento. Tente novamente mais tarde.");
     }
-};
-
+  };
   
   const generateBoleto = async () => {
     try {
@@ -558,15 +606,23 @@ useEffect(() => {
             },
           },
           userId,
-          // Ajusta os IDs dos produtos
           products: checkoutData.items.map((item: any) => ({
-            ...item,
             productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+            title: item.title || `Produto ${item.productId}`,
+            quantity: item.quantity,
+            unit_price: item.unit_price || 0, // Adiciona unit_price como fallback
+            description: item.description || `Descrição do produto ${item.productId}`,
+            category_id: "default", // Adiciona category_id para consistência com o backend
           })),
+          device_id: "default_device_id", // Adiciona device_id para consistência
         }
       );
   
-      const boletoUrl = boletoResponse.data.boletoUrl;
+      console.log("✅ Resposta completa do servidor para boleto:", JSON.stringify(boletoResponse.data, null, 2));
+  
+      const paymentResponse = boletoResponse.data;
+  
+      const boletoUrl = paymentResponse.boletoUrl;
   
       if (boletoUrl) {
         setBoletoUrl(boletoUrl);
@@ -579,13 +635,16 @@ useEffect(() => {
         });
       } else {
         console.warn("Link do boleto não encontrado.");
+        alert("Erro ao gerar o link do boleto. Tente novamente.");
       }
+  
+      console.log("✅ Pagamento via Boleto gerado com sucesso!");
     } catch (error: any) {
-      console.error("Erro ao processar pagamento com boleto:", error.message || error);
+      console.error("❌ Erro ao processar pagamento com boleto:", error.message || error);
+      console.error("🔍 Detalhes do erro:", JSON.stringify(error, null, 2));
       alert(`Erro ao gerar boleto: ${error.message}`);
     }
   };
-  
 
   const handleContinue = () => {
     if (paymentMethod === "card") {
