@@ -91,49 +91,48 @@ const App: React.FC = () => {
           }}
         >
           <Router>
-          <Box
-  sx={{
-    position: "fixed",
-    bottom: 20,
-    right: 20,
-    zIndex: 1000,
-    display: "flex",
-    alignItems: "center",
-    gap: 1,
-    paddingBottom:30,
-  }}
->
-  <Typography
-    variant="body2"
-    sx={{
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      color: "#fff",
-      padding: "12px 16px", // Aumentei o padding para destacar mais
-      borderRadius: "20px",
-      boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-      fontSize: "0.90rem", // Aumentei o tamanho da fonte
-      fontWeight: "bold", // Deixei o texto em negrito
-    }}
-  >
-    Agende a visita do nosso instalador
-  </Typography>
-  <Fab
-  color="primary"
-  aria-label="whatsapp"
-  onClick={() => window.open("https://wa.me/555198688559", "_blank")} // Número de WhatsApp formatado corretamente
-  sx={{
-    backgroundColor: "#25D366", // Cor do WhatsApp
-    width: 56, // Tamanho do botão
-    height: 56, // Tamanho do botão
-    "&:hover": {
-      backgroundColor: "#128C7E", // Cor ao passar o mouse
-    },
-  }}
->
-
-    <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} /> {/* Aumentei o tamanho do ícone */}
-  </Fab>
-</Box>
+                    <Box
+            sx={{
+              position: "fixed",
+              bottom: 60, // Aumentado para mais espaço
+              right: 20,
+              zIndex: 500, // Reduzido para estar abaixo do botão "Continuar"
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              paddingBottom: 30,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                color: "#fff",
+                padding: "12px 16px",
+                borderRadius: "20px",
+                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                fontSize: "0.90rem",
+                fontWeight: "bold",
+              }}
+            >
+              Agende a visita do nosso instalador
+            </Typography>
+            <Fab
+              color="primary"
+              aria-label="whatsapp"
+              onClick={() => window.open("https://wa.me/555198688559", "_blank")}
+              sx={{
+                backgroundColor: "#25D366",
+                width: 56,
+                height: 56,
+                "&:hover": {
+                  backgroundColor: "#128C7E",
+                },
+              }}
+            >
+              <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
+            </Fab>
+          </Box>
             <CartProvider>
               <Navbar
                 onSearch={handleSearch}
