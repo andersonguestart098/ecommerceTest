@@ -1113,15 +1113,15 @@ useEffect(() => {
             onTouchEnd={handleContinue}
             disabled={isLoadingFreight || !freightCost || (paymentMethod === "card" && !isMpReady)}
             sx={{
-              width: "100%",
-              maxWidth: "300px",
-              margin: "0 auto",
-              minHeight: "56px", // Altura mínima para toque em mobile
+              width: "100%", // Ocupa 100% do container pai
+              margin: "0", // Remove margens para preencher o espaço
+              minHeight: "60px", // Aumenta a altura mínima para uma área clicável maior
               backgroundColor: isLoadingFreight ? "#aaa" : "#313926",
               "&:hover": { backgroundColor: isLoadingFreight ? "#aaa" : "#4caf50" },
               textAlign: "center",
-              padding: "16px 32px", // Aumentado para área clicável maior
+              padding: "16px 32px", // Mantém o padding generoso para área clicável
               zIndex: 1000,
+              lineHeight: "28px", // Alinha o texto verticalmente no centro, evitando problemas na parte inferior
             }}
           >
             {isLoadingFreight ? "Carregando..." : "Continuar"}
