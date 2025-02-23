@@ -490,7 +490,6 @@ useEffect(() => {
     }
   };
   
-
   const generatePixQrCode = async () => {
     try {
       console.log("🔄 Iniciando geração do QR Code Pix...");
@@ -1108,19 +1107,24 @@ useEffect(() => {
 
 
           <Button
-            variant="contained"
-            type="button"
-            onClick={handleContinue}
-            disabled={isLoadingFreight || !freightCost || (paymentMethod === "card" && !isMpReady)}
-            sx={{
-              width: "100%",
-              backgroundColor: isLoadingFreight ? "#aaa" : "#313926",
-              "&:hover": { backgroundColor: isLoadingFreight ? "#aaa" : "#4caf50" },
-              textAlign: "center",
-            }}
-          >
-            {isLoadingFreight ? "Carregando..." : "Continuar"}
-          </Button>
+          variant="contained"
+          type="button"
+          onClick={handleContinue}
+          onTouchEnd={handleContinue} // Adiciona suporte explícito para toque
+          disabled={isLoadingFreight || !freightCost || (paymentMethod === "card" && !isMpReady)}
+          sx={{
+            width: "100%",
+            maxWidth: "300px",
+            margin: "0 auto",
+            backgroundColor: isLoadingFreight ? "#aaa" : "#313926",
+            "&:hover": { backgroundColor: isLoadingFreight ? "#aaa" : "#4caf50" },
+            textAlign: "center",
+            padding: "12px 24px",
+            zIndex: 1000,
+          }}
+        >
+          {isLoadingFreight ? "Carregando..." : "Continuar"}
+        </Button>
           </Box>
         </Grid>
       </Grid>
