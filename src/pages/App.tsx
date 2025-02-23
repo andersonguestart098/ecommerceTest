@@ -22,9 +22,8 @@ import FailurePage from "../components/mercadoPago/falha";
 import PendingPage from "../components/mercadoPago/pendente";
 import Management from "../components/gerenciador";
 import MeusDados from "../components/MeusDados";
-import WhatsAppIcon from '@mui/icons-material/WhatsApp'; // Importe o ícone do WhatsApp
-import { Fab, Typography } from '@mui/material'; // Importe os componentes do Material-UI
-
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { Fab, Typography } from '@mui/material';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
@@ -87,52 +86,52 @@ const App: React.FC = () => {
             minHeight: "100vh",
             paddingTop: "94px",
             position: "relative",
-            zIndex: 10,
+            zIndex: 100, // Aumentado para garantir que o conteúdo do site fique na frente do WhatsApp
           }}
         >
           <Router>
-                    <Box
-            sx={{
-              position: "fixed",
-              bottom: 60, // Aumentado para mais espaço
-              right: 20,
-              zIndex: 500, // Reduzido para estar abaixo do botão "Continuar"
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              paddingBottom: 30,
-            }}
-          >
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                color: "#fff",
-                padding: "12px 16px",
-                borderRadius: "20px",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                fontSize: "0.90rem",
-                fontWeight: "bold",
+                position: "fixed",
+                bottom: 60,
+                right: 20,
+                zIndex: 1, // Reduzido para garantir que fique atrás dos botões do site
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                paddingBottom: 30,
               }}
             >
-              Agende a visita do nosso instalador
-            </Typography>
-            <Fab
-              color="primary"
-              aria-label="whatsapp"
-              onClick={() => window.open("https://wa.me/555198688559", "_blank")}
-              sx={{
-                backgroundColor: "#25D366",
-                width: 56,
-                height: 56,
-                "&:hover": {
-                  backgroundColor: "#128C7E",
-                },
-              }}
-            >
-              <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
-            </Fab>
-          </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  color: "#fff",
+                  padding: "12px 16px",
+                  borderRadius: "20px",
+                  boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                  fontSize: "0.90rem",
+                  fontWeight: "bold",
+                }}
+              >
+                Agende a visita do nosso instalador
+              </Typography>
+              <Fab
+                color="primary"
+                aria-label="whatsapp"
+                onClick={() => window.open("https://wa.me/555198688559", "_blank")}
+                sx={{
+                  backgroundColor: "#25D366",
+                  width: 56,
+                  height: 56,
+                  "&:hover": {
+                    backgroundColor: "#128C7E",
+                  },
+                }}
+              >
+                <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
+              </Fab>
+            </Box>
             <CartProvider>
               <Navbar
                 onSearch={handleSearch}
