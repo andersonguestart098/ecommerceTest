@@ -15,6 +15,7 @@ import { useCart } from "../contexts/CartContext"; // Certifique-se de ajustar o
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const { handleOrderCompletion } = useCart();
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [isMpReady, setIsMpReady] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -22,433 +23,154 @@ const Checkout: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState(1);
   const [checkoutData, setCheckoutData] = useState<any>(null);
-  const [formKey, setFormKey] = useState(0);
-  const { handleOrderCompletion } = useCart();
   const [userAddress, setUserAddress] = useState<any>(null);
-  const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
   const [freightCost, setFreightCost] = useState<number>(0);
   const [isLoadingFreight, setIsLoadingFreight] = useState(false);
-  const [freightOptions, setFreightOptions] = useState<any[]>([]); // Armazena todas as opções de frete
-
-
+  const [freightOptions, setFreightOptions] = useState<any[]>([]);
   const publicKey = process.env.REACT_APP_MERCADO_PAGO_PUBLIC_KEY;
 
   // Função para calcular o total do pedido
   const calculateTotal = () => {
-    if (!checkoutData) {
-      console.warn("Dados de checkout não encontrados.");
-      return "0.00";
-    }
-  
+    if (!checkoutData) return "0.00";
+
     const amount = parseFloat(checkoutData.amount || "0") || 0;
-    const shippingCost = freightCost || 0; // Usa o valor atualizado do frete
+    const shippingCost = freightCost || 0;
     const discount = parseFloat(checkoutData.discount || "0") || 0;
-  
+
     let totalAmount = amount + shippingCost - discount;
-  
-    // Aplica desconto de 5% se o método de pagamento for Pix
-    if (paymentMethod === "pix") {
-      const pixDiscount = totalAmount * 0.05;
-      totalAmount -= pixDiscount;
-    }
-  
-    return Math.max(totalAmount, 0).toFixed(2); // Garante que o valor nunca seja negativo
+    if (paymentMethod === "pix") totalAmount *= 0.95; // Desconto de 5% para Pix
+
+    return Math.max(totalAmount, 0).toFixed(2);
   };
 
-  useEffect(() => {
-    const initializeCheckout = async () => {
-      try {
-        const storedCheckoutData = localStorage.getItem("checkoutData");
-        if (!storedCheckoutData) {
-          alert("Dados do pedido não encontrados.");
-          navigate("/cart");
-          return;
-        }
-  
-        const parsedCheckoutData = JSON.parse(storedCheckoutData);
-        setCheckoutData(parsedCheckoutData);
-  
-        const token = localStorage.getItem("token");
-        if (!token) {
-          alert("Você precisa estar logado para finalizar o pedido.");
-          navigate("/login");
-          return;
-        }
-  
-        const userResponse = await axios.get(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/profile",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-  
-        const user = userResponse.data;
-        if (!user.address || !user.address.postalCode) {
-          alert("Nenhum endereço cadastrado. Atualize seus dados.");
-          navigate("/meus-dados");
-          return;
-        }
-  
-        setUserAddress(user.address);
-  
-        const freightPayload = {
-          cepOrigem: "90200290",
-          cepDestino: user.address.postalCode.replace(/\s+/g, ""),
-          products: parsedCheckoutData.items.map((item: any) => ({
-            productId: item.productId.split("-")[0],
-            quantity: item.quantity,
-          })),
-        };
-  
-        setIsLoadingFreight(true);
-        const freightResponse = await axios.post(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
-          freightPayload
-        );
-  
-        const jadlogOptions = freightResponse.data.shippingOptions.filter(
-          (option: any) => option.company.name.toLowerCase().includes("jadlog")
-        );
-  
-        if (jadlogOptions.length > 0) {
-          setFreightOptions(jadlogOptions);
-          setFreightCost(Number(jadlogOptions[0].price));
-        } else {
-          setFreightOptions([]);
-          setFreightCost(0);
-        }
-      } catch (error) {
-        console.error("Erro ao inicializar checkout:", error);
-      } finally {
-        setIsLoadingFreight(false);
-      }
-    };
-  
-    initializeCheckout();
-  }, [navigate]);
-  
-  
-  
-
-  useEffect(() => {
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      try {
-        const parsedCheckoutData = JSON.parse(storedCheckoutData);
-        setCheckoutData(parsedCheckoutData);
-        console.log("CheckoutData carregado com sucesso:", parsedCheckoutData);
-      } catch (error) {
-        console.error("Erro ao carregar checkoutData:", error);
-        alert("Erro ao carregar os dados do pedido.");
-        navigate("/cart");
-      }
-    } else {
-      console.error("CheckoutData não encontrado no localStorage.");
-      alert("Dados do pedido não encontrados.");
-      navigate("/cart");
-    }
-  }, [navigate]);
-  
-  
-
-  const fetchUserAndCalculateFreight = async (checkoutData: any) => {
+  // Função consolidada para inicializar o checkout
+  const initializeCheckout = async () => {
     try {
+      const storedCheckoutData = localStorage.getItem("checkoutData");
+      if (!storedCheckoutData) {
+        alert("Dados do pedido não encontrados.");
+        navigate("/cart");
+        return;
+      }
+
+      const parsedCheckoutData = JSON.parse(storedCheckoutData);
+      setCheckoutData(parsedCheckoutData);
+
       const token = localStorage.getItem("token");
       if (!token) {
         alert("Você precisa estar logado para finalizar o pedido.");
         navigate("/login");
         return;
       }
-  
+
       const userResponse = await axios.get(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/profile",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       const user = userResponse.data;
       if (!user.address || !user.address.postalCode) {
         alert("Nenhum endereço cadastrado. Atualize seus dados.");
         navigate("/meus-dados");
         return;
       }
+
       setUserAddress(user.address);
-  
-      // Ajuste para incluir a quantidade de cada produto
-      const productsWithQuantities = checkoutData.items.map((item: any) => ({
-        productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
-        quantity: item.quantity, // Inclui a quantidade de caixas
-      }));
-  
+
+      setIsLoadingFreight(true);
       const freightPayload = {
         cepOrigem: "90200290",
-        cepDestino: user.address.postalCode.replace(/\s+/g, ""), // Remove espaços
-        products: productsWithQuantities, // Envia o array de produtos com IDs e quantidades
+        cepDestino: user.address.postalCode.replace(/\s+/g, ""),
+        products: parsedCheckoutData.items.map((item: any) => ({
+          productId: item.productId.split("-")[0],
+          quantity: item.quantity,
+        })),
       };
-  
+
       const freightResponse = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/shipping/calculate",
         freightPayload
       );
-  
+
       const jadlogOptions = freightResponse.data.shippingOptions.filter(
         (option: any) => option.company.name.toLowerCase().includes("jadlog")
       );
-  
+
       if (jadlogOptions.length > 0) {
         setFreightOptions(jadlogOptions);
+        setFreightCost(Number(jadlogOptions[0].price));
       } else {
         setFreightOptions([]);
+        setFreightCost(0);
       }
     } catch (error) {
-      console.error("Erro ao buscar dados do usuário ou calcular frete:", error);
-    }
-  };
-  
-  // Atualize o estado ao buscar o frete
-useEffect(() => {
-  const fetchFreight = async () => {
-    if (!checkoutData) return;
-
-    try {
-      setIsLoadingFreight(true); // Inicia o loader
-      await fetchUserAndCalculateFreight(checkoutData);
-    } catch (error) {
-      console.error("Erro ao calcular frete:", error);
-    } finally {
-      setIsLoadingFreight(false); // Finaliza o loader
-    }
-  };
-
-  fetchFreight();
-}, [checkoutData]);
-  
-  useEffect(() => {
-    const storedCheckoutData = localStorage.getItem("checkoutData");
-    if (storedCheckoutData) {
-      const parsedCheckoutData = JSON.parse(storedCheckoutData);
-      console.log("Dados de checkout carregados:", parsedCheckoutData);
-      setCheckoutData(parsedCheckoutData);
-      fetchUserAndCalculateFreight(parsedCheckoutData);
-    } else {
-      console.error("Dados de checkout não encontrados.");
-      alert("Erro: Dados de checkout não encontrados.");
+      console.error("Erro ao inicializar checkout:", error);
+      alert("Erro ao carregar os dados do pedido.");
       navigate("/cart");
+    } finally {
+      setIsLoadingFreight(false);
     }
-  }, [navigate]);
-   
-
-  const handleFinalizeOrder = () => {
-    handleOrderCompletion(); // Limpa o carrinho
-    navigate("/sucesso", { state: { paymentMethod: "boleto" } }); // Redireciona para a página de sucesso
   };
 
+  // Hook para inicializar o checkout apenas uma vez no carregamento
   useEffect(() => {
-    if (paymentMethod === "card") {
-      setIsLoading(true); // Mostra o spinner enquanto monta o formulário
-      setTimeout(() => {
-        loadMercadoPago(); // Carrega novamente o SDK e o formulário
+    initializeCheckout();
+  }, [navigate]);
+
+  // Hook para carregar o SDK do Mercado Pago apenas quando necessário
+  useEffect(() => {
+    if (paymentMethod !== "card" || !checkoutData || !publicKey) {
+      setIsMpReady(false);
+      return;
+    }
+
+    const loadMercadoPago = async () => {
+      setIsLoading(true);
+      const script = document.createElement("script");
+      script.src = "https://sdk.mercadopago.com/js/v2";
+      script.async = true;
+      script.onload = () => {
+        const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
+        mp.cardForm({
+          amount: calculateTotal(),
+          iframe: true,
+          form: {
+            id: "form-checkout",
+            cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do Cartão" },
+            expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
+            securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
+            cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do Titular" },
+            issuer: { id: "form-checkout__issuer" },
+            installments: { id: "form-checkout__installments" },
+            identificationType: { id: "form-checkout__identificationType" },
+            identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "CPF" },
+            cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+          },
+          callbacks: {
+            onFormMounted: (error: any) => error ? console.warn(error) : setIsMpReady(true),
+            onSubmit: (event: any) => {
+              event.preventDefault();
+              const formData = mp.cardForm().getCardFormData();
+              if (formData) handleCardPayment(formData);
+            },
+          },
+        });
         setIsLoading(false);
-      }, 500); // Simula um pequeno atraso para o usuário perceber o carregamento
-    }
-  }, [paymentMethod]);
-
-  useEffect(() => {
-    // Incrementa a chave sempre que o método de pagamento mudar
-    setFormKey((prevKey) => prevKey + 1);
-  }, [paymentMethod]);
-
-
-  
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        console.log("Buscando dados do usuário no backend...");
-
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.warn("Token não encontrado. Redirecionando para login.");
-          navigate("/login");
-          return;
-        }
-
-        const response = await axios.get(
-          "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/auth/profile",
-          {
-            headers: { Authorization: `Bearer ${token}` }, // Passa o token no cabeçalho
-          }
-        );
-
-        const user = response.data;
-
-        if (user.address) {
-          console.log("Endereço carregado com sucesso:", user.address);
-          setUserAddress(user.address);
-          setDeliveryAddress(user.address);
-        } else {
-          console.warn("Usuário não possui endereço cadastrado.");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar perfil do usuário:", error);
-        
-      }
+      };
+      document.body.appendChild(script);
     };
 
-    fetchUserProfile();
-  }, [navigate]);
+    loadMercadoPago();
 
-  useEffect(() => {
-    console.log("Atualizando SDK do Mercado Pago devido a mudanças em paymentMethod ou checkoutData...");
-  
-    // Função para remover o script existente, se houver
-    const removeMercadoPagoScript = () => {
-      const existingScript = document.getElementById("mercado-pago-sdk");
-      if (existingScript) {
-        existingScript.remove();
-        console.log("Script existente do Mercado Pago removido.");
-      }
+    return () => {
+      const script = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+      if (script) script.remove();
     };
-  
-    // Função para carregar ou recarregar o SDK do Mercado Pago
-    const loadOrReloadMercadoPago = () => {
-      if (!publicKey) {
-        console.error("Chave Pública do Mercado Pago não encontrada!");
-        return;
-      }
-  
-      if (paymentMethod === "card" && checkoutData) {
-        setIsLoading(true); // Mostra o spinner enquanto carrega
-        removeMercadoPagoScript(); // Remove o script antigo antes de carregar novo
-  
-        const script = document.createElement("script");
-        script.id = "mercado-pago-sdk";
-        script.src = "https://sdk.mercadopago.com/js/v2";
-        script.async = true;
-        script.onload = () => {
-          console.log("SDK do Mercado Pago carregado com sucesso.");
-          initializeCardForm(); // Inicializa o formulário após carregar o SDK
-          setIsLoading(false); // Esconde o spinner após carregar
-          setIsMpReady(true); // Define que o SDK está pronto
-        };
-        script.onerror = () => {
-          console.error("Erro ao carregar o SDK do Mercado Pago.");
-          setIsLoading(false); // Esconde o spinner em caso de erro
-          setIsMpReady(false); // Define que o SDK não está pronto
-        };
-        document.body.appendChild(script);
-      } else {
-        setIsMpReady(false); // Reseta o estado se não for cartão de crédito
-        removeMercadoPagoScript(); // Remove o script se não for necessário
-      }
-    };
-  
-    loadOrReloadMercadoPago();
-  }, [paymentMethod, checkoutData, publicKey]); // Observa mudanças em paymentMethod, checkoutData e publicKey
+  }, [paymentMethod, checkoutData, publicKey]);
 
-
-  const loadMercadoPago = () => {
-    console.log("Carregando SDK do Mercado Pago...");
-    if (document.getElementById("mercado-pago-sdk")) {
-      console.log("SDK do Mercado Pago já carregado.");
-      checkMercadoPagoAvailability();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = "mercado-pago-sdk";
-    script.src = "https://sdk.mercadopago.com/js/v2";
-    script.async = true;
-    script.onload = () => {
-      console.log("SDK do Mercado Pago carregado com sucesso.");
-      checkMercadoPagoAvailability();
-    };
-    script.onerror = () => {
-      console.error("Erro ao carregar o SDK do Mercado Pago.");
-    };
-    document.body.appendChild(script);
-  };
-
-  const checkMercadoPagoAvailability = () => {
-    if ((window as any).MercadoPago) {
-      initializeCardForm();
-    } else {
-      console.error("MercadoPago SDK não carregado corretamente.");
-    }
-  };
-
-  const initializeCardForm = () => {
-    if (!publicKey) {
-      console.error("Chave Pública do Mercado Pago não encontrada!");
-      return;
-    }
-
-    const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
-
-    const cardFormInstance = mp.cardForm({
-      amount: String(parseFloat(checkoutData?.amount.replace(",", ".") || "0")),
-      iframe: true,
-      form: {
-        id: "form-checkout",
-        cardNumber: {
-          id: "form-checkout__cardNumber",
-          placeholder: "Número do Cartão",
-        },
-        expirationDate: {
-          id: "form-checkout__expirationDate",
-          placeholder: "MM/AA",
-        },
-        securityCode: {
-          id: "form-checkout__securityCode",
-          placeholder: "CVV",
-        },
-        cardholderName: {
-          id: "form-checkout__cardholderName",
-          placeholder: "Nome do Titular",
-        },
-        issuer: { id: "form-checkout__issuer" },
-        installments: { id: "form-checkout__installments" },
-        identificationType: { id: "form-checkout__identificationType" },
-        identificationNumber: {
-          id: "form-checkout__identificationNumber",
-          placeholder: "Número do Documento (CPF)",
-        },
-        cardholderEmail: {
-          id: "form-checkout__cardholderEmail",
-          placeholder: "E-mail para Contato",
-        },
-      },
-      callbacks: {
-        onFormMounted: (error: any) => {
-          if (error) {
-            console.warn("Erro ao montar formulário:", error);
-          } else {
-            setIsMpReady(true);
-          }
-        },
-        onSubmit: async (event: any) => {
-          event.preventDefault();
-          const formData = cardFormInstance.getCardFormData(); // Certifique-se de que cardFormInstance está correto aqui
-          if (formData) {
-            handleCardPayment(formData);
-          } else {
-            console.error("Erro ao obter os dados do formulário.");
-          }
-        },
-      },
-    });
-  };
-
+  // Função para processar pagamento com cartão
   const handleCardPayment = async (formData: any) => {
     try {
-      if (!formData || !formData.token || !formData.paymentMethodId) {
-        throw new Error(
-          "Dados do formulário incompletos. Verifique os campos."
-        );
-      }
-  
-      const cardholderName = formData.cardholderName || "";
-      const nameParts = cardholderName.split(" ");
-      const firstName = nameParts[0] || "N/A";
-      const lastName = nameParts.slice(1).join(" ") || "N/A";
-  
       const paymentData = {
         token: formData.token,
         issuer_id: formData.issuerId,
@@ -457,44 +179,39 @@ useEffect(() => {
         installments: selectedInstallment,
         description: "Compra em Nato Pisos",
         payer: {
-          email: formData.cardholderEmail || "",
-          first_name: firstName,
-          last_name: lastName,
-          identification: {
-            type: formData.identificationType || "CPF",
-            number: formData.identificationNumber || "",
-          },
+          email: formData.cardholderEmail,
+          first_name: formData.cardholderName.split(" ")[0],
+          last_name: formData.cardholderName.split(" ").slice(1).join(" ") || "N/A",
+          identification: { type: formData.identificationType, number: formData.identificationNumber },
         },
-        // Ajusta os IDs dos produtos
         products: checkoutData.items.map((item: any) => ({
-          ...item,
-          productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
+          productId: item.productId.split("-")[0],
+          quantity: item.quantity,
+          unit_price: item.unit_price || 0,
         })),
         userId: checkoutData.userId,
       };
-  
+
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         paymentData
       );
-  
+
       if (response.data.status === "approved") {
-        handleOrderCompletion(); // Limpa o carrinho
+        handleOrderCompletion();
         navigate("/sucesso", { state: { paymentMethod: "card" } });
       } else {
         alert("Pagamento não aprovado.");
       }
     } catch (error) {
-      console.error("Erro no envio ao backend:", error);
-      alert("Ocorreu um erro ao processar o pagamento.");
+      console.error("Erro ao processar pagamento:", error);
+      alert("Erro ao processar o pagamento.");
     }
   };
-  
+
+  // Função para gerar QR Code Pix
   const generatePixQrCode = async () => {
     try {
-      console.log("🔄 Iniciando geração do QR Code Pix...");
-      console.log("🔍 Dados de checkout para Pix:", JSON.stringify(checkoutData, null, 2));
-  
       const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
@@ -505,161 +222,75 @@ useEffect(() => {
             email: checkoutData.email,
             first_name: checkoutData.firstName,
             last_name: checkoutData.lastName,
-            identification: {
-              type: "CPF",
-              number: checkoutData.cpf,
-            },
+            identification: { type: "CPF", number: checkoutData.cpf },
           },
           userId: checkoutData.userId,
           products: checkoutData.items.map((item: any) => ({
-            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
-            title: item.title || `Produto ${item.productId}`,
+            productId: item.productId.split("-")[0],
+            title: item.title || "Produto",
             quantity: item.quantity,
-            unit_price: item.unit_price || 0, // Adiciona unit_price como fallback
-            description: item.description || `Descrição do produto ${item.productId}`,
-            category_id: "default", // Adiciona category_id para consistência com o backend
+            unit_price: item.unit_price || 0,
           })),
-          device_id: "default_device_id", // Adiciona device_id para consistência
         }
       );
-  
-      console.log("✅ Resposta completa do servidor:", JSON.stringify(response.data, null, 2));
-  
-      const paymentResponse = response.data;
-  
-      // Captura diretamente os valores enviados pelo backend
-      const qrCodeBase64 = paymentResponse.qr_code_base64;
-      const pixCopiaCola = paymentResponse.qr_code;
-  
-      if (!qrCodeBase64 || !pixCopiaCola) {
-        console.warn("⚠️ Dados do Pix ausentes. Verifique a resposta:", JSON.stringify(paymentResponse, null, 2));
-        alert("Erro ao obter os dados do Pix. Tente novamente.");
-        return;
-      }
-  
-      // Monta a imagem do QR Code em base64
-      const qrCode = `data:image/png;base64,${qrCodeBase64}`;
-  
-      // Atualiza o estado e navega para a tela de sucesso
-      setQrCode(qrCode);
-      handleOrderCompletion(); // Limpa o carrinho
-  
-      navigate("/sucesso", {
-        state: {
-          paymentMethod: "pix",
-          pixQrCode: qrCode,
-          pixCopiaCola: pixCopiaCola,
-        },
-      });
-  
-      console.log("✅ Pagamento via Pix gerado com sucesso!");
+
+      const { qr_code_base64, qr_code } = response.data;
+      const qrCodeImage = `data:image/png;base64,${qr_code_base64}`;
+      setQrCode(qrCodeImage);
+      handleOrderCompletion();
+      navigate("/sucesso", { state: { paymentMethod: "pix", pixQrCode: qrCodeImage, pixCopiaCola: qr_code } });
     } catch (error) {
-      console.error("❌ Erro ao processar pagamento com Pix:", error);
-      console.error("🔍 Detalhes do erro:", JSON.stringify(error, null, 2));
-      alert("Erro ao processar o pagamento. Tente novamente mais tarde.");
+      console.error("Erro ao gerar Pix:", error);
+      alert("Erro ao processar pagamento com Pix.");
     }
   };
-  
+
+  // Função para gerar Boleto
   const generateBoleto = async () => {
     try {
-      const userId = checkoutData?.userId;
-  
-      if (!userId) {
-        throw new Error("Usuário não encontrado para emissão do boleto.");
-      }
-  
-      const response = await axios.get(
-        `https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/users/${userId}`
-      );
-  
-      const { email, name, cpf, address } = response.data;
-  
-      if (!address) {
-        throw new Error("Endereço não encontrado para o usuário.");
-      }
-  
-      const [firstName, ...lastNameArray] = name.split(" ");
-      const lastName = lastNameArray.join(" ");
-  
-      const boletoResponse = await axios.post(
+      const response = await axios.post(
         "https://ecommerce-fagundes-13c7f6f3f0d3.herokuapp.com/payment/process_payment",
         {
           payment_method_id: "bolbradesco",
           transaction_amount: parseFloat(calculateTotal()),
-          description: "Pagamento via Boleto Bancário",
+          description: "Pagamento via Boleto",
           payer: {
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            identification: {
-              type: "CPF",
-              number: cpf,
-            },
-            address: {
-              zip_code: address.postalCode,
-              street_name: address.street,
-              street_number: address.number || "SN",
-              neighborhood: address.neighborhood || "Centro",
-              city: address.city,
-              federal_unit: address.state,
-            },
+            email: checkoutData.email,
+            first_name: checkoutData.firstName,
+            last_name: checkoutData.lastName,
+            identification: { type: "CPF", number: checkoutData.cpf },
+            address: userAddress,
           },
-          userId,
+          userId: checkoutData.userId,
           products: checkoutData.items.map((item: any) => ({
-            productId: item.productId.split("-")[0], // Remove o sufixo após o "-"
-            title: item.title || `Produto ${item.productId}`,
+            productId: item.productId.split("-")[0],
+            title: item.title || "Produto",
             quantity: item.quantity,
-            unit_price: item.unit_price || 0, // Adiciona unit_price como fallback
-            description: item.description || `Descrição do produto ${item.productId}`,
-            category_id: "default", // Adiciona category_id para consistência com o backend
+            unit_price: item.unit_price || 0,
           })),
-          device_id: "default_device_id", // Adiciona device_id para consistência
         }
       );
-  
-      console.log("✅ Resposta completa do servidor para boleto:", JSON.stringify(boletoResponse.data, null, 2));
-  
-      const paymentResponse = boletoResponse.data;
-  
-      const boletoUrl = paymentResponse.boletoUrl;
-  
-      if (boletoUrl) {
-        setBoletoUrl(boletoUrl);
-        handleOrderCompletion(); // Limpa o carrinho
-        navigate("/sucesso", {
-          state: {
-            paymentMethod: "boleto",
-            boletoUrl,
-          },
-        });
-      } else {
-        console.warn("Link do boleto não encontrado.");
-        alert("Erro ao gerar o link do boleto. Tente novamente.");
-      }
-  
-      console.log("✅ Pagamento via Boleto gerado com sucesso!");
-    } catch (error: any) {
-      console.error("❌ Erro ao processar pagamento com boleto:", error.message || error);
-      console.error("🔍 Detalhes do erro:", JSON.stringify(error, null, 2));
-      alert(`Erro ao gerar boleto: ${error.message}`);
+
+      const { boletoUrl } = response.data;
+      setBoletoUrl(boletoUrl);
+      handleOrderCompletion();
+      navigate("/sucesso", { state: { paymentMethod: "boleto", boletoUrl } });
+    } catch (error) {
+      console.error("Erro ao gerar boleto:", error);
+      alert("Erro ao gerar boleto.");
     }
   };
 
+  // Função para continuar o processo de pagamento
   const handleContinue = () => {
     if (paymentMethod === "card") {
-      const form = document.getElementById("form-checkout");
-      if (form) {
-        form.dispatchEvent(
-          new Event("submit", { cancelable: true, bubbles: true })
-        ); // Submete o formulário do cartão
-      }
+      document.getElementById("form-checkout")?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
     } else if (paymentMethod === "pix") {
-      generatePixQrCode(); // Gera o QR Code para Pix
+      generatePixQrCode();
     } else if (paymentMethod === "boleto") {
-      generateBoleto(); // Gera o boleto
+      generateBoleto();
     }
   };
-
   
 
   return (
@@ -1110,18 +741,12 @@ useEffect(() => {
             variant="contained"
             type="button"
             onClick={handleContinue}
-            onTouchEnd={handleContinue}
             disabled={isLoadingFreight || !freightCost || (paymentMethod === "card" && !isMpReady)}
             sx={{
-              width: "100%", // Ocupa 100% do container pai
-              margin: "0", // Remove margens para preencher o espaço
-              minHeight: "60px", // Aumenta a altura mínima para uma área clicável maior
+              width: "100%",
               backgroundColor: isLoadingFreight ? "#aaa" : "#313926",
               "&:hover": { backgroundColor: isLoadingFreight ? "#aaa" : "#4caf50" },
               textAlign: "center",
-              padding: "16px 32px", // Mantém o padding generoso para área clicável
-              zIndex: 1000,
-              lineHeight: "28px", // Alinha o texto verticalmente no centro, evitando problemas na parte inferior
             }}
           >
             {isLoadingFreight ? "Carregando..." : "Continuar"}

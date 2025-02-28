@@ -172,6 +172,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     }
   };
 
+  const extractPriceFromDescription = (description: string) => {
+    // Extrai o primeiro número com ou sem "R$" (ex.: "25.75" ou "R$ 25,75")
+    const match = description.match(/R?\$?\s?(\d+[\.,]\d+)/);
+    if (match) {
+      const price = parseFloat(match[1].replace(",", "."));
+      return `R$ ${price.toFixed(2).replace(".", ",")}`;
+    }
+    return description; // Retorna o texto original se não encontrar preço
+  };
+
   return (
     <>
       <Card
@@ -204,11 +214,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           <Typography gutterBottom variant="h5" component="div">
             {product.name}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {product.description}
-          </Typography>
           <Typography variant="h6" color="#313926">
-            R$ {product.price.toFixed(2).replace(".", ",")} {getPriceUnit(product.name)}
+            {extractPriceFromDescription(product.description)} / m²
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            R$ {(typeof product.price === 'string' ? parseFloat(product.price) : product.price).toFixed(2).replace(".", ",")} por caixa
           </Typography>
 
           <Box
