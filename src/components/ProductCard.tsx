@@ -214,7 +214,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     <Typography gutterBottom variant="h5" component="div">
       {product.name}
     </Typography>
-    {product.name.toLowerCase().includes("piso  ") ? (
+    {product.name.toLowerCase().includes("piso  ") ? ( //adicionado 2 espaços para o produto contrapiso não entrar na regra
       <>
         <Typography variant="h6" color="#313926">
           {extractPriceFromDescription(product.description)} / m²
