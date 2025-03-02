@@ -81,6 +81,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     return "m²"; // Unidade padrão
   };
 
+  // Função para formatar o preço da descrição com "R$"
+  const formatPriceFromDescription = (description: string): string => {
+    // Extrai o primeiro número com ou sem "R$" (ex.: "112.35" ou "112,35")
+    const match = description.match(/(\d+[\.,]\d+)/);
+    if (match) {
+      const price = parseFloat(match[1].replace(",", "."));
+      return `R$ ${price.toFixed(2).replace(".", ",")}`;
+    }
+    return description; // Retorna o texto original se não encontrar preço
+  };
+
   useEffect(() => {
     const iconRef = document.querySelector(".cart-icon");
     if (iconRef) {
@@ -97,7 +108,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
   }, [product.image]);
 
   const handleAddToCart = () => {
-    const quantityToAdd = 1; // Quantidade fixa
+    const quantityToAdd = 1;
     const selectedColor = product.colors[currentColorIndex];
 
     if (!selectedColor) {
@@ -172,246 +183,238 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     }
   };
 
-  const extractPriceFromDescription = (description: string) => {
-    // Extrai o primeiro número com ou sem "R$" (ex.: "25.75" ou "R$ 25,75")
-    const match = description.match(/R?\$?\s?(\d+[\.,]\d+)/);
-    if (match) {
-      const price = parseFloat(match[1].replace(",", "."));
-      return `R$ ${price.toFixed(2).replace(".", ",")}`;
-    }
-    return description; // Retorna o texto original se não encontrar preço
-  };
-
   return (
     <>
       <Card
-  ref={cardRef}
-  sx={{
-    padding: "16px",
-    backgroundColor: "#f9f9f9",
-    border: "1px solid #E6E3DB",
-    borderRadius: "8px",
-  }}
->
-  <CardMedia
-    component="img"
-    image={mainImage || "/path/to/default-image.png"}
-    alt={product.name}
-    onClick={openFullscreen}
-    sx={{
-      objectFit: "cover",
-      width: "100%",
-      height: "250px",
-      margin: "0 auto",
-      backgroundColor: "#f9f9f9",
-      borderRadius: "8px",
-      boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-      cursor: "pointer",
-    }}
-  />
-
-  <CardContent>
-    <Typography gutterBottom variant="h5" component="div">
-      {product.name}
-    </Typography>
-    {product.name.toLowerCase().includes("piso  ") ? ( //adicionado 2 espaços para o produto contrapiso não entrar na regra
-      <>
-        <Typography variant="h6" color="#313926">
-          {extractPriceFromDescription(product.description)} / m²
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          R${" "}
-          {(typeof product.price === "string"
-            ? parseFloat(product.price)
-            : product.price
-          )
-            .toFixed(2)
-            .replace(".", ",")}{" "}
-          por caixa
-        </Typography>
-      </>
-    ) : (
-      <>
-        <Typography variant="body2" color="text.secondary">
-          {product.description}
-        </Typography>
-        <Typography variant="h6" color="#313926">
-          R${" "}
-          {(typeof product.price === "string"
-            ? parseFloat(product.price)
-            : product.price
-          )
-            .toFixed(2)
-            .replace(".", ",")}{" "}
-          {getPriceUnit(product.name)}
-        </Typography>
-      </>
-    )}
-
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 1.5,
-        mt: 2,
-      }}
-    >
-      <Button
-        onClick={() => setStartIndex((prev) => Math.max(prev - 3, 0))}
-        disabled={startIndex === 0}
+        ref={cardRef}
         sx={{
-          minWidth: "auto",
-          padding: 0,
-          color: "#313926",
+          padding: "16px",
+          backgroundColor: "#f9f9f9",
+          border: "1px solid #E6E3DB",
+          borderRadius: "8px",
         }}
       >
-        <ArrowBackIosIcon />
-      </Button>
+        <CardMedia
+          component="img"
+          image={mainImage || "/path/to/default-image.png"}
+          alt={product.name}
+          onClick={openFullscreen}
+          sx={{
+            objectFit: "cover",
+            width: "100%",
+            height: "250px",
+            margin: "0 auto",
+            backgroundColor: "#f9f9f9",
+            borderRadius: "8px",
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            cursor: "pointer",
+          }}
+        />
 
-      {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
-        <motion.div
-          key={index + startIndex}
-          whileHover={{ scale: 1.2 }}
-          whileTap={{ scale: 1 }}
-        >
-          <Avatar
-            src={color.image}
-            alt={color.name}
+        <CardContent>
+          <Typography gutterBottom variant="h5" component="div">
+            {product.name}
+          </Typography>
+          {product.name.toLowerCase().includes("piso") ? (
+            <>
+              <Typography variant="h6" color="#313926">
+                {formatPriceFromDescription(product.description)} / m²
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                R${" "}
+                {(typeof product.price === "string"
+                  ? parseFloat(product.price)
+                  : product.price
+                )
+                  .toFixed(2)
+                  .replace(".", ",")}{" "}
+                por caixa
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                {product.description}
+              </Typography>
+              <Typography variant="h6" color="#313926">
+                R${" "}
+                {(typeof product.price === "string"
+                  ? parseFloat(product.price)
+                  : product.price
+                )
+                  .toFixed(2)
+                  .replace(".", ",")}{" "}
+                {getPriceUnit(product.name)}
+              </Typography>
+            </>
+          )}
+
+          <Box
             sx={{
-              width: 60,
-              height: 60,
-              border:
-                currentColorIndex === index + startIndex
-                  ? "2px solid #313926"
-                  : "1px solid #E6E3DB",
-              cursor: "pointer",
-              transition: "border-color 0.3s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1.5,
+              mt: 2,
             }}
-            onClick={() => handleColorClick(index + startIndex)}
+          >
+            <Button
+              onClick={() => setStartIndex((prev) => Math.max(prev - 3, 0))}
+              disabled={startIndex === 0}
+              sx={{
+                minWidth: "auto",
+                padding: 0,
+                color: "#313926",
+              }}
+            >
+              <ArrowBackIosIcon />
+            </Button>
+
+            {product.colors.slice(startIndex, startIndex + 3).map((color, index) => (
+              <motion.div
+                key={index + startIndex}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 1 }}
+              >
+                <Avatar
+                  src={color.image}
+                  alt={color.name}
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    border:
+                      currentColorIndex === index + startIndex
+                        ? "2px solid #313926"
+                        : "1px solid #E6E3DB",
+                    cursor: "pointer",
+                    transition: "border-color 0.3s",
+                  }}
+                  onClick={() => handleColorClick(index + startIndex)}
+                />
+              </motion.div>
+            ))}
+
+            <Button
+              onClick={() =>
+                setStartIndex((prev) =>
+                  Math.min(prev + 3, product.colors.length - 3)
+                )
+              }
+              disabled={startIndex + 3 >= product.colors.length}
+              sx={{
+                minWidth: "auto",
+                padding: 0,
+                color: "#313926",
+              }}
+            >
+              <ArrowForwardIosIcon />
+            </Button>
+          </Box>
+
+          <Typography
+            variant="body2"
+            sx={{ mt: 1, textAlign: "center", color: "#313926", fontWeight: "bold" }}
+          >
+            Cor selecionada: {product.colors[currentColorIndex]?.name || "Nenhuma"}
+          </Typography>
+
+          <Button
+            onClick={handleAddToCart}
+            variant="contained"
+            sx={{
+              backgroundColor: "#313926",
+              color: "#fff",
+              width: "100%",
+              mt: 2,
+              "&:hover": { backgroundColor: "#3d403a" },
+            }}
+          >
+            <ShoppingCartIcon />
+            <Typography sx={{ ml: 1 }}>Adicionar</Typography>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {showClone && (
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{
+            top: cloneStyles.top,
+            left: cloneStyles.left,
+            width: cloneStyles.width,
+            height: cloneStyles.height,
+            scale: 0.2,
+            opacity: 0,
+          }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          style={{
+            position: "fixed",
+            top: cloneStyles.top,
+            left: cloneStyles.left,
+            zIndex: 1000,
+            width: cloneStyles.width,
+            height: cloneStyles.height,
+            pointerEvents: "none",
+          }}
+        >
+          <CardMedia
+            component="img"
+            height="275"
+            image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
+            alt={product.name}
           />
         </motion.div>
-      ))}
+      )}
 
-      <Button
-        onClick={() =>
-          setStartIndex((prev) => Math.min(prev + 3, product.colors.length - 3))
-        }
-        disabled={startIndex + 3 >= product.colors.length}
-        sx={{
-          minWidth: "auto",
-          padding: 0,
-          color: "#313926",
-        }}
-      >
-        <ArrowForwardIosIcon />
-      </Button>
-    </Box>
-
-    <Typography
-      variant="body2"
-      sx={{ mt: 1, textAlign: "center", color: "#313926", fontWeight: "bold" }}
-    >
-      Cor selecionada: {product.colors[currentColorIndex]?.name || "Nenhuma"}
-    </Typography>
-
-    <Button
-      onClick={handleAddToCart}
-      variant="contained"
-      sx={{
-        backgroundColor: "#313926",
-        color: "#fff",
-        width: "100%",
-        mt: 2,
-        "&:hover": { backgroundColor: "#3d403a" },
-      }}
-    >
-      <ShoppingCartIcon />
-      <Typography sx={{ ml: 1 }}>Adicionar</Typography>
-    </Button>
-  </CardContent>
-</Card>
-
-{showClone && (
-  <motion.div
-    initial={{ opacity: 1, scale: 1 }}
-    animate={{
-      top: cloneStyles.top,
-      left: cloneStyles.left,
-      width: cloneStyles.width,
-      height: cloneStyles.height,
-      scale: 0.2,
-      opacity: 0,
-    }}
-    transition={{ duration: 1, ease: "easeInOut" }}
-    style={{
-      position: "fixed",
-      top: cloneStyles.top,
-      left: cloneStyles.left,
-      zIndex: 1000,
-      width: cloneStyles.width,
-      height: cloneStyles.height,
-      pointerEvents: "none",
-    }}
-  >
-    <CardMedia
-      component="img"
-      height="275"
-      image={imageArray[currentImageIndex] || "/path/to/default-image.png"}
-      alt={product.name}
-    />
-  </motion.div>
-)}
-
-{isFullscreenOpen && (
-  <Dialog
-    open={isFullscreenOpen}
-    onClose={closeFullscreen}
-    fullWidth
-    maxWidth="lg"
-    PaperProps={{
-      style: {
-        backgroundColor: "rgba(0, 0, 0, 0.9)",
-        boxShadow: "none",
-        ...(isMobile ? { width: "100vw", height: "100vh", margin: 0 } : {}),
-      },
-    }}
-  >
-    <Box
-      sx={{
-        position: "relative",
-        width: "100%",
-        height: isMobile ? "100%" : "auto",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <CardMedia
-        component="img"
-        image={mainImage || "/path/to/default-image.png"}
-        alt={product.name}
-        sx={{
-          maxWidth: isMobile ? "100%" : "90%",
-          maxHeight: isMobile ? "100%" : "90%",
-          objectFit: "contain",
-        }}
-      />
-      <Button
-        onClick={closeFullscreen}
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          color: "#fff",
-          fontSize: "1.5rem",
-        }}
-      >
-        Fechar
-      </Button>
-    </Box>
-  </Dialog>
-)}
+      {isFullscreenOpen && (
+        <Dialog
+          open={isFullscreenOpen}
+          onClose={closeFullscreen}
+          fullWidth
+          maxWidth="lg"
+          PaperProps={{
+            style: {
+              backgroundColor: "rgba(0, 0, 0, 0.9)",
+              boxShadow: "none",
+              ...(isMobile ? { width: "100vw", height: "100vh", margin: 0 } : {}),
+            },
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              height: isMobile ? "100%" : "auto",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <CardMedia
+              component="img"
+              image={mainImage || "/path/to/default-image.png"}
+              alt={product.name}
+              sx={{
+                maxWidth: isMobile ? "100%" : "90%",
+                maxHeight: isMobile ? "100%" : "90%",
+                objectFit: "contain",
+              }}
+            />
+            <Button
+              onClick={closeFullscreen}
+              sx={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                color: "#fff",
+                fontSize: "1.5rem",
+              }}
+            >
+              Fechar
+            </Button>
+          </Box>
+        </Dialog>
+      )}
     </>
   );
 };
