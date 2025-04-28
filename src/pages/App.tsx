@@ -25,6 +25,8 @@ import MeusDados from "../components/MeusDados";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { Fab, Typography } from '@mui/material';
 
+declare var gtag: (...args: any[]) => void;
+
 const App: React.FC = () => {
   const [images, setImages] = useState<{ imageUrl: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -91,52 +93,61 @@ const App: React.FC = () => {
         >
           <Router>
           <Box
-            sx={{
-              position: "fixed",
-              bottom: 60,
-              right: 20,
-              zIndex: 50, // Mantém visível, mas atrás dos botões do site
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              paddingBottom: 30,
-              "@media (max-width: 600px)": { // Media query para telas menores ou iguais a 600px (mobile)
-                "& > *:nth-child(1)": { // Seleciona o primeiro filho (Typography)
-                  display: "none", // Oculta a tarja em mobile
-                },
-              },
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                color: "#fff",
-                padding: "12px 16px",
-                borderRadius: "20px",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                fontSize: "0.90rem",
-                fontWeight: "bold",
-              }}
-            >
-              Agende a visita do nosso instalador
-            </Typography>
-            <Fab
-              color="primary"
-              aria-label="whatsapp"
-              onClick={() => window.open("https://wa.me/555198688559", "_blank")}
-              sx={{
-                backgroundColor: "#25D366",
-                width: 56,
-                height: 56,
-                "&:hover": {
-                  backgroundColor: "#128C7E",
-                },
-              }}
-            >
-              <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
-            </Fab>
-          </Box>
+  sx={{
+    position: "fixed",
+    bottom: 60,
+    right: 20,
+    zIndex: 50,
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    paddingBottom: 30,
+    "@media (max-width: 600px)": {
+      "& > *:nth-child(1)": {
+        display: "none",
+      },
+    },
+  }}
+>
+  <Typography
+    variant="body2"
+    sx={{
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      color: "#fff",
+      padding: "12px 16px",
+      borderRadius: "20px",
+      boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+      fontSize: "0.90rem",
+      fontWeight: "bold",
+    }}
+  >
+    Agende a visita do nosso instalador
+  </Typography>
+  <Fab
+    color="primary"
+    aria-label="whatsapp"
+    onClick={() => {
+      if (typeof gtag !== "undefined") {
+        gtag('event', 'whatsapp_click', {
+          event_category: 'Contato',
+          event_label: 'Botão WhatsApp'
+        });
+      }
+      window.open("https://wa.me/555198688559", "_blank");
+    }}
+    sx={{
+      backgroundColor: "#25D366",
+      width: 56,
+      height: 56,
+      "&:hover": {
+        backgroundColor: "#128C7E",
+      },
+    }}
+  >
+    <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
+  </Fab>
+</Box>
+
             <CartProvider>
               <Navbar
                 onSearch={handleSearch}
