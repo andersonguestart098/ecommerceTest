@@ -133,8 +133,10 @@ const App: React.FC = () => {
           event_label: 'Botão WhatsApp'
         });
       }
-      window.open("https://wa.me/555198688559", "_blank");
-    }}
+      setTimeout(() => {
+        window.open("https://wa.me/555198688559", "_blank");
+      }, 300);
+    }}    
     sx={{
       backgroundColor: "#25D366",
       width: 56,
