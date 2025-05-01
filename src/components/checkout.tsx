@@ -118,65 +118,55 @@ const Checkout: React.FC = () => {
   }, [navigate]);
 
   // Hook para carregar o SDK do Mercado Pago apenas quando necessário
-useEffect(() => {
-  if (paymentMethod !== "card" || !checkoutData || !publicKey) {
-    setIsMpReady(false);
-    return;
-  }
+  useEffect(() => {
+    if (paymentMethod !== "card" || !checkoutData || !publicKey) {
+      setIsMpReady(false);
+      return;
+    }
 
-  // Disparar evento de conversão do Google Ads
-  if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
-    window.gtag("event", "conversion", {
-      send_to: "AW-17032473472/ZLo_CiP_t8AaEIlDX27k_",
-      value: 1.0,
-      currency: "BRL"
-    });
-  }
-
-  const loadMercadoPago = async () => {
-    setIsLoading(true);
-    const script = document.createElement("script");
-    script.src = "https://sdk.mercadopago.com/js/v2";
-    script.async = true;
-    script.onload = () => {
-      const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
-      mp.cardForm({
-        amount: calculateTotal(),
-        iframe: true,
-        form: {
-          id: "form-checkout",
-          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do Cartão" },
-          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
-          securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
-          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do Titular" },
-          issuer: { id: "form-checkout__issuer" },
-          installments: { id: "form-checkout__installments" },
-          identificationType: { id: "form-checkout__identificationType" },
-          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "CPF" },
-          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
-        },
-        callbacks: {
-          onFormMounted: (error: any) => error ? console.warn(error) : setIsMpReady(true),
-          onSubmit: (event: any) => {
-            event.preventDefault();
-            const formData = mp.cardForm().getCardFormData();
-            if (formData) handleCardPayment(formData);
+    const loadMercadoPago = async () => {
+      setIsLoading(true);
+      const script = document.createElement("script");
+      script.src = "https://sdk.mercadopago.com/js/v2";
+      script.async = true;
+      script.onload = () => {
+        const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
+        mp.cardForm({
+          amount: calculateTotal(),
+          iframe: true,
+          form: {
+            id: "form-checkout",
+            cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do Cartão" },
+            expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
+            securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
+            cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do Titular" },
+            issuer: { id: "form-checkout__issuer" },
+            installments: { id: "form-checkout__installments" },
+            identificationType: { id: "form-checkout__identificationType" },
+            identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "CPF" },
+            cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
           },
-        },
-      });
-      setIsLoading(false);
+          callbacks: {
+            onFormMounted: (error: any) => error ? console.warn(error) : setIsMpReady(true),
+            onSubmit: (event: any) => {
+              event.preventDefault();
+              const formData = mp.cardForm().getCardFormData();
+              if (formData) handleCardPayment(formData);
+            },
+          },
+        });
+        setIsLoading(false);
+      };
+      document.body.appendChild(script);
     };
-    document.body.appendChild(script);
-  };
 
-  loadMercadoPago();
+    loadMercadoPago();
 
-  return () => {
-    const script = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
-    if (script) script.remove();
-  };
-}, [paymentMethod, checkoutData, publicKey]);
-
+    return () => {
+      const script = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+      if (script) script.remove();
+    };
+  }, [paymentMethod, checkoutData, publicKey]);
 
   // Função para processar pagamento com cartão
   const handleCardPayment = async (formData: any) => {
