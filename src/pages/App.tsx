@@ -24,6 +24,7 @@ import Management from "../components/gerenciador";
 import MeusDados from "../components/MeusDados";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { Fab, Typography } from '@mui/material';
+import WhatsAppRedirect from "../components/WhatsAppRedirect";
 
 declare var gtag: (...args: any[]) => void;
 
@@ -124,30 +125,23 @@ const App: React.FC = () => {
     Agende a visita do nosso instalador
   </Typography>
   <Fab
-    color="primary"
-    aria-label="whatsapp"
-    onClick={() => {
-      if (typeof gtag !== "undefined") {
-        gtag('event', 'whatsapp_click', {
-          event_category: 'Contato',
-          event_label: 'Botão WhatsApp'
-        });
-      }
-      setTimeout(() => {
-        window.open("https://wa.me/555198688559", "_blank");
-      }, 300);
-    }}    
-    sx={{
-      backgroundColor: "#25D366",
-      width: 56,
-      height: 56,
-      "&:hover": {
-        backgroundColor: "#128C7E",
-      },
-    }}
-  >
-    <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
-  </Fab>
+  color="primary"
+  aria-label="whatsapp"
+  onClick={() => {
+    window.location.href = "/whatsapp";
+  }}
+  sx={{
+    backgroundColor: "#25D366",
+    width: 56,
+    height: 56,
+    "&:hover": {
+      backgroundColor: "#128C7E",
+    },
+  }}
+>
+  <WhatsAppIcon sx={{ color: "#fff", fontSize: "2rem" }} />
+</Fab>
+
 </Box>
 
             <CartProvider>
@@ -168,6 +162,7 @@ const App: React.FC = () => {
                   <Route path="/cart" element={<CartList />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/orders" element={<OrderTrackingAdmin />} />
+                  <Route path="/whatsapp" element={<WhatsAppRedirect />} />
                   <Route
                     path="/my-orders"
                     element={<OrderTrackingCustomer />}
@@ -176,6 +171,25 @@ const App: React.FC = () => {
                     path="/product-list"
                     element={<ProductList {...filters} />}
                   />
+                  <Route path="/whatsapp" element={
+                      <div>
+                        <script>
+                          {`
+                            if (typeof gtag !== 'undefined') {
+                              gtag('event', 'whatsapp_click', {
+                                event_category: 'Contato',
+                                event_label: 'Botão WhatsApp'
+                              });
+                            }
+                            setTimeout(() => {
+                              window.location.href = "https://wa.me/555198688559";
+                            }, 300);
+                          `}
+                        </script>
+                        <p>Redirecionando para o WhatsApp...</p>
+                      </div>
+                    } />
+
                   <Route path="/meus-dados" element={<MeusDados />} />
                   <Route path="/sucesso" element={<SuccessPage />} />
                   <Route path="/falha" element={<FailurePage />} />
