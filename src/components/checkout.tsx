@@ -118,55 +118,65 @@ const Checkout: React.FC = () => {
   }, [navigate]);
 
   // Hook para carregar o SDK do Mercado Pago apenas quando necessário
-  useEffect(() => {
-    if (paymentMethod !== "card" || !checkoutData || !publicKey) {
-      setIsMpReady(false);
-      return;
-    }
+useEffect(() => {
+  if (paymentMethod !== "card" || !checkoutData || !publicKey) {
+    setIsMpReady(false);
+    return;
+  }
 
-    const loadMercadoPago = async () => {
-      setIsLoading(true);
-      const script = document.createElement("script");
-      script.src = "https://sdk.mercadopago.com/js/v2";
-      script.async = true;
-      script.onload = () => {
-        const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
-        mp.cardForm({
-          amount: calculateTotal(),
-          iframe: true,
-          form: {
-            id: "form-checkout",
-            cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do Cartão" },
-            expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
-            securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
-            cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do Titular" },
-            issuer: { id: "form-checkout__issuer" },
-            installments: { id: "form-checkout__installments" },
-            identificationType: { id: "form-checkout__identificationType" },
-            identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "CPF" },
-            cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+  // Disparar evento de conversão do Google Ads
+  if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
+    window.gtag("event", "conversion", {
+      send_to: "AW-17032473472/ZLo_CiP_t8AaEIlDX27k_",
+      value: 1.0,
+      currency: "BRL"
+    });
+  }
+
+  const loadMercadoPago = async () => {
+    setIsLoading(true);
+    const script = document.createElement("script");
+    script.src = "https://sdk.mercadopago.com/js/v2";
+    script.async = true;
+    script.onload = () => {
+      const mp = new (window as any).MercadoPago(publicKey, { locale: "pt-BR" });
+      mp.cardForm({
+        amount: calculateTotal(),
+        iframe: true,
+        form: {
+          id: "form-checkout",
+          cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do Cartão" },
+          expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
+          securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
+          cardholderName: { id: "form-checkout__cardholderName", placeholder: "Nome do Titular" },
+          issuer: { id: "form-checkout__issuer" },
+          installments: { id: "form-checkout__installments" },
+          identificationType: { id: "form-checkout__identificationType" },
+          identificationNumber: { id: "form-checkout__identificationNumber", placeholder: "CPF" },
+          cardholderEmail: { id: "form-checkout__cardholderEmail", placeholder: "E-mail" },
+        },
+        callbacks: {
+          onFormMounted: (error: any) => error ? console.warn(error) : setIsMpReady(true),
+          onSubmit: (event: any) => {
+            event.preventDefault();
+            const formData = mp.cardForm().getCardFormData();
+            if (formData) handleCardPayment(formData);
           },
-          callbacks: {
-            onFormMounted: (error: any) => error ? console.warn(error) : setIsMpReady(true),
-            onSubmit: (event: any) => {
-              event.preventDefault();
-              const formData = mp.cardForm().getCardFormData();
-              if (formData) handleCardPayment(formData);
-            },
-          },
-        });
-        setIsLoading(false);
-      };
-      document.body.appendChild(script);
+        },
+      });
+      setIsLoading(false);
     };
+    document.body.appendChild(script);
+  };
 
-    loadMercadoPago();
+  loadMercadoPago();
 
-    return () => {
-      const script = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
-      if (script) script.remove();
-    };
-  }, [paymentMethod, checkoutData, publicKey]);
+  return () => {
+    const script = document.querySelector('script[src="https://sdk.mercadopago.com/js/v2"]');
+    if (script) script.remove();
+  };
+}, [paymentMethod, checkoutData, publicKey]);
+
 
   // Função para processar pagamento com cartão
   const handleCardPayment = async (formData: any) => {
@@ -198,9 +208,19 @@ const Checkout: React.FC = () => {
       );
 
       if (response.data.status === "approved") {
+        if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
+          window.gtag("event", "conversion", {
+            send_to: "AW-17032473472/ZLo_CiP_t8AaEIlDX27k_",
+            value: parseFloat(calculateTotal()),
+            currency: "BRL",
+          });
+        }
+      
         handleOrderCompletion();
         navigate("/sucesso", { state: { paymentMethod: "card" } });
-      } else {
+      }
+      
+       else {
         alert("Pagamento não aprovado.");
       }
     } catch (error) {
@@ -209,7 +229,6 @@ const Checkout: React.FC = () => {
     }
   };
 
-  // Função para gerar QR Code Pix
   const generatePixQrCode = async () => {
     try {
       const response = await axios.post(
@@ -233,17 +252,31 @@ const Checkout: React.FC = () => {
           })),
         }
       );
-
+  
       const { qr_code_base64, qr_code } = response.data;
-      const qrCodeImage = `data:image/png;base64,${qr_code_base64}`;
-      setQrCode(qrCodeImage);
+  
+      if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
+        window.gtag("event", "conversion", {
+          send_to: "AW-17032473472/ZLo_CiP_t8AaEIlDX27k_",
+          value: 1.0,
+          currency: "BRL",
+        });
+      }
+  
       handleOrderCompletion();
-      navigate("/sucesso", { state: { paymentMethod: "pix", pixQrCode: qrCodeImage, pixCopiaCola: qr_code } });
+      navigate("/sucesso", {
+        state: {
+          paymentMethod: "pix",
+          pixQrCode: `data:image/png;base64,${qr_code_base64}`,
+          pixCopiaCola: qr_code,
+        },
+      });
     } catch (error) {
       console.error("Erro ao gerar Pix:", error);
       alert("Erro ao processar pagamento com Pix.");
     }
   };
+  
 
   // Função para gerar Boleto
   const generateBoleto = async () => {
@@ -270,17 +303,28 @@ const Checkout: React.FC = () => {
           })),
         }
       );
-
-      const { boletoUrl } = response.data;
-      setBoletoUrl(boletoUrl);
+  
+      if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
+        window.gtag("event", "conversion", {
+          send_to: "AW-17032473472/ZLo_CiP_t8AaEIlDX27k_",
+          value: 1.0,
+          currency: "BRL",
+        });
+      }
+  
       handleOrderCompletion();
-      navigate("/sucesso", { state: { paymentMethod: "boleto", boletoUrl } });
+      navigate("/sucesso", {
+        state: {
+          paymentMethod: "boleto",
+          boletoUrl: response.data.boletoUrl,
+        },
+      });
     } catch (error) {
       console.error("Erro ao gerar boleto:", error);
       alert("Erro ao gerar boleto.");
     }
   };
-
+  
   // Função para continuar o processo de pagamento
   const handleContinue = () => {
     if (paymentMethod === "card") {
