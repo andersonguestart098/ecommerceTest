@@ -10,17 +10,24 @@ declare global {
 const WhatsAppRedirect = () => {
   useEffect(() => {
     if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
+      // Evento oficial de conversão do Google Ads
+      window.gtag("event", "conversion", {
+        send_to: "AW-17032473472/MnXxCLf5j78aEIDX27k_",
+      });
+  
+      // Evento opcional para métricas personalizadas
       window.gtag("event", "whatsapp_click", {
         event_category: "Contato",
         event_label: "Botão WhatsApp via rota interna",
       });
     }
-
+  
     setTimeout(() => {
-        window.location.href = "https://wa.me/555198688559?text=Ol%C3%A1%2C%20estive%20no%20site%20da%20Nato%20Pisos%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es.";
-
-    }, 800); // aumentei pra dar tempo de ver a tela
+      window.location.href =
+        "https://wa.me/555198688559?text=Ol%C3%A1%2C%20estive%20no%20site%20da%20Nato%20Pisos%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es.";
+    }, 800);
   }, []);
+  
 
   return (
     <Box
