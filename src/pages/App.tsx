@@ -171,24 +171,8 @@ const App: React.FC = () => {
                     path="/product-list"
                     element={<ProductList {...filters} />}
                   />
-                  <Route path="/whatsapp" element={
-                      <div>
-                        <script>
-                          {`
-                            if (typeof gtag !== 'undefined') {
-                              gtag('event', 'whatsapp_click', {
-                                event_category: 'Contato',
-                                event_label: 'Botão WhatsApp'
-                              });
-                            }
-                            setTimeout(() => {
-                              window.location.href = "https://wa.me/555198688559";
-                            }, 300);
-                          `}
-                        </script>
-                        <p>Redirecionando para o WhatsApp...</p>
-                      </div>
-                    } />
+                  <Route path="/whatsapp" element={<WhatsAppRedirect />} />
+
 
                   <Route path="/meus-dados" element={<MeusDados />} />
                   <Route path="/sucesso" element={<SuccessPage />} />

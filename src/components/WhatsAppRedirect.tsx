@@ -14,20 +14,22 @@ const WhatsAppRedirect = () => {
       window.gtag("event", "conversion", {
         send_to: "AW-17032473472/MnXxCLf5j78aEIDX27k_",
       });
-  
-      // Evento opcional para métricas personalizadas
+
+      // Evento personalizado opcional
       window.gtag("event", "whatsapp_click", {
         event_category: "Contato",
         event_label: "Botão WhatsApp via rota interna",
       });
     }
-  
-    setTimeout(() => {
+
+    // Delay maior para garantir que os eventos sejam capturados
+    const redirectTimeout = setTimeout(() => {
       window.location.href =
         "https://wa.me/555198688559?text=Ol%C3%A1%2C%20estive%20no%20site%20da%20Nato%20Pisos%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es.";
-    }, 3000);
+    }, 2000); // 2 segundos
+
+    return () => clearTimeout(redirectTimeout);
   }, []);
-  
 
   return (
     <Box
