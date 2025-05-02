@@ -26,7 +26,7 @@ const WhatsAppRedirect = () => {
     const redirectTimeout = setTimeout(() => {
       window.location.href =
         "https://wa.me/555198688559?text=Ol%C3%A1%2C%20estive%20no%20site%20da%20Nato%20Pisos%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es.";
-    }, 2000); // 2 segundos
+    }, 20000); // 2 segundos
 
     return () => clearTimeout(redirectTimeout);
   }, []);
