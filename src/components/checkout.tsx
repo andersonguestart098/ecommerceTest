@@ -253,7 +253,7 @@ useEffect(() => {
         }
       );
   
-      const { qr_code_base64, qr_code } = response.data;
+      const { qr_code } = response.data; // só pega o código copia e cola
   
       if (typeof window !== "undefined" && typeof window.gtag !== "undefined") {
         window.gtag("event", "conversion", {
@@ -267,8 +267,7 @@ useEffect(() => {
       navigate("/sucesso", {
         state: {
           paymentMethod: "pix",
-          pixQrCode: `data:image/png;base64,${qr_code_base64}`,
-          pixCopiaCola: qr_code,
+          pixCopiaCola: qr_code, // só esse será usado
         },
       });
     } catch (error) {
@@ -276,6 +275,7 @@ useEffect(() => {
       alert("Erro ao processar pagamento com Pix.");
     }
   };
+  
   
 
   // Função para gerar Boleto
