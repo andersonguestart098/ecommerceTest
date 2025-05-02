@@ -277,8 +277,6 @@ useEffect(() => {
   };
   
   
-
-  // Função para gerar Boleto
   const generateBoleto = async () => {
     try {
       const response = await axios.post(
@@ -293,12 +291,12 @@ useEffect(() => {
             last_name: checkoutData.lastName,
             identification: { type: "CPF", number: checkoutData.cpf },
             address: {
-              zip_code: userAddress.postalCode?.replace(/\D/g, ""), // Somente números
-              street_name: userAddress.street,
-              street_number: userAddress.number || "SN",
-              neighborhood: userAddress.neighborhood || "Bairro",
-              city: userAddress.city,
-              federal_unit: userAddress.state,
+              zip_code: userAddress?.postalCode?.replace(/\D/g, "") || "00000000",
+              street_name: userAddress?.street || "Rua Padrão",
+              street_number: userAddress?.number || "S/N",
+              neighborhood: userAddress?.neighborhood || "Centro",
+              city: userAddress?.city || "Cidade Padrão",
+              federal_unit: userAddress?.state || "RS", // ou SP por padrão
             },
           },
           userId: checkoutData.userId,
