@@ -292,7 +292,14 @@ useEffect(() => {
             first_name: checkoutData.firstName,
             last_name: checkoutData.lastName,
             identification: { type: "CPF", number: checkoutData.cpf },
-            address: userAddress,
+            address: {
+              zip_code: userAddress.postalCode?.replace(/\D/g, ""), // Somente números
+              street_name: userAddress.street,
+              street_number: userAddress.number || "SN",
+              neighborhood: userAddress.neighborhood || "Bairro",
+              city: userAddress.city,
+              federal_unit: userAddress.state,
+            },
           },
           userId: checkoutData.userId,
           products: checkoutData.items.map((item: any) => ({
@@ -321,9 +328,10 @@ useEffect(() => {
       });
     } catch (error) {
       console.error("Erro ao gerar boleto:", error);
-      alert("Erro ao gerar boleto.");
+      alert("Erro ao gerar boleto. Verifique se o endereço está completo.");
     }
   };
+  
   
   // Função para continuar o processo de pagamento
   const handleContinue = () => {
