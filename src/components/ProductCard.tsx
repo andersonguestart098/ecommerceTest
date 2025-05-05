@@ -75,9 +75,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     if (productName.includes("Mapei Primer")) return "Lt";
     if (productName.includes("Autonivelante Mapei")) return "Sc";
     if (productName.includes("Mapei Planiprep")) return "Sc";
+    if (productName.includes("Massa Contrapiso Autonivelante Mapei Novoplan 1-10 20 kg")) return "Sc";
     if (productName.includes("Tarucel")) return "M";
     if (productName.includes("Massa para Acabamento Flex")) return "Tubo";
-    if (productName.includes("Piso")) return "Caixa";
+    if (productName.includes("Piso ")) return "Caixa";
     return "m²"; // Unidade padrão
   };
 
@@ -215,7 +216,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
           <Typography gutterBottom variant="h5" component="div">
             {product.name}
           </Typography>
-          {product.name.toLowerCase().includes("piso") ? (
+          {product.name.toLowerCase().includes("piso ") &&
+ !product.name.toLowerCase().includes("novoplan") ? (
             <>
               <Typography variant="h6" color="#313926">
                 {formatPriceFromDescription(product.description)} / m²
