@@ -122,7 +122,7 @@ const App: React.FC = () => {
       fontWeight: "bold",
     }}
   >
-    Agende a visita do nosso instalador
+    Fale com um vendedor agora mesmo!
   </Typography>
   <Fab
   color="primary"
